@@ -52,7 +52,6 @@ export interface Order {
   total_amount: number
   status: 'pending' | 'payment_notified' | 'confirmed' | 'cancelled'
   payment_initiated_at: string | null
-  payment_initiated_at: string | null
   payment_notified_at: string | null
   confirmed_at: string | null
   created_at: string
@@ -170,12 +169,12 @@ Merci de votre compréhension !`,
 
 // Catégories factices
 export const MOCK_CATEGORIES: Category[] = [
-  { id: 'cat-1', name: 'BOISSONS', slug: 'boissons', display_order: 1 },
-  { id: 'cat-2', name: 'EN CAS SALE', slug: 'en-cas-sale', display_order: 2 },
-  { id: 'cat-3', name: 'EN CAS SUCRE', slug: 'en-cas-sucre', display_order: 3 },
-  { id: 'cat-4', name: 'PLATS PRINCIPAUX', slug: 'plats-principaux', display_order: 4 },
-  { id: 'cat-5', name: 'ENTREES', slug: 'entrees', display_order: 5 },
-  { id: 'cat-6', name: 'DESSERTS', slug: 'desserts', display_order: 6 }
+  { id: 'cat-1', name: 'BOISSONS', slug: 'boissons', display_order: 1, created_at: new Date().toISOString() },
+  { id: 'cat-2', name: 'EN CAS SALE', slug: 'en-cas-sale', display_order: 2, created_at: new Date().toISOString() },
+  { id: 'cat-3', name: 'EN CAS SUCRE', slug: 'en-cas-sucre', display_order: 3, created_at: new Date().toISOString() },
+  { id: 'cat-4', name: 'PLATS PRINCIPAUX', slug: 'plats-principaux', display_order: 4, created_at: new Date().toISOString() },
+  { id: 'cat-5', name: 'ENTREES', slug: 'entrees', display_order: 5, created_at: new Date().toISOString() },
+  { id: 'cat-6', name: 'DESSERTS', slug: 'desserts', display_order: 6, created_at: new Date().toISOString() }
 ]
 
 // Produits factices

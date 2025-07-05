@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Plus, Minus, ShoppingCart, Package, Search, Filter } from 'lucide-react'
 import { mockDatabase } from '../lib/mockDatabase'
 import { useAuth } from '../contexts/AuthContext'
-import type { Product } from '../lib/mockData'
+import type { Product, Category } from '../lib/mockData'
 
 interface CartItem {
   product: Product
@@ -13,12 +13,12 @@ interface CartItem {
 export function Commande() {
   const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<any[]>([])
+  const [categories, setCategories] = useState<Array<Category & { id: string }>>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all')
 
   useEffect(() => {
     fetchProducts()
@@ -46,7 +46,7 @@ export function Commande() {
   }
 
   const addToCart = (product: Product, variant?: string) => {
-    setCart(prev => {
+    setCart((prev: CartItem[]) => {
       const existingItem = prev.find(item => 
         item.product.id === product.id && item.selectedVariant === variant
       )
@@ -73,33 +73,43 @@ export function Commande() {
         return prev
       }
       
-      return [...prev, { product, quantity: 1, selectedVariant: variant }]
+      return [
+        ...prev,
+        {
+          product,
+          quantity: 1,
+          selectedVariant: variant
+        }
+      ]
     })
   }
 
   const removeFromCart = (productId: string, variant?: string) => {
-    setCart(prev => {
-      const existingItem = prev.find(item => 
-        item.product.id === productId && item.selectedVariant === variant
+    setCart((prev: CartItem[]) => {
+      const existingItem = prev.find((item: CartItem) => 
+        item.product.id === productId && 
+        (!variant || item.selectedVariant === variant)
       )
       
       if (existingItem && existingItem.quantity > 1) {
-        return prev.map(item =>
-          item.product.id === productId && item.selectedVariant === variant
+        return prev.map((item: CartItem) =>
+          item === existingItem
             ? { ...item, quantity: item.quantity - 1 }
             : item
         )
       }
       
-      return prev.filter(item => 
-        !(item.product.id === productId && item.selectedVariant === variant)
+      return prev.filter((item: CartItem) => 
+        !(item.product.id === productId && 
+          (!variant || item.selectedVariant === variant))
       )
     })
   }
 
-  const getQuantity = (productId: string, variant?: string) => {
-    const item = cart.find(item => 
-      item.product.id === productId && item.selectedVariant === variant
+  const getCartItemCount = (productId: string, variant?: string): number => {
+    const item = cart.find(
+      (item: CartItem) => item.product.id === productId && 
+      (!variant || item.selectedVariant === variant)
     )
     return item ? item.quantity : 0
   }
@@ -115,8 +125,8 @@ export function Commande() {
     return product.stock_quantity || 0
   }
 
-  const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+  const getCartTotal = (): number => {
+    return cart.reduce((total: number, item: CartItem) => total + (item.product.price * item.quantity), 0)
   }
 
   const submitOrder = async () => {
@@ -130,7 +140,7 @@ export function Commande() {
 
     setSubmitting(true)
     try {
-      const totalAmount = getTotalAmount()
+      const totalAmount = getCartTotal()
       const items = cart.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -338,7 +348,7 @@ export function Commande() {
                       </h4>
                       
                       {product.stock_variants.map((variant) => {
-                        const quantity = getQuantity(product.id, variant.name)
+                        const quantity = getCartItemCount(product.id, variant.name)
                         const isOutOfStock = variant.quantity <= 0
                         const isLowStock = variant.quantity <= 3 && variant.quantity > 0
                         
@@ -437,13 +447,13 @@ export function Commande() {
                       <button
                         onClick={() => removeFromCart(product.id)}
                         className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
-                        disabled={getQuantity(product.id) === 0}
+                        disabled={getCartItemCount(product.id) === 0}
                       >
                         <Minus size={14} />
                       </button>
                       
                       <span className="w-6 text-center font-medium text-sm flex items-center justify-center">
-                        {getQuantity(product.id)}
+                        {getCartItemCount(product.id)}
                       </span>
                       
                       <button
@@ -452,7 +462,7 @@ export function Commande() {
                         disabled={
                           product.stock_enabled && 
                           product.stock_quantity !== undefined && 
-                          (product.stock_quantity === 0 || getQuantity(product.id) >= product.stock_quantity)
+                          (product.stock_quantity === 0 || getCartItemCount(product.id) >= product.stock_quantity)
                         }
                       >
                         <Plus size={14} />
@@ -475,7 +485,7 @@ export function Commande() {
             className="btn-primary flex items-center space-x-2 shadow-lg disabled:opacity-50"
           >
             <ShoppingCart size={20} />
-            <span>Valider ({getTotalAmount().toFixed(2)} €)</span>
+            <span>Valider ({getCartTotal().toFixed(2)} €)</span>
           </button>
         </div>
       )}
