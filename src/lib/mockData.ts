@@ -114,54 +114,62 @@ export const MOCK_USERS: User[] = [
 export const MOCK_NEWS: NewsPost[] = [
   {
     id: 'news-1',
-    title: 'Bienvenue à la Popotte Association !',
-    content: `Nous sommes ravis de vous accueillir dans notre nouvelle application de commande en ligne.
+    title: 'Nouveau modèle de casquette FOR',
+    content: `Découvrez notre tout nouveau modèle de casquette FOR, disponible dès maintenant en plusieurs coloris !
 
-Vous pouvez désormais :
-- Consulter notre menu complet
-- Passer vos commandes facilement
-- Suivre vos dettes et paiements
-- Rester informés de nos actualités
+Caractéristiques :
+- Taille unique réglable
+- Matière respirante et légère
+- Visière courbée pour une protection optimale
+- Broderie de haute qualité
 
-Notre association continue de vous proposer des plats traditionnels marocains préparés avec amour et des ingrédients de qualité.
+Coloris disponibles :
+- Noir
+- Bleu marine
+- Rouge bordeaux
+- Vert kaki
 
-N'hésitez pas à nous faire part de vos retours pour améliorer votre expérience !`,
-    excerpt: 'Découvrez notre nouvelle application de commande en ligne',
-    image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+Parfaite pour l'été, cette casquette allie style et confort. N'attendez plus pour adopter ce must-have de la collection FOR !`,
+    excerpt: 'Découvrez notre nouvelle casquette FOR disponible en plusieurs coloris',
+    image_url: 'https://images.pexels.com/photos/9558699/pexels-photo-9558699.jpeg',
     published: true,
     created_at: new Date().toISOString()
   },
   {
     id: 'news-2',
-    title: 'Nouveau menu de printemps',
-    content: `Nous avons le plaisir de vous annoncer l'arrivée de notre nouveau menu de printemps !
+    title: 'La bière FOR de l\'été est arrivée !',
+    content: `C'est officiel, la bière FOR de l'été est enfin disponible ! Une édition limitée qui va vous rafraîchir tout l'été avec ses notes fruitées et sa touche d'agrumes.
 
-Au programme :
-- Des salades fraîches de saison
-- De nouveaux tajines aux légumes printaniers
-- Des desserts légers et parfumés
+Caractéristiques :
+- Bière blonde légère (4,5% vol)
+- Notes d'agrumes et de fruits exotiques
+- Amertume douce et rafraîchissante
+- Bouteille de 33cl
 
-Tous nos plats sont préparés avec des produits frais et de saison, dans le respect de nos traditions culinaires.
+Cette bière est le compagnon idéal pour vos soirées d'été, vos barbecues entre amis ou simplement pour vous détendre au soleil.
 
-Venez découvrir ces nouvelles saveurs dès maintenant !`,
-    excerpt: 'Découvrez nos nouveaux plats de saison',
-    image_url: 'https://images.pexels.com/photos/5949888/pexels-photo-5949888.jpeg',
+Disponible en commande dès maintenant !`,
+    excerpt: 'Découvrez la nouvelle bière FOR de l\'été',
+    image_url: 'https://images.pexels.com/photos/1267702/pexels-photo-1267702.jpeg',
     published: true,
     created_at: new Date(Date.now() - 86400000).toISOString()
   },
   {
     id: 'news-3',
-    title: 'Horaires d\'ouverture mis à jour',
-    content: `Nous vous informons que nos horaires d'ouverture ont été légèrement modifiés pour mieux vous servir :
+    title: 'Les anniversaires du mois',
+    content: `En ce mois de juillet, nous souhaitons un joyeux anniversaire à tous nos adhérents qui fêtent leur anniversaire !
 
-Lundi - Vendredi : 11h30 - 14h30 et 18h30 - 22h00
-Samedi - Dimanche : 12h00 - 15h00 et 19h00 - 22h30
+Un petit mot spécial pour :
+- Jean D. qui fête ses 35 ans le 15 juillet
+- Marie L. qui fête ses 28 ans le 18 juillet
+- Thomas P. qui fête ses 42 ans le 22 juillet
+- Sophie M. qui fête ses 31 ans le 30 juillet
 
-Les commandes en ligne restent disponibles 24h/24 avec récupération selon nos horaires d'ouverture.
+Pour fêter ça, nous offrons une boisson offerte à tous les anniversaires du mois sur présentation d'une pièce d'identité. Venez nombreux célébrer avec nous !
 
-Merci de votre compréhension !`,
-    excerpt: 'Nouveaux horaires pour mieux vous servir',
-    image_url: 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg',
+Toute l'équipe FOR vous souhaite une excellente année à venir !`,
+    excerpt: 'Découvrez qui fête son anniversaire ce mois-ci',
+    image_url: 'https://images.pexels.com/photos/265216/pexels-photo-265216.jpeg',
     published: true,
     created_at: new Date(Date.now() - 172800000).toISOString()
   }
