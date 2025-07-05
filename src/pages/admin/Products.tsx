@@ -25,7 +25,9 @@ export function Products() {
     stock_variants: [] as Array<{ name: string; quantity: number }>
   })
   const [categoryFormData, setCategoryFormData] = useState({
-    name: ''
+    name: '',
+    slug: '',
+    display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0
   })
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export function Products() {
         image_url: productFormData.image_url || null,
         is_available: productFormData.is_available,
         stock_enabled: productFormData.stock_enabled,
+        display_order: editingProduct ? editingProduct.display_order : 0, // Conserver l'ordre existant ou utiliser 0 par défaut
         stock_quantity: productFormData.stock_enabled && !productFormData.stock_variants.length 
           ? parseInt(productFormData.stock_quantity) || 0 
           : undefined,
@@ -103,11 +106,26 @@ export function Products() {
     e.preventDefault()
     
     try {
+      // Générer un slug à partir du nom de la catégorie
+      const slug = categoryFormData.slug || categoryFormData.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-')
+        .trim()
+
       await mockDatabase.createCategory({
-        name: categoryFormData.name
+        name: categoryFormData.name,
+        slug: slug,
+        display_order: categoryFormData.display_order
       })
 
-      setCategoryFormData({ name: '' })
+      setCategoryFormData({ 
+        name: '', 
+        slug: '',
+        display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0 
+      })
       setIsCreatingCategory(false)
       fetchCategories()
       alert('Catégorie créée !')
@@ -119,11 +137,27 @@ export function Products() {
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category.id)
     setEditingCategoryName(category.name)
+    setCategoryFormData({
+      ...categoryFormData,
+      name: category.name,
+      slug: category.slug,
+      display_order: category.display_order
+    })
   }
 
   const handleSaveCategory = async (categoryId: string) => {
     try {
-      await mockDatabase.updateCategory(categoryId, { name: editingCategoryName })
+      await mockDatabase.updateCategory(categoryId, { 
+        name: categoryFormData.name,
+        slug: categoryFormData.slug || categoryFormData.name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/--+/g, '-')
+          .trim(),
+        display_order: categoryFormData.display_order
+      })
       setEditingCategory(null)
       setEditingCategoryName('')
       fetchCategories()
@@ -137,6 +171,11 @@ export function Products() {
   const handleCancelCategoryEdit = () => {
     setEditingCategory(null)
     setEditingCategoryName('')
+    setCategoryFormData({
+      name: '',
+      slug: '',
+      display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0
+    })
   }
 
   const moveCategoryUp = async (categoryId: string) => {
@@ -209,7 +248,11 @@ export function Products() {
   }
 
   const handleCancelCategory = () => {
-    setCategoryFormData({ name: '' })
+    setCategoryFormData({
+      name: '',
+      slug: '',
+      display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0
+    })
     setIsCreatingCategory(false)
   }
 
@@ -309,7 +352,10 @@ export function Products() {
                 id="categoryName"
                 type="text"
                 value={categoryFormData.name}
-                onChange={(e) => setCategoryFormData({ name: e.target.value })}
+                onChange={(e) => setCategoryFormData({
+                  ...categoryFormData,
+                  name: e.target.value
+                })}
                 className="input mt-1"
                 required
               />
