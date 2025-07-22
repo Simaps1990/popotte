@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { mockDatabase } from '../../lib/mockDatabase'
+import { supabase } from '../../lib/supabaseClient'
 import type { Order } from '../../lib/mockData'
+import { AdminPageLayout } from '../../components/admin/AdminPageLayout'
 
 export function Orders() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -11,24 +12,38 @@ export function Orders() {
   }, [])
 
   const fetchOrders = async () => {
+    setLoading(true);
     try {
-      const data = await mockDatabase.getOrders()
-      setOrders(data)
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles:profiles!orders_user_id_fkey(full_name, email),
+          order_items:order_items(*, products(name))
+        `)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setOrders(data || []);
     } catch (error) {
-      console.error('Error fetching orders:', error)
+      console.error('Error fetching orders:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const confirmPayment = async (orderId: string) => {
     try {
-      await mockDatabase.updateOrder(orderId, { 
-        status: 'confirmed'
-      })
-      
-      fetchOrders()
-      alert('Paiement confirmé !')
+      // Mettre à jour le statut dans Supabase
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+        .eq('id', orderId);
+      if (error) {
+        alert('Erreur lors de la confirmation');
+        return;
+      }
+      fetchOrders();
+      alert('Paiement confirmé !');
     } catch (error) {
       console.error('Error confirming payment:', error)
       alert('Erreur lors de la confirmation')
@@ -80,78 +95,80 @@ export function Orders() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-      </div>
+      <AdminPageLayout title="Commandes">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </AdminPageLayout>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="card bg-blue-50 border-blue-200">
-        <p className="text-sm text-blue-700">
-          💡 Données de démonstration - Vérification factice des paiements.
-        </p>
-      </div>
+    <AdminPageLayout title="Gestion des commandes">
+      <div className="space-y-6">
+        <div className="card text-center">
+          <div className="text-2xl font-bold text-orange-600">{notifiedOrders.length}</div>
+          <div className="text-sm text-gray-500">commandes à traiter</div>
+        </div>
 
-      <div className="card text-center">
-        <div className="text-2xl font-bold text-orange-600">{notifiedOrders.length}</div>
-        <div className="text-sm text-gray-600">Paiements à vérifier</div>
-      </div>
-
-      <div className="space-y-4">
-        {notifiedOrders.length === 0 ? (
-          <div className="card text-center py-8">
-            <p className="text-gray-500">Aucun paiement à vérifier.</p>
-            <p className="text-xs text-gray-400 mt-2">
-              Les paiements apparaîtront ici après notification par les utilisateurs
-            </p>
-          </div>
-        ) : (
-          notifiedOrders.map((order) => (
-            <div key={order.id} className={`card border-l-4 ${getStatusColor(order.status)}`}>
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-semibold">{order.profiles?.full_name}</h3>
-                  <p className="text-sm text-gray-600">{order.profiles?.email}</p>
-                  <p className="text-xs text-gray-500">
-                    Commande: {formatDate(order.created_at)}
-                  </p>
-                  {order.payment_notified_at && (
-                    <p className="text-xs text-orange-600">
-                      Paiement notifié: {formatPaymentDate(order.payment_notified_at)}
+        <div className="space-y-4">
+          {notifiedOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Aucune commande à traiter pour le moment</p>
+            </div>
+          ) : (
+            notifiedOrders.map((order) => (
+              <div key={order.id} className="card p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">Commande #{order.id.slice(0, 6)}</h3>
+                    <p className="text-sm text-gray-500">
+                      Client: {order.profiles?.full_name || 'Anonyme'}
                     </p>
+                    <p className="text-sm text-gray-500">
+                      {formatDate(order.created_at)}
+                    </p>
+                    {order.payment_notified_at && (
+                      <p className="text-sm text-gray-500">
+                        Paiement notifié: {formatPaymentDate(order.payment_notified_at)}
+                      </p>
+                    )}
+                  </div>
+                  <span className={`px-3 py-1 text-xs rounded-full border ${getStatusColor(order.status)}`}>
+                    {getStatusLabel(order.status)}
+                  </span>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-2">Produits</h4>
+                  <ul className="space-y-2">
+                    {order.order_items.map((item) => (
+                      <li key={item.id} className="flex justify-between text-sm">
+                        <span>{item.products.name} x {item.quantity}</span>
+                        <span>{item.total_price.toFixed(2)} €</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex justify-between items-center pt-4 border-t">
+                  <div className="font-medium">
+                    Total: {order.total_amount.toFixed(2)} €
+                  </div>
+                  {order.status === 'payment_notified' && (
+                    <button
+                      onClick={() => confirmPayment(order.id)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    >
+                      Confirmer le paiement
+                    </button>
                   )}
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-lg">{order.total_amount.toFixed(2)} €</div>
-                  <div className="text-sm font-medium">
-                    {getStatusLabel(order.status)}
-                  </div>
-                </div>
               </div>
-
-              <div className="space-y-1 mb-3">
-                {order.order_items.map((item) => (
-                  <div key={item.id} className="text-sm text-gray-600 flex justify-between">
-                    <span>{item.quantity}x {item.products.name}</span>
-                    <span>{item.total_price.toFixed(2)} €</span>
-                  </div>
-                ))}
-              </div>
-
-              {order.status === 'payment_notified' && (
-                <button
-                  onClick={() => confirmPayment(order.id)}
-                  className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm flex items-center space-x-2"
-                >
-                  <span>✅ Confirmer le paiement</span>
-                </button>
-              )}
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </AdminPageLayout>
   )
 }

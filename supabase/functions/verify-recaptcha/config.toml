@@ -1,0 +1,20 @@
+[functions.verify-recaptcha]
+# Activer la fonction
+enabled = true
+
+# Spécifier la version de l'environnement d'exécution
+runtime = "deno1"
+
+# Spécifier la version de Deno
+runtime_version = "1.40.0"
+
+# Définir la mémoire allouée (en Mo)
+memory = 128
+
+# Définir le timeout (en secondes)
+timeout = 10
+
+# Variables d'environnement
+[functions.verify-recaptcha.environment]
+# La clé secrète reCAPTCHA sera définie dans le tableau de bord Supabase
+# car elle est sensible et ne doit pas être versionnée

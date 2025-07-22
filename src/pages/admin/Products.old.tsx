@@ -1,0 +1,637 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, ChevronUp, ChevronDown, PenSquare, Trash2, ArrowLeft, FolderPlus } from 'lucide-react';
+import { getProducts, createProduct, updateProduct, deleteProduct } from '../../services/productService';
+import * as categoryService from '../../services/categoryService';
+import { Product, Category } from '../../services/types';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+
+interface ProductCategory extends Category {
+  products: Product[];
+}
+
+export function Products() {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState<string>('');
+
+  // Grouper les produits par catégorie et trier par display_order
+  const productsByCategory: ProductCategory[] = categories
+    .filter(category => category.is_active !== false) // Exclure les catégories inactives
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+    .map(category => {
+      const categoryProducts = products.filter(p => p.category_id === category.id);
+      return {
+        ...category,
+        products: categoryProducts
+      };
+    });
+
+  // Fonction utilitaire pour rendre une carte produit
+  const renderProductCard = (product: Product) => (
+    <div key={product.id} className="card p-4">
+      <div className="flex justify-between items-start">
+        <div className="flex space-x-4 flex-1">
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.name}
+              className="w-20 h-20 object-cover rounded"
+            />
+          ) : (
+            <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center">
+              <span className="text-xs text-gray-400">Pas d'image</span>
+            </div>
+          )}
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="font-medium">{product.name}</h3>
+              {!product.is_available && (
+                <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                  Indisponible
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-600 mb-2">{product.description || 'Aucune description'}</p>
+            <div className="text-lg font-semibold text-primary-600">
+              {product.price.toFixed(2)} €
+            </div>
+            {product.stock_enabled && (
+              <div className="mt-2 text-sm">
+                {product.stock_variants?.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-600">Stock par variante :</p>
+                    {product.stock_variants.map((variant: any, idx: number) => (
+                      <div key={idx} className="text-xs text-gray-500 flex justify-between">
+                        <span>{variant.name}</span>
+                        <span className={variant.quantity <= 0 ? 'text-red-600 font-medium' : ''}>
+                          {variant.quantity <= 0 ? 'Rupture' : `${variant.quantity} dispo`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Stock: <span className={product.stock_quantity && product.stock_quantity > 0 ? 'text-green-600' : 'text-red-600 font-medium'}>
+                      {product.stock_quantity && product.stock_quantity > 0 ? 
+                        `${product.stock_quantity} disponible${product.stock_quantity > 1 ? 's' : ''}` : 
+                        'Rupture'}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleEditProduct(product)}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Modifier le produit"
+          >
+            <PenSquare size={16} />
+          </button>
+          <button
+            onClick={() => handleDeleteProduct(product.id)}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Supprimer le produit"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const [productFormData, setProductFormData] = useState<{
+    name: string;
+    description: string;
+    price: number;
+    category_id: string | null;
+    image_url: string;
+    is_available: boolean;
+    stock_enabled: boolean;
+    stock_quantity: number;
+    stock_variants: Array<{ name: string; quantity: number; price_adjustment?: number }>;
+  }>({
+    name: '',
+    description: '',
+    price: 0,
+    category_id: null,
+    image_url: '',
+    is_available: true,
+    stock_enabled: false,
+    stock_quantity: 0,
+    stock_variants: []
+  });
+
+  const [categoryFormData, setCategoryFormData] = useState<{
+    name: string;
+    slug: string;
+    description: string;
+    image_url: string;
+    display_order: number;
+    is_active: boolean;
+  }>({
+    name: '',
+    slug: '',
+    description: '',
+    image_url: '',
+    display_order: 0,
+    is_active: true
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [productsData, categoriesData] = await Promise.all([
+          getProducts(),
+          categoryService.getCategories()
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        alert('Erreur lors du chargement des données. Voir la console pour plus de détails.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Mettre à jour le display_order pour les nouvelles catégories
+  useEffect(() => {
+    if (categories.length > 0) {
+      const maxOrder = Math.max(...categories.map(c => c.display_order || 0));
+      setCategoryFormData(prev => ({
+        ...prev,
+        display_order: maxOrder + 1
+      }));
+    }
+  }, [categories]);
+
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const productData: Omit<Product, 'id' | 'created_at' | 'updated_at'> = {
+        ...productFormData,
+        stock_quantity: productFormData.stock_enabled ? productFormData.stock_quantity : 0,
+        stock_variants: productFormData.stock_variants,
+        is_available: true,
+        display_order: 0
+      };
+
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+      } else {
+        await createProduct(productData);
+      }
+      setProductFormData({
+        name: '',
+        description: '',
+        price: 0,
+        category_id: null,
+        image_url: '',
+        is_available: true,
+        stock_enabled: false,
+        stock_quantity: 0,
+        stock_variants: []
+      });
+      setEditingProduct(null);
+      setIsCreatingProduct(false);
+      fetchProducts();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du produit:', error);
+      alert('Erreur lors de la sauvegarde du produit. Voir la console pour plus de détails.');
+    }
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingCategory) {
+        await categoryService.updateCategory(editingCategory.id, {
+          ...categoryFormData,
+          name: editingCategoryName
+        });
+        setEditingCategory(null);
+        setEditingCategoryName('');
+      } else {
+        await categoryService.createCategory(categoryFormData);
+        setCategoryFormData({
+          name: '',
+          slug: '',
+          description: '',
+          image_url: '',
+          display_order: 0,
+          is_active: true
+        });
+        setIsCreatingCategory(false);
+      }
+      fetchCategories();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la catégorie:', error);
+      alert('Erreur lors de la sauvegarde de la catégorie. Voir la console pour plus de détails.');
+    }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setEditingCategoryName(category.name || '');
+  };
+
+  const handleCancelCategory = () => {
+    setEditingCategory(null);
+    setEditingCategoryName('');
+  };
+
+  const handleSaveCategory = async (categoryId: string) => {
+    try {
+      if (!editingCategoryName.trim()) {
+        alert('Le nom de la catégorie ne peut pas être vide');
+        return;
+      }
+
+      const slug = editingCategoryName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-')
+        .trim();
+
+      await categoryService.updateCategory(categoryId, {
+        name: editingCategoryName,
+        slug,
+        description: editingCategory?.description || null,
+        image_url: editingCategory?.image_url || null,
+        display_order: editingCategory?.display_order || 0,
+        is_active: editingCategory?.is_active !== false
+      } as Partial<Category>);
+
+      setEditingCategory(null);
+      setEditingCategoryName('');
+      fetchCategories();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la catégorie:', error);
+      alert('Erreur lors de la mise à jour de la catégorie. Voir la console pour plus de détails.');
+    }
+  };
+
+  const moveCategoryUp = async (categoryId: string) => {
+    await handleMoveCategory(categoryId, 'up');
+  };
+
+  const moveCategoryDown = async (categoryId: string) => {
+    await handleMoveCategory(categoryId, 'down');
+  };
+
+  const handleMoveCategory = async (categoryId: string, direction: 'up' | 'down') => {
+    try {
+      const currentIndex = categories.findIndex(c => c.id === categoryId);
+      if (currentIndex === -1) return;
+
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+      const currentCategory = categories[currentIndex];
+      const targetCategory = categories[targetIndex];
+
+      // Échanger les display_order
+      await Promise.all([
+        categoryService.updateCategory(currentCategory.id, {
+          ...currentCategory,
+          display_order: targetCategory.display_order
+        } as Partial<Category>),
+        categoryService.updateCategory(targetCategory.id, {
+          ...targetCategory,
+          display_order: currentCategory.display_order
+        } as Partial<Category>)
+      ]);
+
+      fetchCategories();
+    } catch (error) {
+      console.error('Erreur lors du déplacement de la catégorie:', error);
+      alert('Erreur lors du déplacement de la catégorie. Voir la console pour plus de détails.');
+    }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductFormData({
+      name: product.name,
+      description: product.description || '',
+      price: product.price,
+      category_id: product.category_id,
+      image_url: product.image_url || '',
+      is_available: product.is_available,
+      stock_enabled: product.stock_enabled || false,
+      stock_quantity: product.stock_quantity || 0,
+      stock_variants: product.stock_variants.map(variant => ({
+        name: variant.name,
+        quantity: variant.quantity,
+        price_adjustment: 'price_adjustment' in variant ? (variant as any).price_adjustment : 0
+      }))
+    });
+    setIsCreatingProduct(true);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+      try {
+        await deleteProduct(productId);
+        fetchProducts();
+      } catch (error) {
+        console.error('Erreur lors de la suppression du produit:', error);
+        alert('Erreur lors de la suppression du produit. Voir la console pour plus de détails.');
+      }
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ? Les produits associés ne seront pas supprimés mais n\'auront plus de catégorie.')) {
+      try {
+        await categoryService.deleteCategory(categoryId);
+        fetchCategories();
+      } catch (error) {
+        console.error('Erreur lors de la suppression de la catégorie:', error);
+        alert('Erreur lors de la suppression de la catégorie. Voir la console pour plus de détails.');
+      }
+    }
+  };
+
+  const addStockVariant = () => {
+    setProductFormData(prev => ({
+      ...prev,
+      stock_variants: [...prev.stock_variants, { name: '', quantity: 0, price_adjustment: 0 }]
+    }));
+  };
+
+  const handleStockVariantChange = (index: number, field: 'name' | 'quantity' | 'price_adjustment', value: string | number) => {
+    const updatedVariants = [...productFormData.stock_variants];
+    const updatedVariant = {
+      ...updatedVariants[index],
+      [field]: field === 'name' ? value : Number(value)
+    };
+    
+    // S'assurer que price_adjustment est toujours un nombre
+    if (field === 'price_adjustment') {
+      updatedVariant.price_adjustment = Number(value) || 0;
+    }
+    
+    updatedVariants[index] = updatedVariant as { name: string; quantity: number; price_adjustment?: number };
+    
+    setProductFormData(prev => ({
+      ...prev,
+      stock_variants: updatedVariants
+    }));
+  };
+
+  const removeStockVariant = (index: number) => {
+    const updatedVariants = productFormData.stock_variants.filter((_, i) => i !== index);
+    setProductFormData(prev => ({
+      ...prev,
+      stock_variants: updatedVariants
+    }));
+  };
+
+  const sortedCategories = [...categories].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await getProducts();
+      setProducts(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des produits:', error);
+      alert('Erreur lors du chargement des produits. Voir la console pour plus de détails.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des catégories:', error);
+      alert('Erreur lors du chargement des catégories. Voir la console pour plus de détails.');
+    }
+  };
+
+  // Fonction pour rendre une carte de produit
+  const renderProductCard = (product: Product) => (
+    <div key={product.id} className="card p-4">
+      <div className="flex justify-between items-start">
+        <div className="flex space-x-4 flex-1">
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.name}
+              className="w-20 h-20 object-cover rounded"
+            />
+          ) : (
+            <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center">
+              <span className="text-xs text-gray-400">Pas d'image</span>
+            </div>
+          )}
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="font-medium">{product.name}</h3>
+              {!product.is_available && (
+                <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                  Indisponible
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-600 mb-2">{product.description || 'Aucune description'}</p>
+            <div className="text-lg font-semibold text-primary-600">
+              {product.price.toFixed(2)} €
+            </div>
+            {product.stock_enabled && (
+              <div className="mt-2 text-sm">
+                {product.stock_variants?.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-600">Stock par variante :</p>
+                    {product.stock_variants.map((variant: any, idx: number) => (
+                      <div key={idx} className="text-xs text-gray-500 flex justify-between">
+                        <span>{variant.name}</span>
+                        <span className={variant.quantity <= 0 ? 'text-red-600 font-medium' : ''}>
+                          {variant.quantity <= 0 ? 'Rupture' : `${variant.quantity} dispo`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Stock: <span className={product.stock_quantity && product.stock_quantity > 0 ? 'text-green-600' : 'text-red-600 font-medium'}>
+                      {product.stock_quantity && product.stock_quantity > 0 ? 
+                        `${product.stock_quantity} disponible${product.stock_quantity > 1 ? 's' : ''}` : 
+                        'Rupture'}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleEditProduct(product)}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Modifier le produit"
+          >
+            <PenSquare size={16} />
+          </button>
+          <button
+            onClick={() => handleDeleteProduct(product.id)}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Supprimer le produit"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendu du chargement
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement des produits...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AdminPageLayout title="Gestion des produits">
+      <div className="space-y-6">
+        {/* En-tête avec bouton d'ajout */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des produits</h1>
+          <button 
+            onClick={() => navigate(-1)}
+            className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span>Retour</span>
+          </button>
+        </div>
+        
+        <div className="card bg-blue-50 border-blue-200 p-4">
+          <p className="text-sm text-blue-700">💡 Mode démonstration - Les produits et catégories sont stockés temporairement.</p>
+        </div>
+          </div>
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={() => setIsCreatingCategory(true)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <FolderPlus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+              Catégorie
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCreatingProduct(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+              Produit
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun produit</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Commencez par créer un produit pour qu'il apparaisse ici.
+            </p>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setIsCreatingProduct(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Nouveau produit
+              </button>
+            </div>
+                      </h2>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => handleMoveCategory(category.id, 'up')}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Monter la catégorie"
+                        >
+                          <ChevronUp size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleMoveCategory(category.id, 'down')}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Descendre la catégorie"
+                        >
+                          <ChevronDown size={18} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingCategory(category);
+                            setEditingCategoryName(category.name);
+                          }}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Modifier la catégorie"
+                        >
+                          <PenSquare size={18} />
+                        </button>
+                      </div>
+                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                        {category.products.length} produit{category.products.length !== 1 ? 's' : ''}
+                      </span>
+                    </>
+                  )}
+                    {categoryProducts.map((product) => renderProductCard(product))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </AdminPageLayout>
+  );
+};
+
+export default Products;

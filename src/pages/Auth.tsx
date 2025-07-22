@@ -1,13 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { toast } from 'react-hot-toast'
 
 export function Auth() {
   const { user, signIn, signUp } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [username, setUsername] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -24,7 +27,25 @@ export function Auth() {
       if (isLogin) {
         await signIn(email, password)
       } else {
-        await signUp(email, password, fullName)
+        // Vérifier que le nom d'utilisateur est unique et valide
+        if (!username || username.trim().length < 3) {
+          throw new Error('Le nom d\'utilisateur doit contenir au moins 3 caractères')
+        }
+        
+        // Vérifier qu'il n'y a pas d'espaces ou de caractères spéciaux dans le nom d'utilisateur
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+          throw new Error('Le nom d\'utilisateur ne doit contenir que des lettres, chiffres et underscores')
+        }
+        
+        console.log('Tentative d\'inscription avec:', { email, username, firstName, lastName })
+        const result = await signUp(email, password, username, firstName, lastName)
+        
+        if (result && result.error) {
+          console.error('Erreur lors de l\'inscription:', result.error)
+          throw result.error
+        }
+        
+        toast.success('Compte créé avec succès! Vous êtes maintenant connecté.')
       }
     } catch (error: any) {
       setError(error.message || 'Une erreur est survenue')
@@ -45,7 +66,7 @@ export function Auth() {
           </p>
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
-              💡 Mode démo : utilisez n'importe quel email et le mot de passe "password"
+
             </p>
           </div>
         </div>
@@ -59,21 +80,60 @@ export function Auth() {
 
           <div className="space-y-4">
             {!isLogin && (
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                  Nom complet
-                </label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required={!isLogin}
-                  className="input mt-1"
-                  placeholder="Votre nom complet"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
+              <>
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                    Nom d'utilisateur
+                  </label>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required={!isLogin}
+                    className="input mt-1"
+                    placeholder="nom_utilisateur"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Uniquement lettres, chiffres et underscores. Pas d'espaces.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                      Prénom
+                    </label>
+                    <input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      required={!isLogin}
+                      className="input mt-1"
+                      placeholder="Prénom"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                      Nom
+                    </label>
+                    <input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      required={!isLogin}
+                      className="input mt-1"
+                      placeholder="Nom"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             <div>

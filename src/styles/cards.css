@@ -1,0 +1,130 @@
+/* Styles pour les cartes */
+.card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Effet de survol pour les cartes cliquables */
+.card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-0.125rem);
+}
+
+/* Styles pour les cartes avec bordure gauche colorée */
+.card.border-l-4 {
+  border-left-width: 4px;
+}
+
+/* Styles spécifiques pour les cartes de statistiques */
+.stats-card {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+/* Styles pour les icônes dans les cartes */
+.card-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Styles pour le bouton de déconnexion */
+.logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  cursor: pointer;
+  text-align: left;
+  background-color: white;
+  border: none;
+}
+
+/* Styles pour les titres de section */
+.section-title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 1rem;
+}
+
+/* Styles pour les sous-titres */
+.subtitle {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #6B7280;
+  margin-top: 0.25rem;
+}
+
+/* Styles pour les montants */
+.amount {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+}
+
+/* Styles pour les boutons d'action */
+.action-button {
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  border: none;
+  background-color: white;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.action-button:hover {
+  background-color: #F9FAFB;
+}
+
+/* Styles pour les bordures colorées */
+.border-red-500 { border-color: #EF4444; }
+.border-green-500 { border-color: #10B981; }
+.border-blue-500 { border-color: #3B82F6; }
+.border-orange-500 { border-color: #F59E0B; }
+.border-purple-500 { border-color: #8B5CF6; }
+.border-gray-500 { border-color: #6B7280; }
+
+/* Styles pour les arrière-plans colorés */
+.bg-red-50 { background-color: #FEF2F2; }
+.bg-green-50 { background-color: #ECFDF5; }
+.bg-blue-50 { background-color: #EFF6FF; }
+.bg-orange-50 { background-color: #FFFBEB; }
+.bg-purple-50 { background-color: #F5F3FF; }
+.bg-gray-50 { background-color: #F9FAFB; }
+
+/* Styles pour les icônes colorées */
+.text-red-600 { color: #DC2626; }
+.text-green-600 { color: #059669; }
+.text-blue-600 { color: #2563EB; }
+.text-orange-600 { color: #D97706; }
+.text-purple-600 { color: #7C3AED; }
+.text-gray-600 { color: #4B5563; }
+
+/* Styles pour les arrière-plans d'icônes */
+.bg-red-100 { background-color: #FEE2E2; }
+.bg-green-100 { background-color: #D1FAE5; }
+.bg-blue-100 { background-color: #DBEAFE; }
+.bg-orange-100 { background-color: #FFFFFF; }
+.bg-purple-100 { background-color: #EDE9FE; }
+.bg-gray-100 { background-color: #F3F4F6; }

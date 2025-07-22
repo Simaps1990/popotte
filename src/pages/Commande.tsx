@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Plus, Minus, ShoppingCart, Package, Search, Filter } from 'lucide-react'
-import { mockDatabase } from '../lib/mockDatabase'
+import { getProducts, getCategories, createOrder } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Product, Category } from '../lib/mockData'
 
@@ -27,10 +27,12 @@ export function Commande() {
 
   const fetchProducts = async () => {
     try {
-      const data = await mockDatabase.getProducts(true)
-      setProducts(data)
+      console.log('🔄 Récupération des produits...')
+      const data = await getProducts()
+      console.log('✅ Produits récupérés:', data)
+      setProducts(data as Product[])
     } catch (error) {
-      console.error('Error fetching products:', error)
+      console.error('❌ Erreur lors de la récupération des produits:', error)
     } finally {
       setLoading(false)
     }
@@ -38,10 +40,12 @@ export function Commande() {
 
   const fetchCategories = async () => {
     try {
-      const data = await mockDatabase.getCategories()
-      setCategories(data)
+      console.log('🔄 Récupération des catégories...')
+      const data = await getCategories()
+      console.log('✅ Catégories récupérées:', data)
+      setCategories(data as Category[])
     } catch (error) {
-      console.error('Error fetching categories:', error)
+      console.error('❌ Erreur lors de la récupération des catégories:', error)
     }
   }
 
@@ -129,12 +133,11 @@ export function Commande() {
     return cart.reduce((total: number, item: CartItem) => total + (item.product.price * item.quantity), 0)
   }
 
-  const submitOrder = async () => {
-    if (!user || cart.length === 0) {
-      if (!user) {
-        alert('Vous devez être connecté pour passer une commande')
-        return
-      }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (cart.length === 0) return
+    if (!user) {
+      alert('Vous devez être connecté pour passer une commande')
       return
     }
 
@@ -144,11 +147,11 @@ export function Commande() {
       const items = cart.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
-        unit_price: item.product.price,
-        variant: item.selectedVariant
+        unit_price: item.product.price
+        // Le champ variant a été supprimé car il n'est pas nécessaire dans la table order_items
       }))
 
-      await mockDatabase.createOrder({
+      await createOrder({
         user_id: user.id,
         total_amount: totalAmount,
         items
@@ -158,25 +161,27 @@ export function Commande() {
       alert('Commande validée avec succès !')
     } catch (error) {
       console.error('Error submitting order:', error)
-      alert('Erreur lors de la validation de la commande')
+      alert('Une erreur est survenue lors de la validation de la commande.')
     } finally {
       setSubmitting(false)
     }
   }
 
-  // Filtrer les produits selon la recherche et la catégorie
+  // Filtrer les produits selon la recherche et la catégorie et disponibilité
   const filterProducts = (categoryProducts: Product[]) => {
-    return categoryProducts.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      return matchesSearch
-    })
-  }
+    return categoryProducts
+      .filter(product => product.is_available) // Exclure les produits indisponibles
+      .filter(product => 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+  };
 
   // Grouper les produits par catégorie dans l'ordre défini
   let groupedProducts = categories.reduce((acc, category) => {
     const categoryProducts = products
       .filter(p => p.category_id === category.id)
+      .filter(p => p.is_available) // Filtrer les produits indisponibles dès le début
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
     if (categoryProducts.length > 0) {
       acc[category.name] = categoryProducts
@@ -185,7 +190,9 @@ export function Commande() {
   }, {} as Record<string, Product[]>)
 
   // Ajouter les produits sans catégorie à la fin
-  const uncategorizedProducts = products.filter(p => !p.category_id)
+  const uncategorizedProducts = products
+    .filter(p => !p.category_id)
+    .filter(p => p.is_available) // Filtrer les produits indisponibles
   if (uncategorizedProducts.length > 0) {
     groupedProducts['Sans catégorie'] = uncategorizedProducts
   }
@@ -223,15 +230,6 @@ export function Commande() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Commander</h1>
-        <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-          Mode démo
-        </div>
-      </div>
-
-      <div className="card bg-blue-50 border-blue-200">
-        <p className="text-sm text-blue-700">
-          💡 Produits de démonstration. Toutes les commandes sont simulées.
-        </p>
       </div>
 
       {/* Barre de recherche et filtres */}
@@ -264,6 +262,7 @@ export function Commande() {
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="input pr-8 min-w-[140px] appearance-none bg-white"
+              style={{ backgroundColor: '#FFFFFF' }}
             >
               <option value="all">Toutes catégories</option>
               {categories.map((category) => (
@@ -477,15 +476,26 @@ export function Commande() {
         ))
       )}
 
+      {/* Ajouter un espace supplémentaire en bas de la page */}
+      <div className="pb-8"></div>
+
       {cart.length > 0 && (
         <div className="fixed top-4 right-4 z-50">
           <button
-            onClick={submitOrder}
-            disabled={submitting}
-            className="btn-primary flex items-center space-x-2 shadow-lg disabled:opacity-50"
+            onClick={handleSubmit}
+            disabled={cart.length === 0 || submitting || !user}
+            className="btn-primary flex items-center space-x-2 shadow-lg disabled:opacity-50 px-4 py-2 rounded-lg text-white font-medium"
+            type="button"
           >
             <ShoppingCart size={20} />
-            <span>Valider ({getCartTotal().toFixed(2)} €)</span>
+            <span>
+              {!user 
+                ? 'Connectez-vous pour commander' 
+                : submitting 
+                  ? 'Validation...' 
+                  : `Valider (${getCartTotal().toFixed(2)} €)`
+              }
+            </span>
           </button>
         </div>
       )}

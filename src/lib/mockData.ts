@@ -16,6 +16,8 @@ export interface NewsPost {
   image_url: string | null
   published: boolean
   created_at: string
+  updated_at?: string
+  author_id?: string
 }
 
 export interface Category {

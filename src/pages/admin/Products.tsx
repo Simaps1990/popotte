@@ -1,794 +1,680 @@
-import React, { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Save, X, FolderPlus, Check, ChevronUp, ChevronDown } from 'lucide-react'
-import { mockDatabase } from '../../lib/mockDatabase'
-import { ImageUpload } from '../../components/ImageUpload'
-import type { Product, Category } from '../../lib/mockData'
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, ChevronUp, ChevronDown, PenSquare, Trash2, Eye, EyeOff, ArrowLeft, FolderPlus } from 'lucide-react';
+import * as productService from '../../services/productService';
+import * as categoryService from '../../services/categoryService';
+import { Product, Category } from '../../services/types';
+import { toast } from 'react-hot-toast';
+import { ProductForm } from '../../components/admin/ProductForm';
 
-export function Products() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [isCreatingProduct, setIsCreatingProduct] = useState(false)
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<string | null>(null)
-  const [editingCategoryName, setEditingCategoryName] = useState('')
-  const [productFormData, setProductFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category_id: '',
-    image_url: '',
-    is_available: true,
-    stock_enabled: false,
-    stock_quantity: '',
-    stock_variants: [] as Array<{ name: string; quantity: number }>
-  })
-  const [categoryFormData, setCategoryFormData] = useState({
-    name: '',
-    slug: '',
-    display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0
-  })
+type ProductsByCategory = (Category & { products: Product[] })[];
+
+const Products = () => {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isCreatingProduct, setIsCreatingProduct] = useState<boolean>(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState<boolean>(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState<string>('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const productsByCategory: ProductsByCategory = categories
+    .filter(category => category.is_active !== false)
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+    .map(category => ({
+      ...category,
+      products: products.filter(p => p.category_id === category.id)
+        // N'affiche côté admin que les produits (disponibles ou non)
+    }));
 
   useEffect(() => {
-    fetchProducts()
-    fetchCategories()
-  }, [])
-
-  const fetchProducts = async () => {
-    try {
-      const data = await mockDatabase.getProducts()
-      setProducts(data)
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchCategories = async () => {
-    try {
-      const data = await mockDatabase.getCategories()
-      setCategories(data)
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
-  }
-
-  const handleProductSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    try {
-      const productData = {
-        name: productFormData.name,
-        description: productFormData.description || null,
-        price: parseFloat(productFormData.price),
-        category_id: productFormData.category_id || null,
-        image_url: productFormData.image_url || null,
-        is_available: productFormData.is_available,
-        stock_enabled: productFormData.stock_enabled,
-        display_order: editingProduct ? editingProduct.display_order : 0, // Conserver l'ordre existant ou utiliser 0 par défaut
-        stock_quantity: productFormData.stock_enabled && !productFormData.stock_variants.length 
-          ? parseInt(productFormData.stock_quantity) || 0 
-          : undefined,
-        stock_variants: productFormData.stock_enabled && productFormData.stock_variants.length > 0 
-          ? productFormData.stock_variants 
-          : undefined
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productsData, categoriesData] = await Promise.all([
+          productService.getProducts(),
+          categoryService.getCategories()
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        toast.error('Erreur lors du chargement des données');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (editingProduct) {
-        await mockDatabase.updateProduct(editingProduct.id, productData)
-      } else {
-        await mockDatabase.createProduct(productData)
-      }
+    fetchData();
+  }, []);
 
-      setProductFormData({
-        name: '',
-        description: '',
-        price: '',
-        category_id: '',
-        image_url: '',
-        is_available: true,
-        stock_enabled: false,
-        stock_quantity: '',
-        stock_variants: []
-      })
-      setEditingProduct(null)
-      setIsCreatingProduct(false)
-      fetchProducts()
-      alert(editingProduct ? 'Produit modifié !' : 'Produit créé !')
-    } catch (error: any) {
-      alert('Erreur : ' + error.message)
-    }
-  }
-
-  const handleCategorySubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    try {
-      // Générer un slug à partir du nom de la catégorie
-      const slug = categoryFormData.slug || categoryFormData.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/--+/g, '-')
-        .trim()
-
-      await mockDatabase.createCategory({
-        name: categoryFormData.name,
-        slug: slug,
-        display_order: categoryFormData.display_order
-      })
-
-      setCategoryFormData({ 
-        name: '', 
-        slug: '',
-        display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0 
-      })
-      setIsCreatingCategory(false)
-      fetchCategories()
-      alert('Catégorie créée !')
-    } catch (error: any) {
-      alert('Erreur : ' + error.message)
-    }
-  }
-
-  const handleEditCategory = (category: Category) => {
-    setEditingCategory(category.id)
-    setEditingCategoryName(category.name)
-    setCategoryFormData({
-      ...categoryFormData,
-      name: category.name,
-      slug: category.slug,
-      display_order: category.display_order
-    })
-  }
-
-  const handleSaveCategory = async (categoryId: string) => {
-    try {
-      await mockDatabase.updateCategory(categoryId, { 
-        name: categoryFormData.name,
-        slug: categoryFormData.slug || categoryFormData.name
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/--+/g, '-')
-          .trim(),
-        display_order: categoryFormData.display_order
-      })
-      setEditingCategory(null)
-      setEditingCategoryName('')
-      fetchCategories()
-      fetchProducts() // Rafraîchir les produits pour mettre à jour les noms de catégories
-      alert('Catégorie modifiée !')
-    } catch (error: any) {
-      alert('Erreur : ' + error.message)
-    }
-  }
-
-  const handleCancelCategoryEdit = () => {
-    setEditingCategory(null)
-    setEditingCategoryName('')
-    setCategoryFormData({
-      name: '',
-      slug: '',
-      display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0
-    })
-  }
-
-  const moveCategoryUp = async (categoryId: string) => {
-    try {
-      await mockDatabase.moveCategoryUp(categoryId)
-      fetchCategories()
-      fetchProducts()
-    } catch (error: any) {
-      alert('Erreur : ' + error.message)
-    }
-  }
-
-  const moveCategoryDown = async (categoryId: string) => {
-    try {
-      await mockDatabase.moveCategoryDown(categoryId)
-      fetchCategories()
-      fetchProducts()
-    } catch (error: any) {
-      alert('Erreur : ' + error.message)
-    }
-  }
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product)
-    setProductFormData({
-      name: product.name,
-      description: product.description || '',
-      price: product.price.toString(),
-      category_id: product.category_id || '',
-      image_url: product.image_url || '',
-      is_available: product.is_available,
-      stock_enabled: product.stock_enabled,
-      stock_quantity: product.stock_quantity?.toString() || '',
-      stock_variants: product.stock_variants || []
-    })
-    setIsCreatingProduct(true)
-    
-    // Scroll vers le haut du formulaire
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, 100)
-  }
-
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) return
-
-    try {
-      await mockDatabase.deleteProduct(productId)
-      fetchProducts()
-      alert('Produit supprimé !')
-    } catch (error: any) {
-      alert('Erreur : ' + error.message)
-    }
-  }
-
-  const handleCancelProduct = () => {
-    setProductFormData({
-      name: '',
-      description: '',
-      price: '',
-      category_id: '',
-      image_url: '',
-      is_available: true,
-      stock_enabled: false,
-      stock_quantity: '',
-      stock_variants: []
-    })
-    setEditingProduct(null)
-    setIsCreatingProduct(false)
-  }
-
-  const handleCancelCategory = () => {
-    setCategoryFormData({
-      name: '',
-      slug: '',
-      display_order: categories.length > 0 ? Math.max(...categories.map(c => c.display_order)) + 1 : 0
-    })
-    setIsCreatingCategory(false)
-  }
-
-  const addStockVariant = () => {
-    setProductFormData({
-      ...productFormData,
-      stock_variants: [...productFormData.stock_variants, { name: '', quantity: 0 }]
-    })
-  }
-
-  const updateStockVariant = (index: number, field: 'name' | 'quantity', value: string | number) => {
-    const updatedVariants = [...productFormData.stock_variants]
-    updatedVariants[index] = { ...updatedVariants[index], [field]: value }
-    setProductFormData({ ...productFormData, stock_variants: updatedVariants })
-  }
-
-  const removeStockVariant = (index: number) => {
-    const updatedVariants = productFormData.stock_variants.filter((_, i) => i !== index)
-    setProductFormData({ ...productFormData, stock_variants: updatedVariants })
-  }
-
-  // Grouper les produits par catégorie
-  const groupedProducts = categories.reduce((acc, category) => {
-    const categoryProducts = products.filter(p => p.category_id === category.id)
-    if (categoryProducts.length > 0) {
-      acc[category.name] = categoryProducts
-    }
-    return acc
-  }, {} as Record<string, Product[]>)
-
-  // Ajouter les produits sans catégorie à la fin
-  const uncategorizedProducts = products
-    .filter(p => !p.category_id)
-    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-  if (uncategorizedProducts.length > 0) {
-    groupedProducts['Sans catégorie'] = uncategorizedProducts
-  }
-
-  if (loading) {
+  // Composant séparé pour les boutons d'action
+  const ProductActionButtons = ({ product, index, productsInCategory }: { product: Product; index: number; productsInCategory: Product[] }) => {
     return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+      <div className="flex items-center space-x-1">
+        <button
+          onClick={() => toggleProductAvailability(product)}
+          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title={product.is_available ? "Rendre indisponible" : "Rendre disponible"}
+        >
+          {product.is_available ? <Eye size={18} /> : <EyeOff size={18} />}
+        </button>
+        <button
+          onClick={() => handleMoveProduct(product.id, 'up')}
+          disabled={index === 0}
+          className={`p-2 rounded-lg transition-colors ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
+          title="Monter le produit"
+        >
+          <ChevronUp size={18} />
+        </button>
+        <button
+          onClick={() => handleMoveProduct(product.id, 'down')}
+          disabled={index === productsInCategory.length - 1}
+          className={`p-2 rounded-lg transition-colors ${index === productsInCategory.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
+          title="Descendre le produit"
+        >
+          <ChevronDown size={18} />
+        </button>
+        <button
+          onClick={() => {
+            console.log('Clic sur le bouton modifier pour:', product.name, 'disponible:', product.is_available);
+            handleEditProduct(product);
+          }}
+          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Modifier le produit"
+        >
+          <PenSquare size={18} />
+        </button>
+        <button
+          onClick={() => handleDeleteProduct(product.id)}
+          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Supprimer le produit"
+        >
+          <Trash2 size={18} />
+        </button>
       </div>
-    )
-  }
+    );
+  };
 
-  return (
-    <div className="space-y-6">
-      <div className="card bg-blue-50 border-blue-200">
-        <p className="text-sm text-blue-700">
-          💡 Mode démonstration - Les produits et catégories sont stockés temporairement.
+  // Fonction de rendu des cartes produit avec gestion spéciale pour les produits indisponibles
+  const renderProductCard = (product: Product, index: number, productsInCategory: Product[]) => (
+    <div
+      key={product.id}
+      className={`flex items-center justify-between p-3 rounded-lg shadow-sm border border-gray-200`}
+      style={{ backgroundColor: 'white' }}
+    >
+      <div className="flex-1">
+        <div className="flex items-center space-x-2">
+          <h3 className={`font-medium ${product.is_available ? 'text-gray-900' : 'text-gray-500'}`}>
+            {product.name}
+          </h3>
+        </div>
+        <p className="text-sm text-gray-500">
+          {product.price ? `${product.price.toFixed(2)} €` : 'Prix non défini'}
         </p>
       </div>
+      <ProductActionButtons product={product} index={index} productsInCategory={productsInCategory} />
+    </div>
+  );
 
-      <div className="flex items-center justify-between">
-        <div className="flex space-x-2">
-          {!isCreatingProduct && !isCreatingCategory && (
-            <>
-              <button
-                onClick={() => setIsCreatingProduct(true)}
-                className="btn-primary flex items-center space-x-2"
-              >
-                <Plus size={20} />
-                <span>Nouveau produit</span>
-              </button>
-              <button
-                onClick={() => setIsCreatingCategory(true)}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <FolderPlus size={20} />
-                <span>Nouvelle catégorie</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+  // Fonction pour éditer un produit - réécrite pour éviter les problèmes avec les produits indisponibles
+  const handleEditProduct = (product: Product) => {
+    console.log('Début de l\'opération d\'edition du produit:', product.name, 'disponible:', product.is_available);
+    // Forcer la mise à jour des états dans le bon ordre
+    setEditingProduct(null); // D'abord réinitialiser
+    setTimeout(() => {
+      setEditingProduct(product); // Ensuite définir le produit en édition
+      setTimeout(() => {
+        console.log('Activation du mode création/édition pour le produit:', product.name);
+        setIsCreatingProduct(true); // Enfin activer le mode création/édition
+      }, 50);
+    }, 50);
+  };
+  
+  // Fonction pour tester directement la disponibilité d'un produit
+  const toggleProductAvailability = async (product: Product) => {
+    try {
+      const updatedProduct = await productService.updateProduct(product.id, {
+        is_available: !product.is_available
+      });
+      
+      // Mettre à jour la liste des produits
+      setProducts(products.map(p => p.id === product.id ? updatedProduct : p));
+      
+      toast.success(`Produit ${updatedProduct.name} ${updatedProduct.is_available ? 'disponible' : 'indisponible'}`);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la disponibilité:', error);
+      toast.error('Une erreur est survenue lors de la mise à jour de la disponibilité');
+    }
+  };
 
-      {/* Formulaire de création/modification de catégorie */}
-      {isCreatingCategory && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Nouvelle catégorie</h3>
-            <button
-              onClick={handleCancelCategory}
-              className="text-gray-500 hover:text-gray-700"
+  const handleDeleteProduct = async (productId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+      try {
+        await productService.deleteProduct(productId);
+        setProducts(products.filter(p => p.id !== productId));
+        toast.success('Produit supprimé avec succès');
+      } catch (error) {
+        console.error('Erreur lors de la suppression du produit:', error);
+        toast.error('Une erreur est survenue lors de la suppression du produit');
+      }
+    }
+  };
+
+  const handleMoveProduct = async (productId: string, direction: 'up' | 'down') => {
+    try {
+      console.log('handleMoveProduct appelé avec:', { productId, direction });
+      
+      // 1. Créer une copie profonde des produits actuels
+      const updatedProducts = JSON.parse(JSON.stringify(products));
+      
+      // 2. Trouver le produit à déplacer
+      const productIndex = updatedProducts.findIndex((p: Product) => p.id === productId);
+      if (productIndex === -1) {
+        console.error('Produit non trouvé:', productId);
+        return;
+      }
+      
+      const product = { ...updatedProducts[productIndex] };
+      if (!product.category_id) {
+        console.error('Le produit n\'a pas de catégorie:', product);
+        return;
+      }
+      
+      // 3. Filtrer les produits de la même catégorie et les trier par display_order
+      const categoryProducts = updatedProducts
+        .filter((p: Product) => p.category_id === product.category_id)
+        .sort((a: Product, b: Product) => (a.display_order || 0) - (b.display_order || 0));
+      
+      console.log('Produits de la catégorie avant modification:', 
+        categoryProducts.map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          display_order: p.display_order
+        }))
+      );
+      
+      // 4. Trouver l'index du produit dans la liste triée
+      const currentIndex = categoryProducts.findIndex((p: Product) => p.id === productId);
+      if (currentIndex === -1) {
+        console.error('Produit non trouvé dans la liste triée:', productId);
+        return;
+      }
+      
+      // 5. Calculer le nouvel index en fonction de la direction
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      // 6. Vérifier si le déplacement est possible
+      if (newIndex < 0 || newIndex >= categoryProducts.length) {
+        console.log('Déplacement impossible: hors limites');
+        toast('Impossible de déplacer le produit plus loin dans cette direction');
+        return;
+      }
+      
+      // 7. Créer une nouvelle liste des produits de la catégorie avec les nouveaux ordres
+      const updatedCategoryProducts = [...categoryProducts];
+      
+      // 8. Échanger les positions dans le tableau
+      [updatedCategoryProducts[currentIndex], updatedCategoryProducts[newIndex]] = 
+        [updatedCategoryProducts[newIndex], { ...updatedCategoryProducts[currentIndex] }];
+      
+      // 9. Mettre à jour les display_order de manière séquentielle
+      updatedCategoryProducts.forEach((p: Product, index: number) => {
+        p.display_order = index + 1; // Commence à 1 pour plus de lisibilité
+      });
+      
+      console.log('Produits de la catégorie après modification:', 
+        updatedCategoryProducts.map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          display_order: p.display_order
+        }))
+      );
+      
+      // 10. Mettre à jour les produits dans le tableau principal
+      const updatedProductsMap = new Map(updatedProducts.map((p: Product) => [p.id, p]));
+      updatedCategoryProducts.forEach((updatedProduct: Product) => {
+        updatedProductsMap.set(updatedProduct.id, { ...updatedProduct });
+      });
+      
+      const finalProducts = Array.from(updatedProductsMap.values()) as Product[];
+      
+      // 11. Mettre à jour d'abord la base de données
+      try {
+        console.log('Mise à jour en base de données...');
+        
+        // Préparer les mises à jour pour tous les produits modifiés
+        const updates = updatedCategoryProducts.map(p => ({
+          id: p.id,
+          updates: {
+            display_order: p.display_order
+          }
+        }));
+        
+        console.log(`Mise à jour groupée de ${updates.length} produits...`);
+        
+        // Mettre à jour tous les produits en une seule requête
+        await productService.updateMultipleProducts(updates);
+        
+        console.log('Mise à jour en base de données réussie');
+        
+        // Mettre à jour l'état local avec les produits mis à jour
+        setProducts(finalProducts);
+        
+        // Afficher le message de succès
+        toast.success(`Produit déplacé vers le ${direction === 'up' ? 'haut' : 'bas'}`);
+        
+      } catch (error) {
+        console.error('Erreur dans handleMoveProduct:', error);
+        toast.error('Une erreur est survenue lors du déplacement du produit');
+        
+        // Recharger les produits depuis la base pour revenir à un état cohérent
+        const refreshedProducts = await productService.getProducts();
+        if (refreshedProducts) {
+          setProducts(refreshedProducts);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du déplacement du produit:', error);
+      toast.error('Une erreur est survenue lors du déplacement du produit');
+      
+      // En cas d'erreur, recharger les produits pour revenir à un état cohérent
+      const refreshedProducts = await productService.getProducts();
+      if (refreshedProducts) {
+        setProducts(refreshedProducts);
+      }
+    }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setEditingCategoryName(category.name);
+  };
+
+  const handleCreateCategory = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    
+    if (!newCategoryName.trim()) {
+      toast.error('Veuillez entrer un nom de catégorie');
+      return;
+    }
+    
+    try {
+      const newCategory = await categoryService.createCategory({
+        name: newCategoryName.trim(),
+        slug: newCategoryName.trim().toLowerCase().replace(/\s+/g, '-'),
+        is_active: true,
+        display_order: categories.length
+      });
+      
+      setCategories([...categories, newCategory]);
+      setNewCategoryName('');
+      setIsCreatingCategory(false);
+      toast.success('Catégorie créée avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la création de la catégorie:', error);
+      toast.error('Une erreur est survenue lors de la création de la catégorie');
+    }
+  };
+
+  const handleCreateProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const newProduct = await productService.createProduct(productData);
+      setProducts([...products, newProduct]);
+      setEditingProduct(null);
+      setIsCreatingProduct(false);
+      toast.success('Produit créé avec succès');
+      return newProduct;
+    } catch (error) {
+      console.error('Erreur lors de la création du produit:', error);
+      toast.error('Une erreur est survenue lors de la création du produit');
+      throw error;
+    }
+  };
+
+  const handleUpdateProduct = async (id: string, updates: Partial<Product>) => {
+    try {
+      // Inclure is_available dans les mises à jour
+      const updatedProduct = await productService.updateProduct(id, updates);
+      setProducts(products.map(p => p.id === id ? updatedProduct : p));
+      setEditingProduct(null);
+      toast.success('Produit mis à jour avec succès');
+      return updatedProduct;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du produit:', error);
+      toast.error('Une erreur est survenue lors de la mise à jour du produit');
+      throw error;
+    }
+  };
+
+  const handleSaveCategory = async () => {
+    if (!editingCategory || !editingCategoryName.trim()) return;
+    
+    try {
+      await categoryService.updateCategory(editingCategory.id, { 
+        name: editingCategoryName.trim() 
+      });
+      
+      setCategories(categories.map(cat => 
+        cat.id === editingCategory.id 
+          ? { ...cat, name: editingCategoryName.trim() } 
+          : cat
+      ));
+      
+      setEditingCategory(null);
+      setEditingCategoryName('');
+      toast.success('Catégorie mise à jour avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la catégorie:', error);
+      toast.error('Une erreur est survenue lors de la mise à jour de la catégorie');
+    }
+  };
+
+  const handleCancelCategory = () => {
+    setEditingCategory(null);
+    setEditingCategoryName('');
+  };
+
+  const handleMoveCategory = async (categoryId: string, direction: 'up' | 'down') => {
+    try {
+      const currentIndex = categories.findIndex(c => c.id === categoryId);
+      if (currentIndex === -1) return;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= categories.length) return;
+      
+      const newCategories = [...categories];
+      const [movedCategory] = newCategories.splice(currentIndex, 1);
+      newCategories.splice(newIndex, 0, movedCategory);
+      
+      // Mettre à jour l'ordre d'affichage
+      const updatedCategories = newCategories.map((cat, index) => ({
+        ...cat,
+        display_order: index
+      }));
+      
+      // Mettre à jour les catégories en base de données
+      await Promise.all(
+        updatedCategories.map(cat => 
+          categoryService.updateCategory(cat.id, { display_order: cat.display_order })
+        )
+      );
+      
+      setCategories(updatedCategories);
+      toast.success(`Catégorie déplacée vers le ${direction === 'up' ? 'haut' : 'bas'}`);
+    } catch (error) {
+      console.error('Erreur lors du déplacement de la catégorie:', error);
+      toast.error('Une erreur est survenue lors du déplacement de la catégorie');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    console.log('handleDeleteCategory appelé avec categoryId:', categoryId);
+    
+    // Trouver la catégorie dans la liste des catégories
+    const category = categories.find(cat => cat.id === categoryId);
+    
+    if (!category) {
+      console.error('Catégorie non trouvée:', categoryId);
+      toast.error('Catégorie introuvable');
+      return;
+    }
+    
+    // Vérifier directement dans l'état des produits
+    const productsInCategory = products.filter(p => p.category_id === categoryId);
+    console.log('Produits dans la catégorie:', productsInCategory);
+    
+    if (productsInCategory.length > 0) {
+      const errorMessage = `Impossible de supprimer la catégorie "${category.name}" car elle contient ${productsInCategory.length} produit(s). Veuillez d'abord supprimer ou déplacer ces produits.`;
+      console.log('Affichage du message d\'erreur:', errorMessage);
+      toast.error(errorMessage);
+      return;
+    }
+    
+    // Si la catégorie est vide, demander confirmation
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ?`)) {
+      try {
+        const { error } = await categoryService.deleteCategory(categoryId);
+        
+        if (!error) {
+          // Mettre à jour la liste des catégories
+          setCategories(categories.filter(cat => cat.id !== categoryId));
+          toast.success('Catégorie supprimée avec succès');
+        } else {
+          throw error;
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression de la catégorie:', error);
+        toast.error('Une erreur est survenue lors de la suppression de la catégorie');
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-16">
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">Gestion des produits</h1>
+            <button 
+              onClick={() => navigate(-1)}
+              className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
             >
-              <X size={20} />
+              <ArrowLeft size={20} />
+              <span>Retour</span>
             </button>
           </div>
-
-          <form onSubmit={handleCategorySubmit} className="space-y-4">
-            <div>
-              <label htmlFor="categoryName" className="block text-sm font-medium text-gray-700">
-                Nom de la catégorie
-              </label>
-              <input
-                id="categoryName"
-                type="text"
-                value={categoryFormData.name}
-                onChange={(e) => setCategoryFormData({
-                  ...categoryFormData,
-                  name: e.target.value
-                })}
-                className="input mt-1"
-                required
-              />
-            </div>
-
-            <div className="flex space-x-2">
-              <button type="submit" className="btn-primary flex items-center space-x-2">
-                <Save size={20} />
-                <span>Créer</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelCategory}
-                className="btn-secondary"
-              >
-                Annuler
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Formulaire de création/modification de produit */}
-      {isCreatingProduct && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">
-              {editingProduct ? 'Modifier le produit' : 'Nouveau produit'}
-            </h3>
-            <button
-              onClick={handleCancelProduct}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <form onSubmit={handleProductSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Nom du produit
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={productFormData.name}
-                onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
-                className="input mt-1"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description (optionnel)
-              </label>
-              <textarea
-                id="description"
-                value={productFormData.description}
-                onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
-                className="input mt-1 h-20 resize-none"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                Prix (€)
-              </label>
-              <input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={productFormData.price}
-                onChange={(e) => setProductFormData({ ...productFormData, price: e.target.value })}
-                className="input mt-1"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
-                Catégorie
-              </label>
-              <select
-                id="category_id"
-                value={productFormData.category_id}
-                onChange={(e) => setProductFormData({ ...productFormData, category_id: e.target.value })}
-                className="input mt-1"
-              >
-                <option value="">Aucune catégorie</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Image du produit
-              </label>
-              <ImageUpload
-                value={productFormData.image_url}
-                onChange={(imageData) => setProductFormData({ ...productFormData, image_url: imageData || '' })}
-                placeholder="Ajouter une image du produit"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="is_available"
-                type="checkbox"
-                checked={productFormData.is_available}
-                onChange={(e) => setProductFormData({ ...productFormData, is_available: e.target.checked })}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="is_available" className="ml-2 block text-sm text-gray-900">
-                Produit disponible
-              </label>
-            </div>
-
-            {/* Gestion du stock */}
-            <div className="space-y-4 border-t pt-4">
-              <div className="flex items-center">
-                <input
-                  id="stock_enabled"
-                  type="checkbox"
-                  checked={productFormData.stock_enabled}
-                  onChange={(e) => setProductFormData({ 
-                    ...productFormData, 
-                    stock_enabled: e.target.checked,
-                    stock_quantity: '',
-                    stock_variants: []
-                  })}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="stock_enabled" className="ml-2 block text-sm text-gray-900">
-                  Activer la gestion de stock
-                </label>
+          
+          <div className="space-y-6">
+            
+            <div className="flex items-center justify-between">
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => {
+                    setIsCreatingProduct(true);
+                    setIsCreatingCategory(false);
+                  }}
+                  className="btn-primary flex items-center space-x-2"
+                  disabled={isCreatingCategory || isCreatingProduct}
+                >
+                  <Plus size={20} />
+                  <span>Nouveau produit</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsCreatingCategory(true);
+                    setIsCreatingProduct(false);
+                  }}
+                  className="btn-secondary flex items-center space-x-2"
+                  disabled={isCreatingCategory || isCreatingProduct}
+                >
+                  <FolderPlus size={20} />
+                  <span>Nouvelle catégorie</span>
+                </button>
               </div>
-
-              {productFormData.stock_enabled && (
-                <div className="space-y-4 ml-6 p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Type de stock
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="stockType"
-                          checked={productFormData.stock_variants.length === 0}
-                          onChange={() => setProductFormData({ ...productFormData, stock_variants: [] })}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                        />
-                        <span className="ml-2 text-sm text-gray-900">Stock simple (quantité unique)</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="stockType"
-                          checked={productFormData.stock_variants.length > 0}
-                          onChange={() => {
-                            if (productFormData.stock_variants.length === 0) {
-                              addStockVariant()
-                            }
-                          }}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                        />
-                        <span className="ml-2 text-sm text-gray-900">Stock par taille/variante</span>
-                      </label>
-                    </div>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Formulaire de création de catégorie */}
+              {isCreatingCategory && (
+                <div className="card mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Nouvelle catégorie</h3>
+                    <button 
+                      onClick={() => setIsCreatingCategory(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                      </svg>
+                    </button>
                   </div>
-
-                  {productFormData.stock_variants.length === 0 ? (
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleCreateCategory();
+                  }} className="space-y-4">
                     <div>
-                      <label htmlFor="stock_quantity" className="block text-sm font-medium text-gray-700">
-                        Quantité en stock
+                      <label htmlFor="categoryName" className="block text-sm font-medium text-gray-700">
+                        Nom de la catégorie
                       </label>
-                      <input
-                        id="stock_quantity"
-                        type="number"
-                        min="0"
-                        value={productFormData.stock_quantity}
-                        onChange={(e) => setProductFormData({ ...productFormData, stock_quantity: e.target.value })}
-                        className="input mt-1"
-                        placeholder="Ex: 10"
+                      <input 
+                        id="categoryName" 
+                        type="text" 
+                        className="input mt-1 w-full" 
+                        required 
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        autoFocus
                       />
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Variantes et stock
-                        </label>
-                        <button
-                          type="button"
-                          onClick={addStockVariant}
-                          className="text-sm text-primary-600 hover:text-primary-700"
-                        >
-                          + Ajouter une variante
-                        </button>
-                      </div>
-                      
-                      {productFormData.stock_variants.map((variant, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <input
-                            type="text"
-                            value={variant.name}
-                            onChange={(e) => updateStockVariant(index, 'name', e.target.value)}
-                            className="input flex-1"
-                            placeholder="Ex: Taille M"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            value={variant.quantity}
-                            onChange={(e) => updateStockVariant(index, 'quantity', parseInt(e.target.value) || 0)}
-                            className="input w-20"
-                            placeholder="Qté"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeStockVariant(index)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="flex space-x-2">
+                      <button type="submit" className="btn-primary flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-save">
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                          <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>Créer</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn-secondary"
+                        onClick={() => {
+                          setIsCreatingCategory(false);
+                          setNewCategoryName('');
+                        }}
+                      >
+                        Annuler
+                      </button>
                     </div>
-                  )}
+                  </form>
                 </div>
               )}
-            </div>
-            <div className="flex space-x-2">
-              <button type="submit" className="btn-primary flex items-center space-x-2">
-                <Save size={20} />
-                <span>{editingProduct ? 'Modifier' : 'Créer'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelProduct}
-                className="btn-secondary"
-              >
-                Annuler
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
-      {/* Liste des produits groupés par catégorie */}
-      <div className="space-y-6">
-        {Object.keys(groupedProducts).length === 0 ? (
-          <div className="card text-center py-8">
-            <p className="text-gray-500">Aucun produit trouvé.</p>
-          </div>
-        ) : (
-          Object.entries(groupedProducts).map(([categoryName, categoryProducts]) => (
-            <div key={categoryName} className="space-y-4">
-              <div className="flex items-center space-x-2 group bg-gray-50 p-3 rounded-lg">
-                {editingCategory === categories.find(c => c.name === categoryName)?.id ? (
-                  <div className="flex items-center space-x-2 flex-1">
-                    <input
-                      type="text"
-                      value={editingCategoryName}
-                      onChange={(e) => setEditingCategoryName(e.target.value)}
-                      className="input text-lg font-semibold flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const categoryId = categories.find(c => c.name === categoryName)?.id
-                          if (categoryId) handleSaveCategory(categoryId)
-                        }
-                        if (e.key === 'Escape') {
-                          handleCancelCategoryEdit()
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => {
-                        const categoryId = categories.find(c => c.name === categoryName)?.id
-                        if (categoryId) handleSaveCategory(categoryId)
-                      }}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    >
-                      <Check size={16} />
-                    </button>
-                    <button
-                      onClick={handleCancelCategoryEdit}
-                      className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <h2 
-                      className="text-lg font-semibold text-gray-800 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
-                      onClick={() => {
-                        const category = categories.find(c => c.name === categoryName)
-                        if (category && categoryName !== 'Sans catégorie') handleEditCategory(category)
-                      }}
-                    >
-                      {categoryName}
-                    </h2>
-                    {categoryName !== 'Sans catégorie' && (
-                      <div className="flex items-center space-x-1">
-                        <button
-                          onClick={() => {
-                            const category = categories.find(c => c.name === categoryName)
-                            if (category) moveCategoryUp(category.id)
-                          }}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Monter la catégorie"
-                        >
-                          <ChevronUp size={18} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            const category = categories.find(c => c.name === categoryName)
-                            if (category) moveCategoryDown(category.id)
-                          }}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Descendre la catégorie"
-                        >
-                          <ChevronDown size={18} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            const category = categories.find(c => c.name === categoryName)
-                            if (category) handleEditCategory(category)
-                          }}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Modifier la catégorie"
-                        >
-                          <Edit size={18} />
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-                <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                  {categoryProducts.length} produit{categoryProducts.length > 1 ? 's' : ''}
-                </span>
-              </div>
-              
-              <div className="space-y-3 ml-4">
-                {categoryProducts.map((product) => (
-                  <div key={product.id} className="card">
-                    <div className="flex justify-between items-start">
-                      <div className="flex space-x-4 flex-1">
-                        {product.image_url && (
-                          <img
-                            src={product.image_url}
-                            alt={product.name}
-                            className="w-20 h-20 object-cover rounded-lg"
+              {/* Formulaire de création ou modification de produit */}
+              {isCreatingProduct && (
+                <div className="mb-6">
+                  <ProductForm
+                    categories={categories}
+                    onCancel={() => {
+                      setIsCreatingProduct(false);
+                      setEditingProduct(null);
+                    }}
+                    onSubmit={async (data) => {
+                      if (editingProduct) {
+                        await handleUpdateProduct(editingProduct.id, data);
+                      } else {
+                        await handleCreateProduct(data);
+                      }
+                      setIsCreatingProduct(false);
+                    }}
+                    initialData={editingProduct || undefined}
+                  />
+                </div>
+              )}
+            
+            {loading ? (
+              <div>Chargement des produits...</div>
+            ) : (
+                productsByCategory.map((category) => (
+                  <div key={category.id} className="space-y-4">
+                    <div className="flex items-center space-x-2 group bg-gray-50 p-3 rounded-lg">
+                      {editingCategory?.id === category.id ? (
+                        <div className="flex items-center space-x-2 flex-1">
+                          <input
+                            type="text"
+                            value={editingCategoryName}
+                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                            className="input text-lg font-semibold flex-1"
+                            autoFocus
                           />
-                        )}
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-medium">{product.name}</h3>
-                            {!product.is_available && (
-                              <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                                Indisponible
-                              </span>
-                            )}
-                          </div>
-                          
-                          {product.description && (
-                            <p className="text-gray-600 mb-2">{product.description}</p>
-                          )}
-                          
-                          <div className="text-lg font-semibold text-primary-600">
-                            {product.price.toFixed(2)} €
-                          </div>
-                         
-                         {/* Affichage du stock */}
-                         {product.stock_enabled && (
-                           <div className="mt-2">
-                             {product.stock_variants && product.stock_variants.length > 0 ? (
-                               <div className="space-y-1">
-                                 <p className="text-xs font-medium text-gray-600">Stock par variante :</p>
-                                 {product.stock_variants.map((variant, index) => (
-                                   <div key={index} className="text-xs text-gray-500 flex justify-between">
-                                     <span>{variant.name}</span>
-                                     <span className={variant.quantity === 0 ? 'text-red-600 font-medium' : variant.quantity <= 3 ? 'text-orange-600 font-medium' : 'text-green-600'}>
-                                       {variant.quantity === 0 ? 'Rupture' : `${variant.quantity} dispo`}
-                                     </span>
-                                   </div>
-                                 ))}
-                               </div>
-                             ) : (
-                               <p className={`text-xs ${
-                                 product.stock_quantity === 0 ? 'text-red-600 font-medium' : 
-                                 (product.stock_quantity || 0) <= 3 ? 'text-orange-600 font-medium' : 
-                                 'text-green-600'
-                               }`}>
-                                 Stock: {product.stock_quantity === 0 ? 'Rupture' : `${product.stock_quantity} disponibles`}
-                               </p>
-                             )}
-                           </div>
-                         )}
+                          <button 
+                            onClick={handleSaveCategory}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Enregistrer les modifications"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => setEditingCategory(null)}
+                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                            title="Annuler"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
+                              <path d="M18 6 6 18"></path>
+                              <path d="m6 6 12 12"></path>
+                            </svg>
+                          </button>
                         </div>
-                      </div>
-                      
-                      <div className="flex space-x-2 ml-4">
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      ) : (
+                        <>
+                          <h2 
+                            className="text-lg font-semibold text-gray-800 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
+                            onClick={() => {
+                              setEditingCategory(category);
+                              setEditingCategoryName(category.name);
+                            }}
+                          >
+                            {category.name}
+                          </h2>
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={() => handleMoveCategory(category.id, 'up')}
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Monter la catégorie"
+                            >
+                              <ChevronUp size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleMoveCategory(category.id, 'down')}
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Descendre la catégorie"
+                            >
+                              <ChevronDown size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleEditCategory(category)}
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Modifier la catégorie"
+                            >
+                              <PenSquare size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(category.id)}
+                              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Supprimer la catégorie"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                            {category.products.length} produit{category.products.length !== 1 ? 's' : ''}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      {category.products
+                        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+                        .map((product, index, productsArray) => 
+                          renderProductCard(product, index, productsArray)
+                        )}
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          ))
-        )}
+          </div>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Products;

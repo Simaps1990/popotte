@@ -1,15 +1,30 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff, Save, User, Lock } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export function Profile() {
   const { profile, updateProfile, changePassword } = useAuth()
+  const navigate = useNavigate()
+  const initialLoadDone = useRef(false)
   
   // États pour le profil
-  const [fullName, setFullName] = useState(profile?.full_name || '')
+  const [firstName, setFirstName] = useState(profile?.first_name || '')
+  const [lastName, setLastName] = useState(profile?.last_name || '')
   const [username, setUsername] = useState(profile?.username || '')
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileMessage, setProfileMessage] = useState('')
+  
+  // Mettre à jour les états locaux quand le profil change
+  useEffect(() => {
+    if (profile) {
+      console.log('Mise à jour des états locaux avec le profil:', profile)
+      setFirstName(profile.first_name || '')
+      setLastName(profile.last_name || '')
+      setUsername(profile.username || '')
+      initialLoadDone.current = true
+    }
+  }, [profile])
   
   // États pour le mot de passe
   const [currentPassword, setCurrentPassword] = useState('')
@@ -27,16 +42,38 @@ export function Profile() {
 
     setProfileLoading(true)
     setProfileMessage('')
+    
+    console.log('Soumission du profil avec les données:', { firstName, lastName, username })
 
     try {
-      await updateProfile({ 
-        full_name: fullName,
+      // Créer un objet avec les données du profil à mettre à jour
+      const profileData = { 
+        first_name: firstName,
+        last_name: lastName,
         username: username
-      })
+      }
+      
+      // Appeler la fonction de mise à jour du profil
+      console.log('Appel de updateProfile avec:', profileData)
+      const result = await updateProfile(profileData)
+      
+      // Vérifier si la mise à jour a réussi
+      if (result && result.error) {
+        throw result.error
+      }
+      
+      // Afficher un message de succès
       setProfileMessage('Informations mises à jour avec succès !')
+      console.log('Mise à jour réussie, profil mis à jour')
+      
+      // Attendre un court délai pour que l'utilisateur voie le message de succès
+      // mais ne pas rediriger automatiquement pour éviter la page blanche
+      setTimeout(() => {
+        setProfileLoading(false)
+      }, 1000)
     } catch (error: any) {
-      setProfileMessage('Erreur lors de la mise à jour : ' + error.message)
-    } finally {
+      console.error('Erreur lors de la mise à jour du profil:', error)
+      setProfileMessage('Erreur lors de la mise à jour : ' + (error.message || 'Erreur inconnue'))
       setProfileLoading(false)
     }
   }
@@ -74,7 +111,7 @@ export function Profile() {
     <div className="space-y-6">
       <div className="card bg-blue-50 border-blue-200">
         <p className="text-sm text-blue-700">
-          💡 Mode démonstration - Les modifications sont temporaires.
+
         </p>
       </div>
 
@@ -99,19 +136,17 @@ export function Profile() {
           <div className="card">
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Nom d'utilisateur
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  value={profile?.email || ''}
-                  disabled
-                  className="input mt-1 bg-gray-50 cursor-not-allowed"
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="input mt-1"
+                  required
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  L'email ne peut pas être modifié
-                </p>
               </div>
 
               <div>
@@ -130,17 +165,31 @@ export function Profile() {
               </div>
 
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                  Nom complet
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                  Prénom
                 </label>
                 <input
-                  id="fullName"
+                  id="firstName"
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   className="input mt-1"
                   required
-                  placeholder="Votre nom complet"
+                  placeholder="Votre prénom"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                  Nom
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="input mt-1"
+                  required
+                  placeholder="Votre nom"
                 />
               </div>
             </div>
@@ -256,7 +305,7 @@ export function Profile() {
                   <strong>Conseils pour votre mot de passe :</strong>
                 </p>
                 <ul className="text-xs text-gray-500 mt-1 space-y-1">
-                  <li>• Au moins 3 caractères (pas d'exigence complexe en mode démo)</li>
+                  <li>• Au moins 3 caractères</li>
                   <li>• Évitez d'utiliser des informations personnelles</li>
                   <li>• Choisissez quelque chose de facile à retenir</li>
                 </ul>

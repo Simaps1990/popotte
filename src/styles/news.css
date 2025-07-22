@@ -1,0 +1,24 @@
+/* Styles spécifiques pour la page News */
+.news-container {
+  background-color: white !important;
+  background: white !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e5e7eb !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
+.news-container .bg-white {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
+.news-article-card {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e5e7eb !important;
+}

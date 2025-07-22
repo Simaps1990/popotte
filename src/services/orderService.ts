@@ -1,0 +1,112 @@
+import { supabase } from '../lib/supabase';
+
+export type OrderStatus = 'unpaid' | 'payment_pending' | 'paid' | 'cancelled';
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  variant?: string;
+  created_at: string;
+  products?: {
+    name: string;
+  };
+}
+
+export interface Order {
+  id: string;
+  user_id: string;
+  total_amount: number;
+  status: OrderStatus;
+  created_at: string;
+  updated_at: string;
+  payment_notified_at?: string | null;
+  notes?: string;
+  order_items: OrderItem[];
+  items_count?: number;
+}
+
+interface NotifyPaymentResponse {
+  success: boolean;
+  error?: string;
+}
+
+export const orderService = {
+  async notifyPayment(orderId: string): Promise<NotifyPaymentResponse> {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'payment_pending',
+          payment_notified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Error notifying payment:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  },
+
+  async getUserOrders(userId: string): Promise<Order[]> {
+    try {
+      console.log('Récupération des commandes pour l\'utilisateur:', userId);
+      
+      // D'abord, récupérer les commandes
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+      
+      console.log('Commandes brutes reçues:', orders);
+      
+      if (!orders || orders.length === 0) {
+        console.log('Aucune commande trouvée pour cet utilisateur');
+        return [];
+      }
+
+      // Ensuite, récupérer les articles de commande pour chaque commande
+      const orderIds = orders.map((order: any) => order.id);
+      
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*, products(name)')
+        .in('order_id', orderIds);
+        
+      if (itemsError) throw itemsError;
+      
+      console.log('Articles de commande récupérés:', orderItems);
+      
+      // Combiner les données
+      const ordersWithItems = orders.map((order: any) => {
+        const items = (orderItems || []).filter((item: any) => item.order_id === order.id);
+        return {
+          ...order,
+          order_items: items.map((item: any) => ({
+            ...item,
+            product_name: (item.products?.name || 'Produit inconnu') as string
+          }))
+        };
+      });
+      
+      console.log('Commandes formatées:', ordersWithItems);
+      return ordersWithItems;
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      throw error;
+    }
+  }
+};

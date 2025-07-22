@@ -1,0 +1,450 @@
+import { supabase } from './supabaseClient';
+
+// Réexporter le client Supabase
+export { supabase } from './supabaseClient';
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  is_available: boolean;
+  display_order: number;
+  category_id: string;
+  category_name?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  image_url?: string;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  slug: string;
+}
+
+export interface NewsPost {
+  id: string;
+  title: string;
+  content: string;
+  image_url?: string | null;
+  created_at: string;
+  updated_at: string;
+  published: boolean;
+  author_id: string;
+  excerpt?: string | null;
+}
+
+/**
+ * Désactive la vérification d'email en développement
+ */
+export const disableEmailConfirmation = () => {
+  if (import.meta.env.DEV) {
+    // @ts-ignore - Propriété interne
+    supabase.auth.admin = supabase.auth.admin || {};
+    // @ts-ignore - Propriété interne
+    supabase.auth.admin.generateLink = async () => ({
+      data: { user: { email: 'test@example.com' }, properties: {} },
+      error: null,
+    });
+  }
+};
+
+/**
+ * Vérifie si une table existe dans la base de données
+ * @param tableName Nom de la table à vérifier
+ * @returns true si la table existe, false sinon
+ */
+export const tableExists = async (tableName: string): Promise<boolean> => {
+  try {
+    // Essayer de récupérer les informations de la table via l'API Supabase
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .limit(1);
+    
+    // Si on a une erreur 42P01, la table n'existe pas
+    if (error && (error.code === '42P01' || error.message.includes('relation'))) {
+      return false;
+    }
+    
+    // Autre erreur, on la propage
+    if (error) throw error;
+    
+    // Si on arrive ici, la table existe
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la vérification de la table:', error);
+    return false;
+  }
+};
+
+/**
+ * Vérifie et initialise la structure de la base de données
+ * @returns État de la structure de la base de données
+ */
+export const checkDatabaseStructure = async (): Promise<{
+  debtsTableExists: boolean;
+  getDebtsFunctionExists: boolean;
+}> => {
+  const result = {
+    debtsTableExists: false,
+    getDebtsFunctionExists: false,
+  };
+
+  try {
+    // Vérifier si la table debts existe
+    result.debtsTableExists = await tableExists('debts');
+    
+    if (!result.debtsTableExists) {
+      console.warn("La table 'debts' n'existe pas. Elle doit être créée via une migration SQL.");
+    }
+
+    // Vérifier si la fonction get_user_debts existe
+    // On utilise une requête SQL directe pour vérifier si la fonction existe
+    try {
+      const { data, error } = await supabase.rpc('get_user_debts', { 
+        user_id_param: '00000000-0000-0000-0000-000000000000' 
+      });
+      
+      // Si on arrive ici, la fonction existe (même si elle échoue avec un mauvais paramètre)
+      if (error) {
+        // Si l'erreur est liée à un UUID invalide, c'est que la fonction existe
+        if (!error.message.includes('invalid input value for type uuid') && 
+            !error.message.includes('no function matches the given name and argument types')) {
+          throw error;
+        }
+      }
+      
+      result.getDebtsFunctionExists = true;
+    } catch (error) {
+      console.warn("La fonction RPC 'get_user_debts' n'existe pas ou n'est pas accessible.", error);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Erreur lors de la vérification de la structure de la base de données:', error);
+    return result;
+  }
+};
+
+/**
+ * Récupère les dernières actualités publiées
+ * @param limit Nombre maximum d'actualités à récupérer (par défaut: 3)
+ * @returns Liste des actualités
+ */
+export const getNews = async (limit = 3): Promise<NewsPost[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('news')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Erreur lors de la récupération des actualités:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erreur inattendue lors de la récupération des actualités:', error);
+    return [];
+  }
+};
+
+/**
+ * Crée une nouvelle commande (version simplifiée)
+ * @param orderData Données de la commande
+ * @returns La commande créée
+ */
+// Import pour la création de dette
+import { DebtStatus } from '../types/debt';
+
+export const createOrder = async (orderData: {
+  user_id: string;
+  items: Array<{
+    product_id: string;
+    quantity: number;
+    unit_price: number;
+  }>;
+  total_amount: number;
+  status?: string;
+}): Promise<any> => {
+  try {
+    console.log('Création de la commande avec les données:', {
+      user_id: orderData.user_id,
+      total_amount: orderData.total_amount,
+      status: orderData.status || 'en_attente',
+      items: orderData.items
+    });
+
+    // 1. Créer la commande
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: orderData.user_id,
+        total_amount: orderData.total_amount,
+        status: orderData.status || 'en_attente',
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Erreur lors de la création de la commande:', orderError);
+      throw orderError;
+    }
+
+    if (!order) {
+      throw new Error('Aucune donnée de commande retournée');
+    }
+
+    console.log('Commande créée avec succès:', order);
+
+    // 2. Ajouter les articles de la commande
+    const orderItems = orderData.items.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price
+    }));
+
+    console.log('Insertion des articles de commande:', orderItems);
+
+    const { data: items, error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems)
+      .select('*');
+
+    if (itemsError) {
+      console.error('Erreur lors de l\'ajout des articles:', itemsError);
+      throw itemsError;
+    }
+
+    console.log('Articles ajoutés avec succès:', items);
+    
+    // 3. Créer une dette associée à la commande (pour tout statut de commande)
+    try {
+      console.log('Création de la dette associée à la commande:', order.id);
+      
+      const debtItems = items?.map((item: {
+        product_id: string;
+        quantity: number;
+        unit_price: number;
+        products?: { name: string };
+      }) => ({
+        id: item.product_id,
+        name: item.products?.name || 'Produit',
+        quantity: item.quantity,
+        unitPrice: item.unit_price
+      })) || [];
+      
+      const { error: debtError } = await supabase
+        .from('user_debts')
+        .insert({
+          user_id: orderData.user_id,
+          order_id: order.id,
+          amount: orderData.total_amount,
+          status: DebtStatus.UNPAID,
+          items: debtItems,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      
+      if (debtError) {
+        console.error('Erreur lors de la création de la dette:', debtError);
+        // On ne rejette pas l'erreur pour ne pas bloquer la création de commande
+        // mais on la log pour pouvoir la tracer
+      } else {
+        console.log('Dette créée avec succès pour la commande:', order.id);
+      }
+    } catch (debtError) {
+      console.error('Erreur inattendue lors de la création de la dette:', debtError);
+      // On ne rejette pas l'erreur pour ne pas bloquer la création de commande
+    }
+
+    // 4. Retourner la commande complète avec les articles
+    return {
+      ...order,
+      items: items || []
+    };
+  } catch (error) {
+    console.error('Erreur dans createOrder:', error);
+    throw error;
+  }
+};
+
+/**
+ * Récupère la liste des catégories de produits
+ * @returns Liste des catégories
+ */
+export const getCategories = async (): Promise<Category[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Erreur lors de la récupération des catégories:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erreur inattendue lors de la récupération des catégories:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupère la liste des produits
+ * @param categoryId ID de la catégorie pour filtrer (optionnel)
+ * @param includeUnavailable Si true, inclut également les produits indisponibles (is_available=false)
+ * @returns Liste des produits
+ */
+export const getProducts = async (categoryId?: string, includeUnavailable: boolean = false): Promise<Product[]> => {
+  try {
+    // Première méthode : essayer avec la jointure
+    try {
+      let query = supabase
+        .from('products')
+        .select('*, categories!inner(*)');
+      
+      // Filtrer par disponibilité seulement si includeUnavailable est false
+      if (!includeUnavailable) {
+        query = query.eq('is_available', true);
+      }
+      
+      query = query.order('display_order', { ascending: true });
+
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
+
+      const { data, error } = await query;
+
+      if (!error && data) {
+        return data.map((product: any) => ({
+          ...product,
+          category_name: product.categories?.name,
+        }));
+      }
+    } catch (joinError) {
+      console.warn('Erreur avec la jointure, tentative sans jointure:', joinError);
+    }
+
+    // Si la jointure échoue, essayer sans jointure
+    let query = supabase
+      .from('products')
+      .select('*');
+      
+    // Filtrer par disponibilité seulement si includeUnavailable est false
+    if (!includeUnavailable) {
+      query = query.eq('is_available', true);
+    }
+      
+    query = query.order('display_order', { ascending: true });
+
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Erreur lors de la récupération des produits:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erreur inattendue lors de la récupération des produits:', error);
+    return [];
+  }
+};
+
+/**
+ * Vérifie et crée la table user_debts si elle n'existe pas
+ */
+const ensureDebtsTableExists = async (): Promise<void> => {
+  try {
+    // Vérifier si la table existe déjà
+    const { data: tableExists } = await supabase
+      .from('user_debts')
+      .select('*')
+      .limit(1);
+    
+    // Si la requête réussit, la table existe déjà
+    if (tableExists !== null) return;
+    
+    console.warn('La table user_debts n\'existe pas. Elle doit être créée dans Supabase.');
+    
+    // On ne crée pas la table automatiquement car elle nécessite des permissions spéciales
+    // L'administrateur doit la créer manuellement avec la bonne structure
+    throw new Error('La table user_debts n\'existe pas. Veuillez la créer dans Supabase.');
+  } catch (error) {
+    console.warn('Erreur lors de la vérification de la table user_debts:', error);
+    // On propage l'erreur pour que l'utilisateur soit informé
+    throw error;
+  }
+};
+
+/**
+ * Récupère les dettes d'un utilisateur
+ * @param userId ID de l'utilisateur
+ * @returns Liste des dettes de l'utilisateur
+ */
+export const fetchUserDebts = async (userId: string): Promise<any[]> => {
+  try {
+    // Essayer d'abord avec user_debts
+    try {
+      const { data, error } = await supabase
+        .from('user_debts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'unpaid');
+      
+      if (!error && data) {
+        return data;
+      }
+    } catch (error) {
+      console.warn("Erreur avec user_debts, tentative avec debts...", error);
+    }
+
+    // Si user_debts échoue, essayer avec debts
+    try {
+      const { data, error } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'unpaid');
+      
+      if (!error && data) {
+        return data;
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des dettes:', error);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erreur inattendue lors de la récupération des dettes:', error);
+    return [];
+  }
+};
