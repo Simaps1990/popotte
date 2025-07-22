@@ -71,19 +71,41 @@ export const orderService = {
   
   async notifyPayment(orderId: string): Promise<NotifyPaymentResponse> {
     try {
-      const { error } = await supabase
+      // 1. Mettre à jour le statut de la commande
+      const { data: updatedOrder, error } = await supabase
         .from('orders')
         .update({ 
           status: 'payment_pending',
           payment_notified_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select()
+        .single();
       
       if (error) throw error;
+      
+      // 2. Émettre un broadcast pour forcer la mise à jour en temps réel
+      if (updatedOrder) {
+        try {
+          console.log('📢 Envoi du broadcast pour la notification de paiement de la commande:', orderId);
+          
+          // Forcer une mise à jour pour déclencher les abonnements temps réel
+          const broadcastResult = await supabase
+            .from('orders')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', orderId);
+            
+          console.log('📡 Résultat du broadcast:', broadcastResult);
+        } catch (broadcastError) {
+          console.warn('⚠️ Erreur non bloquante lors du broadcast:', broadcastError);
+          // Ne pas bloquer le processus en cas d'erreur de broadcast
+        }
+      }
+      
       return { success: true };
     } catch (error) {
-      console.error('Error notifying payment:', error);
+      console.error('❌ Error notifying payment:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 

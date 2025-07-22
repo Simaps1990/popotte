@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
@@ -10,22 +10,37 @@ const VisibilityHandler: React.FC = () => {
   // Accéder au contexte d'authentification pour gérer l'état de chargement
   const { loading, setLoadingState } = useAuth();
   
-  // Fonction pour masquer le spinner de chargement
+  // Référence pour suivre si une intervention a déjà eu lieu
+  const hasIntervenedRef = useRef(false);
+  
+  // Fonction pour masquer le spinner de chargement et restaurer l'interface
   const hideLoadingSpinner = () => {
+    // Si on a déjà traité ce cycle de chargement, ne pas réintervenir
+    if (hasIntervenedRef.current) return true;
+    
     // Rechercher le spinner de chargement dans le DOM
     const spinnerElement = document.querySelector('.animate-spin');
     const loadingContainer = spinnerElement?.parentElement;
     
     // Si le spinner est trouvé, le masquer
     if (spinnerElement && loadingContainer) {
-      console.log('🔄 Spinner de chargement détecté - Masquage forcé');
+      console.log('🛑 Spinner de chargement détecté - Arrêt forcé');
+      
       // Utiliser un cast pour résoudre l'erreur TypeScript
       (loadingContainer as HTMLElement).style.display = 'none';
       
       // Forçage de l'état de chargement à false dans le contexte Auth
-      if (setLoadingState && loading) {
+      if (setLoadingState) {
         setLoadingState(false);
       }
+      
+      // Marquer que nous sommes intervenus
+      hasIntervenedRef.current = true;
+      
+      // Réinitialiser le flag après un délai pour permettre de futures interventions
+      setTimeout(() => {
+        hasIntervenedRef.current = false;
+      }, 2000);
       
       return true;
     }
@@ -33,70 +48,77 @@ const VisibilityHandler: React.FC = () => {
     return false;
   };
   
+  // Fonction pour restaurer l'interface utilisateur
+  const restoreUI = () => {
+    // Récupérer l'élément racine de l'application
+    const rootElement = document.getElementById('root');
+    
+    if (rootElement) {
+      // Rétablir l'affichage normal de l'application
+      const appContent = rootElement.querySelector(':scope > div:not(#_rht_toaster)');
+      if (appContent) {
+        console.log('🔄 Restauration de l\'interface utilisateur');
+        (appContent as HTMLElement).style.display = '';
+      }
+    }
+  };
+  
+  // Fonction principale pour gérer le retour sur l'application
+  const handleAppReturn = () => {
+    console.log('🔄 Retour sur l\'application - Préservation de l\'état');
+    
+    // Arrêter immédiatement tout chargement en cours
+    if (window.stop) {
+      window.stop();
+    }
+    
+    // Masquer le spinner de chargement s'il est présent
+    hideLoadingSpinner();
+    
+    // Restaurer l'interface utilisateur
+    restoreUI();
+    
+    // Vérifier à nouveau après un court délai
+    setTimeout(() => {
+      hideLoadingSpinner();
+      restoreUI();
+    }, 100);
+    
+    // Et une dernière vérification après un délai plus long
+    setTimeout(() => {
+      hideLoadingSpinner();
+      restoreUI();
+    }, 500);
+  };
+  
+  // Effet pour gérer les changements de visibilité du document
   useEffect(() => {
-    // Variable pour suivre si l'application était visible auparavant
     let wasVisible = true;
     
-    // Fonction pour gérer les changements de visibilité
     const handleVisibilityChange = () => {
       const isVisible = !document.hidden;
       
       if (!wasVisible && isVisible) {
         // L'utilisateur revient sur l'application après l'avoir quittée
-        console.log('🔄 Retour sur l\'application - Préservation de l\'état');
-        
-        // Arrêter tout chargement en cours
-        if (window.stop) {
-          window.stop();
-        }
-        
-        // Masquer le spinner de chargement s'il est présent
-        hideLoadingSpinner();
-        
-        // Réactiver les éléments d'interface utilisateur
-        setTimeout(() => {
-          // Récupérer l'élément racine de l'application
-          const rootElement = document.getElementById('root');
-          
-          if (rootElement) {
-            // Rétablir l'affichage normal de l'application
-            const appContent = rootElement.querySelector(':scope > div:not(#_rht_toaster)');
-            if (appContent) {
-              // Utiliser un cast pour résoudre l'erreur TypeScript
-              (appContent as HTMLElement).style.display = '';
-            }
-          }
-          
-          // Vérifier à nouveau si le spinner est toujours visible
-          hideLoadingSpinner();
-        }, 100);
+        handleAppReturn();
       }
       
       // Mettre à jour l'état de visibilité
       wasVisible = isVisible;
     };
     
-    // Ajouter l'écouteur d'événements de visibilité
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Nettoyer l'écouteur lors du démontage du composant
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [loading]);
+  }, []);
   
-  // Ajouter un gestionnaire pour l'événement 'focus' de la fenêtre
+  // Effet pour gérer le focus de la fenêtre
   useEffect(() => {
     const handleFocus = () => {
-      console.log('🔄 Fenêtre a reçu le focus - Préservation de l\'état');
-      
-      // Empêcher tout rechargement potentiel
-      if (window.stop) {
-        window.stop();
-      }
-      
-      // Masquer le spinner de chargement s'il est présent
-      hideLoadingSpinner();
+      console.log('🔄 Fenêtre a reçu le focus');
+      handleAppReturn();
     };
     
     window.addEventListener('focus', handleFocus);
@@ -104,22 +126,15 @@ const VisibilityHandler: React.FC = () => {
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
-  }, [loading]);
+  }, []);
   
-  // Ajouter un gestionnaire pour l'événement 'pageshow'
+  // Effet pour gérer l'événement pageshow
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       // Si la page est chargée depuis le cache (retour avec bouton précédent)
       if (event.persisted) {
-        console.log('🔄 Page restaurée depuis le cache - Préservation de l\'état');
-        
-        // Empêcher tout rechargement potentiel
-        if (window.stop) {
-          window.stop();
-        }
-        
-        // Masquer le spinner de chargement s'il est présent
-        hideLoadingSpinner();
+        console.log('🔄 Page restaurée depuis le cache');
+        handleAppReturn();
       }
     };
     
@@ -128,6 +143,20 @@ const VisibilityHandler: React.FC = () => {
     return () => {
       window.removeEventListener('pageshow', handlePageShow);
     };
+  }, []);
+  
+  // Effet pour forcer l'arrêt du chargement après un délai
+  useEffect(() => {
+    // Si l'application est en chargement pendant plus de 3 secondes, intervenir
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('⏱️ Délai de chargement dépassé - Intervention forcée');
+        hideLoadingSpinner();
+        restoreUI();
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timeoutId);
   }, [loading]);
   
   // Ce composant ne rend rien visuellement
