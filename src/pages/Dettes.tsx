@@ -103,6 +103,9 @@ export function Dettes() {
   };
 
   useEffect(() => {
+    // Utiliser un flag pour suivre si le composant est monté
+    let isMounted = true;
+    
     const checkStructure = async () => {
       try {
         await checkDatabaseStructure();
@@ -110,31 +113,51 @@ export function Dettes() {
         console.error('Erreur lors de la vérification de la structure:', error);
       }
     };
+    
+    const loadData = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // On lance la récupération, mais on attend les deux pour mapper
+        if (isMounted) {
+          await fetchAllDebtsAndOrders();
+          await fetchNotifications();
+          console.log('✅ Dettes et commandes chargées avec succès');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors du chargement des dettes et commandes:', error);
+      }
+    };
 
     if (user?.id) {
-      // On lance la récupération, mais on attend les deux pour mapper
-      fetchAllDebtsAndOrders();
+      loadData();
       checkStructure();
       
       // Abonnement aux mises à jour en temps réel des dettes
       const unsubscribeDebts = debtService.subscribeToDebtUpdates(user.id, (payload: any) => {
         console.log('💬 Mise à jour de dette détectée:', payload);
         
-        // Rafraîchir les données après une mise à jour
-        fetchAllDebtsAndOrders();
-        fetchNotifications();
+        // Rafraîchir les données après une mise à jour seulement si le composant est monté
+        if (isMounted) {
+          fetchAllDebtsAndOrders();
+          fetchNotifications();
+        }
       });
       
       // Abonnement aux mises à jour en temps réel des commandes
       const unsubscribeOrders = orderService.subscribeToOrderUpdates(user.id, (payload: any) => {
         console.log('💬 Mise à jour de commande détectée:', payload);
         
-        // Rafraîchir les données après une mise à jour
-        fetchAllDebtsAndOrders();
+        // Rafraîchir les données après une mise à jour seulement si le composant est monté
+        if (isMounted) {
+          fetchAllDebtsAndOrders();
+        }
       });
       
       // Nettoyage des abonnements lors du démontage du composant
       return () => {
+        console.log('🔕 Désabonnement des mises à jour des dettes et commandes');
+        isMounted = false;
         unsubscribeDebts();
         unsubscribeOrders();
       };

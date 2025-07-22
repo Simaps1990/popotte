@@ -9,7 +9,22 @@ export function Orders() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchOrders()
+    // Utiliser un flag pour suivre si le composant est monté
+    let isMounted = true;
+    
+    const loadOrders = async () => {
+      try {
+        await fetchOrders();
+        // Ne mettre à jour l'état que si le composant est toujours monté
+        if (isMounted) {
+          console.log('✅ Commandes chargées avec succès');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors du chargement des commandes:', error);
+      }
+    };
+    
+    loadOrders();
     
     // Abonnement global aux mises à jour des commandes (pour les admins)
     const unsubscribe = supabase
@@ -23,17 +38,22 @@ export function Orders() {
         (payload: any) => {
           console.log('📡 Mise à jour de commande détectée (admin):', payload);
           
-          // Rafraîchir les données après une mise à jour
-          fetchOrders();
+          // Rafraîchir les données après une mise à jour seulement si le composant est monté
+          if (isMounted) {
+            fetchOrders();
+          }
         }
       )
       .subscribe((status: string) => {
-        console.log(`Statut de l'abonnement aux commandes (admin): ${status}`);
+        if (isMounted) {
+          console.log(`Statut de l'abonnement aux commandes (admin): ${status}`);
+        }
       });
     
     // Nettoyage de l'abonnement lors du démontage du composant
     return () => {
       console.log('🔕 Désabonnement des mises à jour des commandes (admin)');
+      isMounted = false;
       unsubscribe.unsubscribe();
     };
   }, [])
