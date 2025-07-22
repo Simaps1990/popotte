@@ -2,12 +2,10 @@ import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface AdminPageLayoutProps {
-  title: string;
   children: ReactNode;
 }
 
 export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
-  title,
   children,
 }) => {
   return (

@@ -1,12 +1,10 @@
 import React, { ReactNode } from 'react';
 
 interface NewsPageLayoutProps {
-  title: string;
   children: ReactNode;
 }
 
 export const NewsPageLayout: React.FC<NewsPageLayoutProps> = ({
-  title,
   children,
 }) => {
   return (
