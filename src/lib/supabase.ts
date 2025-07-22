@@ -255,7 +255,7 @@ export const createOrder = async (orderData: {
         unitPrice: item.unit_price
       })) || [];
       
-      const { error: debtError } = await supabase
+      const { data: debtData, error: debtError } = await supabase
         .from('user_debts')
         .insert({
           user_id: orderData.user_id,
@@ -265,7 +265,9 @@ export const createOrder = async (orderData: {
           items: debtItems,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        });
+        })
+        .select()
+        .single();
       
       if (debtError) {
         console.error('Erreur lors de la création de la dette:', debtError);
@@ -273,6 +275,21 @@ export const createOrder = async (orderData: {
         // mais on la log pour pouvoir la tracer
       } else {
         console.log('Dette créée avec succès pour la commande:', order.id);
+        
+        // Émettre un événement broadcast pour notifier tous les clients
+        // Cela permet de s'assurer que les abonnements temps réel sont déclenchés
+        if (debtData) {
+          try {
+            const broadcastResult = await supabase
+              .from('user_debts')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', debtData.id);
+              
+            console.log('📢 Broadcast de mise à jour pour la dette créée via commande:', broadcastResult);
+          } catch (broadcastError) {
+            console.warn('Erreur lors du broadcast de la dette (non bloquant):', broadcastError);
+          }
+        }
       }
     } catch (debtError) {
       console.error('Erreur inattendue lors de la création de la dette:', debtError);
