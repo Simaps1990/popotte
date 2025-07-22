@@ -1,9 +1,9 @@
 [build]
-  command = "rm -rf node_modules && npm install --no-optional && npm run build"
+  command = "rm -rf node_modules package-lock.json && npm install && npm run build"
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "16"
+  NODE_VERSION = "18"
 
 [[headers]]
   for = "/*"
