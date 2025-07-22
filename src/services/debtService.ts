@@ -90,23 +90,51 @@ export const debtService = {
   async createDebt(debtData: Omit<UserDebt, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserDebt | null> {
     try {
       console.log('Création de dette avec les données:', debtData);
+      
+      // Préparer les données de la dette avec les champs snake_case pour Supabase
+      const debtPayload = {
+        user_id: debtData.userId,
+        order_id: debtData.orderId,
+        amount: debtData.amount,
+        description: debtData.description,
+        status: debtData.status,
+        items: debtData.items || [],
+        created_by: debtData.created_by || debtData.createdBy,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('Payload formaté pour insertion:', debtPayload);
+      
+      // Insérer la dette dans la base de données
       const { data, error } = await supabase
         .from('user_debts')
-        .insert([{
-          user_id: debtData.userId,
-          order_id: debtData.orderId,
-          amount: debtData.amount,
-          description: debtData.description,
-          status: debtData.status,
-          items: debtData.items,
-          created_by: debtData.created_by || debtData.createdBy,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .insert([debtPayload])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur Supabase lors de la création de dette:', error);
+        throw error;
+      }
+      
+      if (data) {
+        console.log('✅ Dette créée avec succès:', data);
+        
+        // Émettre un événement broadcast pour notifier tous les clients
+        // Cela permet de s'assurer que les abonnements temps réel sont déclenchés
+        try {
+          const broadcastResult = await supabase
+            .from('user_debts')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', data.id);
+            
+          console.log('📢 Broadcast de mise à jour pour la dette:', broadcastResult);
+        } catch (broadcastError) {
+          console.warn('Erreur lors du broadcast de la dette (non bloquant):', broadcastError);
+        }
+      }
+      
       return data;
     } catch (error) {
       console.error('Error creating debt:', error);
