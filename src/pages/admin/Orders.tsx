@@ -95,7 +95,7 @@ export function Orders() {
 
   if (loading) {
     return (
-      <AdminPageLayout title="Commandes">
+      <AdminPageLayout>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
@@ -104,7 +104,7 @@ export function Orders() {
   }
 
   return (
-    <AdminPageLayout title="Gestion des commandes">
+    <AdminPageLayout>
       <div className="space-y-6">
         <div className="card text-center">
           <div className="text-2xl font-bold text-orange-600">{notifiedOrders.length}</div>

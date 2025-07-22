@@ -3,7 +3,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 
 export const Products2 = () => {
   return (
-    <AdminPageLayout title="Gestion des produits">
+    <AdminPageLayout>
       <div>Test Products Component</div>
     </AdminPageLayout>
   );

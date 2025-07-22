@@ -178,7 +178,7 @@ export function News() {
 
   if (loading) {
     return (
-      <NewsPageLayout title="Actualités">
+      <NewsPageLayout>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
@@ -187,7 +187,7 @@ export function News() {
   }
 
   return (
-    <NewsPageLayout title="Gestion des actualités">
+    <NewsPageLayout>
       <main className="flex-1 overflow-y-auto p-6 news-page" style={{ backgroundColor: '#f9fafb' }}>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
