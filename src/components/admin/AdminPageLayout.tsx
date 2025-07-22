@@ -17,5 +17,4 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
   );
 };
 
-
 export default AdminPageLayout;
