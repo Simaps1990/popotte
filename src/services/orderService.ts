@@ -36,6 +36,39 @@ interface NotifyPaymentResponse {
 }
 
 export const orderService = {
+  /**
+   * S'abonner aux mises à jour des commandes en temps réel
+   * @param userId ID de l'utilisateur pour filtrer les commandes
+   * @param callback Fonction appelée à chaque mise à jour
+   * @returns Fonction pour se désabonner
+   */
+  subscribeToOrderUpdates(userId: string, callback: (payload: any) => void) {
+    console.log(`🔔 Abonnement aux mises à jour des commandes pour l'utilisateur ${userId}`);
+    
+    const subscription = supabase
+      .channel('orders_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*',  // Tous les événements (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${userId}`
+        }, 
+        (payload: any) => {
+          console.log('📡 Mise à jour de commande reçue:', payload);
+          callback(payload);
+        }
+      )
+      .subscribe((status: string) => {
+        console.log(`Statut de l'abonnement aux commandes: ${status}`);
+      });
+
+    return () => {
+      console.log('🔕 Désabonnement des mises à jour des commandes');
+      subscription.unsubscribe();
+    };
+  },
+  
   async notifyPayment(orderId: string): Promise<NotifyPaymentResponse> {
     try {
       const { error } = await supabase

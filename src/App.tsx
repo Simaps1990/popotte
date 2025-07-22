@@ -5,6 +5,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AuthRoute } from './components/routing/AuthRoute';
 import { LayoutWithChildren } from './components/LayoutWithChildren';
 import { AdminLayoutWithChildren } from './pages/admin/AdminLayoutWithChildren';
+import ScrollToTop from './components/ScrollToTop';
+import VisibilityHandler from './components/VisibilityHandler';
 
 // Pages publiques
 import { Home } from './pages/Home';
@@ -168,7 +170,9 @@ function App() {
     <React.StrictMode>
       <AuthProvider>
         <Toaster position="top-center" reverseOrder={false} />
+        <VisibilityHandler />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Routes publiques */}
             <Route path="/" element={<MemoizedPublicPage />}>

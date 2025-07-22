@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import type { Order } from '../../lib/mockData'
 import { AdminPageLayout } from '../../components/admin/AdminPageLayout'
+import { orderService } from '../../services/orderService'
 
 export function Orders() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -9,6 +10,32 @@ export function Orders() {
 
   useEffect(() => {
     fetchOrders()
+    
+    // Abonnement global aux mises à jour des commandes (pour les admins)
+    const unsubscribe = supabase
+      .channel('orders_admin_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*',  // Tous les événements (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'orders'
+        }, 
+        (payload: any) => {
+          console.log('📡 Mise à jour de commande détectée (admin):', payload);
+          
+          // Rafraîchir les données après une mise à jour
+          fetchOrders();
+        }
+      )
+      .subscribe((status: string) => {
+        console.log(`Statut de l'abonnement aux commandes (admin): ${status}`);
+      });
+    
+    // Nettoyage de l'abonnement lors du démontage du composant
+    return () => {
+      console.log('🔕 Désabonnement des mises à jour des commandes (admin)');
+      unsubscribe.unsubscribe();
+    };
   }, [])
 
   const fetchOrders = async () => {

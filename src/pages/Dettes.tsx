@@ -9,6 +9,7 @@ import { fr } from 'date-fns/locale';
 import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
 import { orderService } from '../services/orderService';
+import { debtService } from '../services/debtService';
 import { checkDatabaseStructure } from '../lib/supabase';
 import { supabase } from '../lib/supabaseClient';
 
@@ -114,6 +115,29 @@ export function Dettes() {
       // On lance la récupération, mais on attend les deux pour mapper
       fetchAllDebtsAndOrders();
       checkStructure();
+      
+      // Abonnement aux mises à jour en temps réel des dettes
+      const unsubscribeDebts = debtService.subscribeToDebtUpdates(user.id, (payload: any) => {
+        console.log('💬 Mise à jour de dette détectée:', payload);
+        
+        // Rafraîchir les données après une mise à jour
+        fetchAllDebtsAndOrders();
+        fetchNotifications();
+      });
+      
+      // Abonnement aux mises à jour en temps réel des commandes
+      const unsubscribeOrders = orderService.subscribeToOrderUpdates(user.id, (payload: any) => {
+        console.log('💬 Mise à jour de commande détectée:', payload);
+        
+        // Rafraîchir les données après une mise à jour
+        fetchAllDebtsAndOrders();
+      });
+      
+      // Nettoyage des abonnements lors du démontage du composant
+      return () => {
+        unsubscribeDebts();
+        unsubscribeOrders();
+      };
     }
   }, [user?.id]);
 

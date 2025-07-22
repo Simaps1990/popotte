@@ -6,7 +6,15 @@ export function BottomNavigation() {
   const location = useLocation()
   const { user } = useAuth()
 
-  const isActive = (path: string) => location.pathname === path
+  // Vérifie si le chemin actuel correspond au chemin de base ou à un sous-chemin
+  const isActive = (path: string) => {
+    // Pour la page d'accueil, vérifier l'exactitude
+    if (path === '/' && location.pathname === '/') return true
+    
+    // Pour les autres pages, vérifier si le chemin actuel commence par le chemin de base
+    // mais seulement si le chemin n'est pas la racine ('/')
+    return path !== '/' && location.pathname.startsWith(path)
+  }
 
   // Afficher la navigation même si l'utilisateur n'est pas connecté
 

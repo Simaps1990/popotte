@@ -114,23 +114,35 @@ export const debtService = {
     }
   },
 
-  // S'abonner aux mises à jour des dettes
+  /**
+   * S'abonner aux mises à jour des dettes en temps réel
+   * @param userId ID de l'utilisateur pour filtrer les dettes
+   * @param callback Fonction appelée à chaque mise à jour
+   * @returns Fonction pour se désabonner
+   */
   subscribeToDebtUpdates(userId: string, callback: (payload: any) => void) {
+    console.log(`🔔 Abonnement aux mises à jour des dettes pour l'utilisateur ${userId}`);
+    
     const subscription = supabase
       .channel('user_debts_changes')
       .on('postgres_changes', 
         { 
-          event: '*',
+          event: '*',  // Tous les événements (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'user_debts',
           filter: `user_id=eq.${userId}`
         }, 
-        (payload: any) => callback(payload)
-
+        (payload: any) => {
+          console.log('📡 Mise à jour de dette reçue:', payload);
+          callback(payload);
+        }
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        console.log(`Statut de l'abonnement aux dettes: ${status}`);
+      });
 
     return () => {
+      console.log('🔕 Désabonnement des mises à jour des dettes');
       subscription.unsubscribe();
     };
   },

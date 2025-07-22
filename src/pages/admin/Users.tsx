@@ -9,7 +9,7 @@ import { DebtStatus } from '../../types/debt';
 
 const Users: React.FC = () => {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUserRole } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [debtHistory, setDebtHistory] = useState<UserDebt[]>([]);
@@ -30,7 +30,7 @@ const Users: React.FC = () => {
   });
   const [debtError, setDebtError] = useState('');
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
       setLoading(prev => ({ ...prev, users: true }));
       setError(null);
@@ -41,7 +41,14 @@ const Users: React.FC = () => {
       const users = await userService.getAllUsers();
       console.log('Utilisateurs récupérés:', users.length);
       
-      const usersWithDebtsAndOrders = await Promise.all(users.map(async (user) => {
+      // Si un ID d'utilisateur est fourni à exclure (cas de suppression), on le filtre immédiatement
+      const filteredUsers = excludeUserId 
+        ? users.filter(user => user.id !== excludeUserId)
+        : users;
+      
+      console.log(`Utilisateurs après filtrage: ${filteredUsers.length} ${excludeUserId ? `(exclusion de ${excludeUserId})` : ''}`);
+      
+      const usersWithDebtsAndOrders = await Promise.all(filteredUsers.map(async (user) => {
         const debtHistory = await userService.getUserDebtHistory(user.id);
         const orders = await userService.getUserOrders(user.id);
         return { ...user, debtHistory, orders };
@@ -85,18 +92,43 @@ const Users: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-    
-    const unsubscribeUsers = userService.subscribeToUsers((payload) => {
+  // Référence pour stocker la fonction de désabonnement
+  const unsubscribeRef = React.useRef<(() => void) | null>(null);
+  
+  // Fonction pour s'abonner aux mises à jour des utilisateurs
+  const subscribeToUserUpdates = useCallback(() => {
+    console.log('Abonnement aux mises à jour des utilisateurs...');
+    const unsubscribe = userService.subscribeToUsers((payload) => {
       console.log('Mise à jour des utilisateurs:', payload);
       fetchUsers();
     });
     
-    return () => {
-      unsubscribeUsers();
-    };
+    // Stocker la fonction de désabonnement dans la référence
+    unsubscribeRef.current = unsubscribe;
+    return unsubscribe;
   }, [fetchUsers]);
+  
+  // Fonction pour se désabonner temporairement
+  const unsubscribeFromUserUpdates = useCallback(() => {
+    if (unsubscribeRef.current) {
+      console.log('Désabonnement temporaire des mises à jour utilisateurs');
+      const unsubscribe = unsubscribeRef.current;
+      unsubscribeRef.current = null;
+      unsubscribe();
+    }
+  }, []);
+  
+  useEffect(() => {
+    fetchUsers();
+    
+    // S'abonner aux mises à jour
+    const unsubscribe = subscribeToUserUpdates();
+    
+    return () => {
+      // Se désabonner lors du démontage du composant
+      if (unsubscribe) unsubscribe();
+    };
+  }, [fetchUsers, subscribeToUserUpdates]);
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -129,6 +161,13 @@ const Users: React.FC = () => {
         console.log('Rafraîchissement de la liste des utilisateurs après mise à jour du rôle...');
         await fetchUsers();
         
+        // Si l'utilisateur modifié est l'utilisateur courant, rafraîchir son statut admin
+        // pour que les menus d'administration apparaissent immédiatement sans actualisation
+        if (currentUser && userId === currentUser.id) {
+          console.log('Rafraîchissement du statut admin pour l\'utilisateur courant');
+          await refreshUserRole();
+        }
+        
         // Afficher un message de confirmation
         alert(`L'utilisateur a été ${newRole === 'admin' ? 'promu administrateur' : 'rétrogradé utilisateur'} avec succès.`);
       } else {
@@ -151,6 +190,10 @@ const Users: React.FC = () => {
       
       console.log('Tentative de suppression de l\'utilisateur:', userId);
       
+      // IMPORTANT: Se désabonner temporairement des mises à jour en temps réel
+      // pour éviter que l'utilisateur supprimé ne réapparaisse dans la liste
+      unsubscribeFromUserUpdates();
+      
       // Supprimer l'utilisateur via le service
       const success = await userService.deleteUser(userId);
       
@@ -161,39 +204,29 @@ const Users: React.FC = () => {
         setSelectedUser(null);
         
         // Mettre à jour la liste des utilisateurs localement immédiatement
+        // en excluant l'utilisateur supprimé
         setUsers(prevUsers => {
           const filteredUsers = prevUsers.filter(user => user.id !== userId);
           console.log(`Utilisateurs restants après filtrage: ${filteredUsers.length} (avant: ${prevUsers.length})`);
           return filteredUsers;
         });
         
-        // Forcer un rafraîchissement complet de la liste des utilisateurs
-        // avec un délai pour laisser le temps à la base de se mettre à jour
-        setTimeout(async () => {
-          try {
-            console.log('Rafraîchissement forcé de la liste des utilisateurs...');
-            // Vider complètement la liste avant de la recharger
-            setUsers([]);
-            // Rafraîchir la liste des utilisateurs depuis le serveur
-            await fetchUsers();
-            console.log('Liste des utilisateurs rafraîchie avec succès');
-            
-            // Vérifier que l'utilisateur supprimé n'est plus dans la liste
-            const { data: checkUser } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', userId)
-              .maybeSingle();
-              
-            if (checkUser) {
-              console.warn(`ATTENTION: L'utilisateur ${userId} existe toujours après suppression!`);
-            } else {
-              console.log(`Vérification OK: L'utilisateur ${userId} n'existe plus dans la base`);
-            }
-          } catch (refreshErr) {
-            console.error('Erreur lors du rafraîchissement de la liste:', refreshErr);
-          }
-        }, 1000); // Attendre 1 seconde pour être sûr
+        // Rafraîchir la liste des utilisateurs en excluant explicitement l'utilisateur supprimé
+        // pour éviter qu'il ne réapparaisse si la suppression n'est pas encore propagée
+        await fetchUsers(userId);
+        
+        // Vérifier que l'utilisateur supprimé n'est plus dans la liste
+        const { data: checkUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+          
+        if (checkUser) {
+          console.warn(`ATTENTION: L'utilisateur ${userId} existe toujours après suppression!`);
+        } else {
+          console.log(`Vérification OK: L'utilisateur ${userId} n'existe plus dans la base`);
+        }
         
         alert('Le compte utilisateur a été supprimé avec succès.');
       } else {
@@ -204,6 +237,8 @@ const Users: React.FC = () => {
       console.error('Erreur lors de la suppression du compte utilisateur:', err);
       alert('Erreur lors de la suppression du compte utilisateur.');
     } finally {
+      // Réactiver l'abonnement aux mises à jour en temps réel
+      subscribeToUserUpdates();
       setLoading(prev => ({ ...prev, users: false }));
     }
   };

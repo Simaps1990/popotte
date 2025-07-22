@@ -13,6 +13,8 @@ interface AuthContextType {
   isAdmin: boolean
   updateProfile: (profileData: Partial<UserProfile>) => Promise<{ error: any } | null>
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any } | null>
+  refreshUserRole: () => Promise<boolean>
+  setLoadingState: (isLoading: boolean) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -373,6 +375,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Fonction pour rafraîchir le statut admin de l'utilisateur
+  const refreshUserRole = async () => {
+    try {
+      if (!user) return false;
+      
+      console.log('🔄 Rafraîchissement du statut admin pour:', user.email);
+      
+      // Récupérer le profil utilisateur complet pour s'assurer d'avoir les données les plus récentes
+      const userWithProfile = await getCurrentUser();
+      
+      // Vérifier le statut admin
+      const adminStatus = await isAdmin(user.id);
+      
+      console.log('🔑 Nouveau statut administrateur:', adminStatus ? 'OUI' : 'NON');
+      
+      // Mettre à jour le profil et le statut admin en même temps pour garantir la cohérence
+      if (userWithProfile) {
+        console.log('👤 Mise à jour du profil utilisateur avec les nouvelles données');
+        setUser(userWithProfile);
+        setProfile(userWithProfile.profile || null);
+      }
+      
+      // Mettre à jour le statut admin
+      setIsUserAdmin(adminStatus);
+      
+      // Forcer un petit délai pour s'assurer que tous les composants ont le temps de se mettre à jour
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return adminStatus;
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement du statut admin:', error);
+      return false;
+    }
+  };
+
+  // Fonction pour permettre aux composants externes de contrôler l'état de chargement
+  // Utile pour résoudre le problème du spinner infini lors du retour sur l'application
+  const setLoadingState = (isLoading: boolean) => {
+    console.log(`🔄 État de chargement défini manuellement à: ${isLoading ? 'ACTIF' : 'INACTIF'}`);
+    setLoading(isLoading);
+  };
+
   const value = {
     user,
     profile,
@@ -382,7 +426,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut: handleSignOut,
     isAdmin: isUserAdmin,
     updateProfile: handleUpdateProfile,
-    changePassword: handleChangePassword
+    changePassword: handleChangePassword,
+    refreshUserRole,
+    setLoadingState
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
