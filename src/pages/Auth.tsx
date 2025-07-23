@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'react-hot-toast'
 
 export function Auth() {
   const { user, signIn, signUp } = useAuth()
+  const navigate = useNavigate()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -13,8 +14,18 @@ export function Auth() {
   const [lastName, setLastName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const authAttempted = useRef(false)
 
-  if (user) {
+  // Utiliser useEffect pour détecter les changements dans l'état user
+  useEffect(() => {
+    if (user && authAttempted.current) {
+      console.log('✅ Utilisateur connecté, redirection vers la page d\'accueil')
+      navigate('/', { replace: true })
+    }
+  }, [user, navigate])
+  
+  // Redirection immédiate si l'utilisateur est déjà connecté au chargement initial
+  if (user && !authAttempted.current) {
     return <Navigate to="/" replace />
   }
 
@@ -22,6 +33,7 @@ export function Auth() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    authAttempted.current = true
 
     try {
       if (isLogin) {
