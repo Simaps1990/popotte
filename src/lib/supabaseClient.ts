@@ -11,17 +11,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const _global = window as any;
 
 if (!_global.__supabaseClient) {
-  // Configuration de base sans realtime
+  // Configuration améliorée avec options de persistance de session
   const config = {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'pkce' as const,
+      storageKey: 'popotte-auth-token',
+      storage: localStorage,
     },
     db: {
       schema: 'public',
     },
+    // Activer les logs en développement pour débogage
+    debug: import.meta.env.DEV,
   };
 
   _global.__supabaseClient = createClient(supabaseUrl, supabaseAnonKey, config);
