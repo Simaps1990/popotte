@@ -76,7 +76,8 @@ const Users: React.FC = () => {
         const summary = await debtService.getDebtSummary(userId);
         setDebtSummary(summary);
         
-        const debts = await userService.getUserDebtHistory(userId);
+        // Récupérer uniquement les dettes ajoutées manuellement (sans order_id)
+        const debts = await userService.getUserDebtHistory(userId, true);
         setDebtHistory(debts);
         
         const orders = await userService.getUserOrders(userId);
@@ -92,8 +93,9 @@ const Users: React.FC = () => {
     }
   }, []);
 
-  // Référence pour stocker la fonction de désabonnement
+  // Références pour stocker les fonctions de désabonnement
   const unsubscribeRef = React.useRef<(() => void) | null>(null);
+  const unsubscribeDebtRef = React.useRef<(() => void) | null>(null);
   
   // Fonction pour s'abonner aux mises à jour des utilisateurs
   const subscribeToUserUpdates = useCallback(() => {
@@ -121,12 +123,17 @@ const Users: React.FC = () => {
   useEffect(() => {
     fetchUsers();
     
-    // S'abonner aux mises à jour
-    const unsubscribe = subscribeToUserUpdates();
+    // S'abonner aux mises à jour des utilisateurs
+    subscribeToUserUpdates();
     
+    // Se désabonner lors du démontage du composant
     return () => {
-      // Se désabonner lors du démontage du composant
-      if (unsubscribe) unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+      if (unsubscribeDebtRef.current) {
+        unsubscribeDebtRef.current();
+      }
     };
   }, [fetchUsers, subscribeToUserUpdates]);
 
@@ -144,6 +151,33 @@ const Users: React.FC = () => {
       unsubscribeDebts();
     };
   }, [selectedUser, fetchUserDetails]);
+
+  const subscribeToUserDebtUpdates = useCallback((userId: string) => {
+    console.log(`🔔 Abonnement aux mises à jour des dettes pour l'utilisateur ${userId}`);
+    
+    // Se désabonner d'abord si un abonnement existe déjà
+    if (unsubscribeDebtRef.current) {
+      unsubscribeDebtRef.current();
+      unsubscribeDebtRef.current = null;
+    }
+    
+    // S'abonner aux mises à jour des dettes
+    unsubscribeDebtRef.current = userService.subscribeToUserDebts(userId, (payload) => {
+      console.log('📡 Mise à jour de dette reçue dans Users.tsx:', payload);
+      
+      // Rafraîchir les détails de l'utilisateur pour mettre à jour les dettes
+      fetchUserDetails(userId);
+    });
+  }, [fetchUserDetails]);
+
+  useEffect(() => {
+    if (selectedUser) {
+      fetchUserDetails(selectedUser.id);
+      
+      // S'abonner aux mises à jour des dettes de l'utilisateur sélectionné
+      subscribeToUserDebtUpdates(selectedUser.id);
+    }
+  }, [selectedUser?.id, fetchUserDetails, subscribeToUserDebtUpdates]);
 
   const handleSelectUser = (user: UserProfile) => {
     setSelectedUser(user);
@@ -554,9 +588,9 @@ const Users: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="font-semibold">Historique des dettes</h3>
+                <h3 className="font-semibold">Historique des dettes manuelles</h3>
                 {debtHistory.length === 0 ? (
-                  <div className="card"><div className="text-center text-gray-500 py-2">Aucune dette</div></div>
+                  <div className="card"><div className="text-center text-gray-500 py-2">Aucune dette manuelle</div></div>
                 ) : (
                   debtHistory.map((debt: UserDebt) => (
                     <div key={debt.id} className={`card mb-2 ${debt.status === DebtStatus.PAID ? 'border-green-200' : ''}`}>
@@ -573,25 +607,22 @@ const Users: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Deuxième ligne UNIQUEMENT pour les dettes manuelles (sans order_id) */}
-                      {!debt.order_id && (
-                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-                          <div className="text-xs text-gray-500">
-                            Ajoutée par les popotiers
-                          </div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteDebt(debt.id || '');
-                            }}
-                            className="flex items-center text-xs text-red-600 hover:text-red-800 transition-colors"
-                            title="Supprimer cette dette"
-                          >
-                            <Trash2 size={14} className="mr-1" />
-                            Supprimer
-                          </button>
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
+                        <div className="text-xs text-gray-500">
+                          Ajoutée par les popotiers
                         </div>
-                      )}
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDebt(debt.id || '');
+                          }}
+                          className="flex items-center text-xs text-red-600 hover:text-red-800 transition-colors"
+                          title="Supprimer cette dette"
+                        >
+                          <Trash2 size={14} className="mr-1" />
+                          Supprimer
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}

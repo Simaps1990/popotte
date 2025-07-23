@@ -6,7 +6,7 @@ export const debtService = {
   async getUserDebts(userId: string): Promise<UserDebt[]> {
     try {
       const { data, error } = await supabase
-        .from('user_debts')
+        .from('debts')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -49,7 +49,7 @@ export const debtService = {
   async markAsPaid(debtId: string, userId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('user_debts')
+        .from('debts')
         .update({ 
           status: DebtStatus.PENDING,
           updated_at: new Date().toISOString(),
@@ -70,7 +70,7 @@ export const debtService = {
   async confirmPayment(debtId: string, adminId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('user_debts')
+        .from('debts')
         .update({ 
           status: DebtStatus.PAID,
           updated_at: new Date().toISOString(),
@@ -108,7 +108,7 @@ export const debtService = {
       
       // Insérer la dette dans la base de données
       const { data, error } = await supabase
-        .from('user_debts')
+        .from('debts')
         .insert([debtPayload])
         .select()
         .single();
@@ -125,7 +125,7 @@ export const debtService = {
         // Cela permet de s'assurer que les abonnements temps réel sont déclenchés
         try {
           const broadcastResult = await supabase
-            .from('user_debts')
+            .from('debts')
             .update({ updated_at: new Date().toISOString() })
             .eq('id', data.id);
             
@@ -152,12 +152,12 @@ export const debtService = {
     console.log(`🔔 Abonnement aux mises à jour des dettes pour l'utilisateur ${userId}`);
     
     const subscription = supabase
-      .channel('user_debts_changes')
+      .channel('debts_changes')
       .on('postgres_changes', 
         { 
           event: '*',  // Tous les événements (INSERT, UPDATE, DELETE)
           schema: 'public',
-          table: 'user_debts',
+          table: 'debts',
           filter: `user_id=eq.${userId}`
         }, 
         (payload: any) => {
@@ -180,7 +180,7 @@ export const debtService = {
     try {
       // Vérifier si la dette existe et récupérer ses informations
       const { data: debtCheck, error: checkError } = await supabase
-        .from('user_debts')
+        .from('debts')
         .select('id, order_id')
         .eq('id', debtId);
       
@@ -207,7 +207,7 @@ export const debtService = {
       
       // Supprimer la dette
       const { error } = await supabase
-        .from('user_debts')
+        .from('debts')
         .delete()
         .eq('id', debtId);
 

@@ -257,23 +257,27 @@ export const userService = {
   },
 
   // Récupérer l'historique des dettes d'un utilisateur
-  async getUserDebtHistory(userId: string): Promise<UserDebt[]> {
+  async getUserDebtHistory(userId: string, onlyManual: boolean = false): Promise<UserDebt[]> {
     try {
-      // Récupérer les dettes depuis la table 'debts' au lieu de 'user_debts'
-      const { data, error } = await supabase
+      let query = supabase
         .from('debts')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erreur lors de la récupération de l\'historique des dettes:', error);
-        return [];
+      
+      // Si onlyManual est true, on filtre pour n'avoir que les dettes ajoutées manuellement
+      // (celles qui n'ont pas d'order_id associé)
+      if (onlyManual) {
+        query = query.is('order_id', null);
       }
 
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
       return data || [];
     } catch (error) {
-      console.error('Erreur lors de la récupération de l\'historique des dettes:', error);
+      console.error('Error fetching user debt history:', error);
       return [];
     }
   },
@@ -398,6 +402,8 @@ export const userService = {
   // S'abonner aux mises à jour des dettes d'un utilisateur
   subscribeToUserDebts(userId: string, callback: (payload: any) => void): () => void {
     try {
+      console.log(` Abonnement aux mises à jour des dettes pour l'utilisateur ${userId} (userService)`);
+      
       const subscription = supabase
         .channel('custom-user-debts-channel')
         .on(
@@ -405,21 +411,25 @@ export const userService = {
           { 
             event: '*', 
             schema: 'public', 
-            table: 'user_debts',
+            table: 'debts',
             filter: `user_id=eq.${userId}`
           },
           (payload: any) => {
             try {
+              console.log(' Mise à jour de dette reçue dans userService:', payload);
               callback(payload);
             } catch (error) {
               console.error('Erreur dans le callback de subscribeToUserDebts:', error);
             }
           }
         )
-        .subscribe();
+        .subscribe((status: string) => {
+          console.log(`Statut de l'abonnement aux dettes (userService): ${status}`);
+        });
 
       return () => {
         try {
+          console.log(' Désabonnement des mises à jour des dettes (userService)');
           subscription.unsubscribe();
         } catch (error) {
           console.error('Erreur lors de la désinscription de subscribeToUserDebts:', error);
@@ -427,7 +437,6 @@ export const userService = {
       };
     } catch (error) {
       console.error('Erreur lors de l\'abonnement aux mises à jour des dettes:', error);
-      // Retourner une fonction vide en cas d'erreur
       return () => {};
     }
   },
