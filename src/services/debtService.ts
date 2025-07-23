@@ -88,8 +88,14 @@ export const debtService = {
 
   // Créer une nouvelle dette
   async createDebt(debtData: Omit<UserDebt, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserDebt | null> {
+    console.group('💰 debtService.createDebt - Création de dette');
     try {
-      console.log('Création de dette avec les données:', debtData);
+      console.log('📦 Données reçues:', JSON.stringify(debtData, null, 2));
+      console.log('🔍 Vérification des champs obligatoires:');
+      console.log('  - userId:', debtData.userId ? '✅' : '❌', debtData.userId);
+      console.log('  - amount:', debtData.amount ? '✅' : '❌', debtData.amount);
+      console.log('  - status:', debtData.status ? '✅' : '❌', debtData.status);
+      console.log('  - created_by:', debtData.created_by ? '✅' : '❌', debtData.created_by);
       
       // Préparer les données de la dette avec les champs snake_case pour Supabase
       const debtPayload = {
@@ -104,9 +110,29 @@ export const debtService = {
         updated_at: new Date().toISOString()
       };
       
-      console.log('Payload formaté pour insertion:', debtPayload);
+      console.log('📝 Payload formaté pour insertion:', JSON.stringify(debtPayload, null, 2));
+      
+      // Vérifier si la table debts existe
+      console.log('🔍 Vérification de l\'existence de la table debts...');
+      try {
+        const { count, error: countError } = await supabase
+          .from('debts')
+          .select('*', { count: 'exact', head: true });
+          
+        if (countError) {
+          console.error('❌ Erreur lors de la vérification de la table debts:', countError);
+          if (countError.code === '42P01') {
+            console.error('⚠️ La table debts n\'existe pas!');
+          }
+        } else {
+          console.log('✅ Table debts existe, nombre d\'enregistrements:', count);
+        }
+      } catch (tableCheckError) {
+        console.error('❌ Exception lors de la vérification de la table:', tableCheckError);
+      }
       
       // Insérer la dette dans la base de données
+      console.log('🚀 Insertion de la dette dans Supabase...');
       const { data, error } = await supabase
         .from('debts')
         .insert([debtPayload])
@@ -114,7 +140,11 @@ export const debtService = {
         .single();
 
       if (error) {
-        console.error('Erreur Supabase lors de la création de dette:', error);
+        console.error('❌ Erreur Supabase lors de la création de dette:', error);
+        console.error('  - Code:', error.code);
+        console.error('  - Message:', error.message);
+        console.error('  - Details:', error.details);
+        console.error('  - Hint:', error.hint);
         throw error;
       }
       
@@ -124,20 +154,29 @@ export const debtService = {
         // Émettre un événement broadcast pour notifier tous les clients
         // Cela permet de s'assurer que les abonnements temps réel sont déclenchés
         try {
+          console.log('📢 Envoi d\'un broadcast pour notifier les clients...');
           const broadcastResult = await supabase
             .from('debts')
             .update({ updated_at: new Date().toISOString() })
             .eq('id', data.id);
             
-          console.log('📢 Broadcast de mise à jour pour la dette:', broadcastResult);
+          if (broadcastResult.error) {
+            console.warn('⚠️ Erreur lors du broadcast:', broadcastResult.error);
+          } else {
+            console.log('📢 Broadcast envoyé avec succès');
+          }
         } catch (broadcastError) {
-          console.warn('Erreur lors du broadcast de la dette (non bloquant):', broadcastError);
+          console.warn('⚠️ Exception lors du broadcast (non bloquant):', broadcastError);
         }
+      } else {
+        console.warn('⚠️ Aucune donnée retournée après l\'insertion');
       }
       
+      console.groupEnd();
       return data;
     } catch (error) {
-      console.error('Error creating debt:', error);
+      console.error('❌ Exception lors de la création de dette:', error);
+      console.groupEnd();
       return null;
     }
   },

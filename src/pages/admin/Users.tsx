@@ -288,22 +288,34 @@ const Users: React.FC = () => {
   };
 
   const handleAddDebt = async () => {
+    console.group('🔄 handleAddDebt - Ajout de dette');
     try {
-      if (!selectedUser) return;
+      if (!selectedUser) {
+        console.error('❌ Aucun utilisateur sélectionné');
+        return;
+      }
+      console.log('👤 Utilisateur sélectionné:', selectedUser);
       setLoading(prev => ({ ...prev, debt: true }));
       setDebtError('');
       
       const amount = parseFloat(debtForm.amount);
+      console.log('💰 Montant de la dette (avant validation):', debtForm.amount, '→', amount);
       if (isNaN(amount) || amount <= 0) {
+        console.error('❌ Montant invalide:', amount);
         setDebtError('Le montant doit être un nombre positif');
         return;
       }
       
       // Récupérer l'ID de l'utilisateur courant depuis Supabase directement
-      const { data: { user } } = await supabase.auth.getUser();
-      const adminId = user?.id || selectedUser.id; // Fallback sur l'ID de l'utilisateur sélectionné
+      console.log('🔍 Récupération de l\'utilisateur administrateur...');
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('❌ Erreur lors de la récupération de l\'utilisateur:', error);
+      }
+      console.log('👮 Données utilisateur admin récupérées:', data);
       
-      console.log('ID administrateur pour la création de dette:', adminId);
+      const adminId = data?.user?.id || selectedUser.id; // Fallback sur l'ID de l'utilisateur sélectionné
+      console.log('🔑 ID administrateur pour la création de dette:', adminId);
       
       const newDebt = {
         userId: selectedUser.id,
@@ -314,8 +326,13 @@ const Users: React.FC = () => {
         items: [], // Initialiser avec un tableau vide pour éviter l'erreur not-null constraint
       };
       
+      console.log('📝 Nouvelle dette à créer:', newDebt);
+      console.log('🚀 Appel de debtService.createDebt...');
       const result = await debtService.createDebt(newDebt);
+      console.log('📊 Résultat de createDebt:', result);
+      
       if (result) {
+        console.log('✅ Dette créée avec succès');
         // Réinitialiser le formulaire
         setDebtForm({
           amount: '',
@@ -323,15 +340,19 @@ const Users: React.FC = () => {
         });
         
         // Rafraîchir les détails de l'utilisateur
+        console.log('🔄 Rafraîchissement des détails de l\'utilisateur...');
         await fetchUserDetails(selectedUser.id);
+        console.log('✅ Détails de l\'utilisateur rafraîchis');
       } else {
+        console.error('❌ Échec de la création de dette: résultat null');
         setDebtError('Erreur lors de l\'ajout de la dette');
       }
     } catch (err) {
-      console.error('Error adding debt:', err);
+      console.error('❌ Exception lors de l\'ajout de la dette:', err);
       setDebtError('Erreur lors de l\'ajout de la dette');
     } finally {
       setLoading(prev => ({ ...prev, debt: false }));
+      console.groupEnd();
     }
   };
   
