@@ -144,17 +144,41 @@ export const checkDatabaseStructure = async (): Promise<{
 };
 
 /**
- * Récupère les dernières actualités publiées (optimisé)
+ * Récupère les dernières actualités publiées (optimisé avec RPC)
  * @param limit Nombre maximum d'actualités à récupérer (par défaut: 3)
  * @returns Liste des actualités
  */
 export const getNews = async (limit = 3): Promise<NewsPost[]> => {
   try {
-    console.log('🔍 getNews - Début de la fonction');
+    console.log('🔍 getNews - Début de la fonction (version RPC)');
     
-    // Stratégie multi-tentatives pour gérer les problèmes RLS
+    // Stratégie multi-tentatives pour gérer les problèmes potentiels
     const strategies = [
-      // Stratégie 1: Requête normale avec published=true
+      // Stratégie 1: Utiliser la fonction RPC get_news_items avec published=true
+      async () => {
+        console.log('🔄 getNews - Appel RPC get_news_items avec published=true');
+        const startTime = Date.now();
+        const { data, error } = await supabase
+          .rpc('get_news_items', { max_items: limit, published_only: true })
+          .maybeSingle();
+        const endTime = Date.now();
+        console.log(`⏱️ getNews - RPC terminé en ${endTime - startTime}ms`);
+        return { data, error };
+      },
+      
+      // Stratégie 2: Utiliser la fonction RPC get_news_items sans filtre published
+      async () => {
+        console.log('🔄 getNews - Appel RPC get_news_items sans filtre published');
+        const startTime = Date.now();
+        const { data, error } = await supabase
+          .rpc('get_news_items', { max_items: limit, published_only: false })
+          .maybeSingle();
+        const endTime = Date.now();
+        console.log(`⏱️ getNews - RPC terminé en ${endTime - startTime}ms`);
+        return { data, error };
+      },
+      
+      // Stratégie 3: Requête normale avec published=true (fallback)
       () => supabase
         .from('news')
         .select('*')
@@ -162,14 +186,7 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
         .order('created_at', { ascending: false })
         .limit(limit),
         
-      // Stratégie 2: Requête sans filtre published (au cas où la colonne n'existe pas)
-      () => supabase
-        .from('news')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit),
-        
-      // Stratégie 3: Utiliser le service newsService comme fallback
+      // Stratégie 4: Utiliser le service newsService comme fallback ultime
       async () => {
         const { newsService } = await import('../services/newsService');
         return { data: await newsService.getAllNews(true), error: null };
@@ -187,7 +204,6 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
         
         console.log(`🕒 getNews - Démarrage stratégie ${i + 1} avec timeout de 15s`);
         
-        console.log(`🔄 getNews - Exécution stratégie ${i + 1}...`);
         const startTime = Date.now();
         const result = await Promise.race([strategies[i](), timeoutPromise]) as any;
         const endTime = Date.now();
