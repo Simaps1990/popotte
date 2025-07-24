@@ -90,27 +90,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (sessionError) {
           console.error('❌ Erreur lors de la récupération de la session:', sessionError)
+          if (isMounted) {
+            setLoading(false)
+          }
           return
         }
         
         console.log('📝 Session récupérée:', session ? 'utilisateur connecté' : 'pas de session')
         
-        if (session?.user) {
+        if (session?.user && isMounted) {
           console.log('👤 Mise à jour des données utilisateur...')
           await updateUserData(session.user)
         } else if (isMounted) {
+          console.log('👤 Aucune session active - Mode anonyme')
+          setUser(null)
+          setProfile(null)
+          setIsUserAdmin(false)
           setLoading(false)
         }
       } catch (error) {
         console.error('Erreur lors de la vérification de la session:', error)
         if (isMounted) {
+          setUser(null)
+          setProfile(null)
+          setIsUserAdmin(false)
           setLoading(false)
         }
       }
     }
 
-    // Vérifier la session active au chargement
-    checkSession()
+    // Vérifier la session active au chargement avec un timeout de sécurité
+    const timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        console.log('⏱️ Délai de chargement dépassé - Intervention forcée')
+        setLoading(false)
+      }
+    }, 5000) // 5 secondes maximum
+    
+    checkSession().finally(() => {
+      clearTimeout(timeoutId)
+    })
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -129,6 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (session?.user) {
               console.log(`🔄 Mise à jour des données utilisateur pour: ${session.user.email}`);
               await updateUserData(session.user);
+            } else {
+              setLoading(false);
             }
             break;
             
@@ -145,6 +166,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (session?.user) {
               // Mise à jour légère pour éviter les boucles infinies
               setUser(session.user);
+            }
+            setLoading(false);
+            break;
+            
+          case 'INITIAL_SESSION':
+            console.log('🏁 Session initiale');
+            if (session?.user) {
+              await updateUserData(session.user);
+            } else {
               setLoading(false);
             }
             break;

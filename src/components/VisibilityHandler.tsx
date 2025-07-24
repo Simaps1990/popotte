@@ -145,16 +145,17 @@ const VisibilityHandler: React.FC = () => {
     };
   }, []);
   
-  // Effet pour forcer l'arrêt du chargement après un délai
+  // Effet pour forcer l'arrêt du chargement après un délai SEULEMENT si nécessaire
   useEffect(() => {
-    // Si l'application est en chargement pendant plus de 3 secondes, intervenir
+    // Si l'application est en chargement pendant plus de 8 secondes, intervenir
+    // Délai augmenté pour permettre le chargement normal des news
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.log('⏱️ Délai de chargement dépassé - Intervention forcée');
         hideLoadingSpinner();
         restoreUI();
       }
-    }, 3000);
+    }, 8000); // Augmenté à 8 secondes
     
     return () => clearTimeout(timeoutId);
   }, [loading]);

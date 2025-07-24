@@ -152,33 +152,60 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
   try {
     console.log('🔍 getNews - Début de la fonction');
     
-    // Vérifier l'état de la session actuelle
+    // Vérifier l'état de la session actuelle (pour information seulement)
     const { data: sessionData } = await supabase.auth.getSession();
     console.log('🔍 getNews - État de la session:', 
-      sessionData?.session ? 'Authentifié' : 'Non authentifié',
+      sessionData?.session ? 'Authentifié' : 'Non authentifié (mode anonyme)',
       'User ID:', sessionData?.session?.user?.id || 'aucun');
     
-    // Afficher les headers qui seront envoyés
-    console.log('🔍 getNews - Headers Supabase:', supabase.supabaseUrl, 
-      supabase.supabaseKey ? 'Clé présente' : 'Clé absente');
+    console.log('🔍 getNews - Exécution de la requête (accès public autorisé)...');
     
-    console.log('🔍 getNews - Exécution de la requête...');
-    const { data, error } = await supabase
+    // Créer une requête avec timeout pour éviter les blocages
+    const queryPromise = supabase
       .from('news')
       .select('*')
       .eq('published', true)
       .order('created_at', { ascending: false })
       .limit(limit);
+    
+    // Ajouter un timeout de 10 secondes
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout: La requête a pris trop de temps')), 10000)
+    );
+    
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
     if (error) {
-      console.error('❌ getNews - Erreur lors de la récupération des actualités:', error);
+      console.error('❌ getNews - Erreur lors de la récupération des actualités:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      // En cas d'erreur, retourner un tableau vide plutôt que de faire échouer l'application
+      console.log('🔄 getNews - Retour d\'un tableau vide en cas d\'erreur pour maintenir l\'affichage');
       return [];
     }
 
-    console.log(`✅ getNews - ${data?.length || 0} actualités récupérées:`, data);
+    console.log(`✅ getNews - ${data?.length || 0} actualités récupérées avec succès`);
+    
+    // Validation des données reçues
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ getNews - Les données reçues ne sont pas un tableau, conversion...');
+      return data ? [data] : [];
+    }
+    
     return data || [];
   } catch (error) {
-    console.error('❌ getNews - Erreur inattendue:', error);
+    console.error('❌ getNews - Erreur inattendue:', {
+      error,
+      message: error instanceof Error ? error.message : 'Erreur inconnue',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Toujours retourner un tableau vide pour maintenir l'affichage
+    console.log('🔄 getNews - Retour d\'un tableau vide après erreur inattendue');
     return [];
   }
 };
