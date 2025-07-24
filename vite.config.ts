@@ -4,6 +4,23 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
+  // Optimisations de performance
+  build: {
+    target: 'esnext',
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['lucide-react', 'react-hot-toast'],
+          router: ['react-router-dom']
+        }
+      }
+    },
+    sourcemap: false,
+    cssCodeSplit: true
+  },
   // Configuration du serveur de développement
   define: {
     // Forcer l'injection des variables d'environnement
@@ -25,7 +42,8 @@ export default defineConfig({
       port: 24678
     },
     watch: {
-      usePolling: false
+      usePolling: false,
+      ignored: ['**/node_modules/**', '**/.git/**']
     },
     cors: true,
     proxy: {
@@ -35,6 +53,14 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  // Optimisations supplémentaires
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@supabase/supabase-js', 'react-router-dom'],
+    exclude: ['@vite/client', '@vite/env']
+  },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   },
   plugins: [
     react({

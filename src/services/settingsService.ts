@@ -20,62 +20,45 @@ export interface UserProfile {
   updated_at: string;
 }
 
-// Récupère l'utilisateur connecté avec son profil (mise à jour)
+// Récupère l'utilisateur connecté avec son profil (optimisé)
 export const getCurrentUserWithProfile = async (): Promise<{
   user: User | null;
   profile: UserProfile | null;
   error: Error | null;
 }> => {
   try {
-    console.log('🔍 Récupération de l\'utilisateur actuel...');
-    
     // 1. Récupérer l'utilisateur authentifié
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      console.error('❌ Aucun utilisateur connecté ou erreur:', userError);
       return { 
         user: null, 
         profile: null, 
         error: userError || new Error('Utilisateur non connecté') 
       };
     }
-
-    console.log('🔑 Utilisateur connecté:', user.email);
     
-    // 2. Récupérer le profil depuis la vue sécurisée
-    console.log('🔍 Récupération du profil depuis la vue sécurisée...');
-    const { data: profile, error: profileError } = await supabase
-      .from(TABLES.PROFILES)
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    // 2. Récupérer le profil avec fallback optimisé
+    const [secureResult, standardResult] = await Promise.allSettled([
+      supabase.from(TABLES.PROFILES).select('*').eq('id', user.id).single(),
+      supabase.from('profiles').select('*').eq('id', user.id).single()
+    ]);
 
-    if (profileError) {
-      console.error('❌ Erreur lors de la récupération du profil:', profileError);
-      console.log('⚠️ Tentative de récupération depuis la table profiles standard...');
-      
-      // Fallback sur la table profiles standard si la vue échoue
-      const { data: fallbackProfile, error: fallbackError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (fallbackError) {
-        console.error('❌ Échec de la récupération du profil de secours:', fallbackError);
-        return { user, profile: null, error: profileError };
-      }
-      
-      console.log('✅ Profil récupéré depuis la table de secours');
-      return { user, profile: fallbackProfile, error: null };
+    // Utiliser le premier résultat réussi
+    if (secureResult.status === 'fulfilled' && !secureResult.value.error) {
+      return { user, profile: secureResult.value.data, error: null };
+    }
+    
+    if (standardResult.status === 'fulfilled' && !standardResult.value.error) {
+      return { user, profile: standardResult.value.data, error: null };
     }
 
-    console.log('✅ Profil récupéré avec succès:', profile);
-    return { user, profile, error: null };
+    // Si les deux échouent
+    const error = secureResult.status === 'rejected' ? secureResult.reason : 
+                  (secureResult.value.error || new Error('Profil non trouvé'));
+    return { user, profile: null, error };
     
   } catch (error) {
-    console.error('❌ Erreur inattendue dans getCurrentUserWithProfile:', error);
     return { 
       user: null, 
       profile: null, 
@@ -85,18 +68,13 @@ export const getCurrentUserWithProfile = async (): Promise<{
 };
 
 export const updateProfile = async (updates: Partial<UserProfile>) => {
-  console.log('🔄 Début de la mise à jour du profil avec les données:', updates);
-  
   // 1. Vérifier que l'utilisateur est connecté
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   
   if (userError || !user) {
     const errorMsg = userError?.message || 'Utilisateur non connecté';
-    console.error('❌ Erreur d\'authentification:', errorMsg);
     throw new Error(errorMsg);
   }
-
-  console.log(`🆔 Mise à jour du profil pour l'utilisateur: ${user.email} (${user.id})`);
   
   // 2. Préparer les données à mettre à jour
   const profileUpdates = {
@@ -104,11 +82,8 @@ export const updateProfile = async (updates: Partial<UserProfile>) => {
     updated_at: new Date().toISOString(),
   };
   
-  console.log('📝 Données à mettre à jour:', profileUpdates);
-  
   try {
     // Mise à jour directe dans la table profiles standard
-    console.log('🔄 Mise à jour directe dans la table profiles...');
     const { data, error } = await supabase
       .from('profiles')
       .update(profileUpdates)
@@ -117,64 +92,48 @@ export const updateProfile = async (updates: Partial<UserProfile>) => {
       .single();
         
     if (error) {
-      console.error('❌ Échec de la mise à jour du profil:', error);
       throw error;
     }
     
-    console.log('✅ Profil mis à jour avec succès');
     return data;
     
   } catch (error) {
-    console.error('❌ Erreur lors de la mise à jour du profil:', error);
     throw error;
   }
 };
 
 export const changePassword = async (currentPassword: string, newPassword: string) => {
-  console.log('🔒 Début du changement de mot de passe...');
-  
   // 1. Vérifier que l'utilisateur est connecté
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   
   if (userError || !user) {
     const errorMsg = userError?.message || 'Utilisateur non connecté';
-    console.error('❌ Erreur d\'authentification:', errorMsg);
     throw new Error(errorMsg);
   }
-
-  console.log(`🔑 Utilisateur authentifié: ${user.email}`);
   
   try {
     // 2. Vérifier le mot de passe actuel
-    console.log('🔍 Vérification du mot de passe actuel...');
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: user.email!,
       password: currentPassword,
     });
 
     if (signInError) {
-      console.error('❌ Mot de passe actuel incorrect');
       throw new Error('Le mot de passe actuel est incorrect');
     }
-
-    console.log('✅ Mot de passe actuel vérifié avec succès');
     
     // 3. Mettre à jour le mot de passe
-    console.log('🔄 Mise à jour du mot de passe...');
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
     });
 
     if (updateError) {
-      console.error('❌ Erreur lors de la mise à jour du mot de passe:', updateError);
       throw updateError;
     }
 
-    console.log('✅ Mot de passe mis à jour avec succès');
     return { success: true };
     
   } catch (error) {
-    console.error('❌ Erreur lors du changement de mot de passe:', error);
     throw error instanceof Error ? error : new Error('Erreur inconnue lors du changement de mot de passe');
   }
 };

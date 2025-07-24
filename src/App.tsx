@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
@@ -8,26 +8,26 @@ import { AdminLayoutWithChildren } from './pages/admin/AdminLayoutWithChildren';
 import ScrollToTop from './components/ScrollToTop';
 import VisibilityHandler from './components/VisibilityHandler';
 
-// Pages publiques
+// Pages publiques (chargement immédiat)
 import { Home } from './pages/Home';
 import { AuthPage } from './pages/AuthPage';
 import { AuthCallback } from './pages/AuthCallback';
 
-// Pages protégées
-import { Commande } from './pages/Commande';
-import { Dettes } from './pages/Dettes';
-import Settings from '@pages/Settings';
-import { Profile } from './pages/Profile';
+// Pages protégées (lazy loading)
+const Commande = React.lazy(() => import('./pages/Commande').then(m => ({ default: m.Commande })));
+const Dettes = React.lazy(() => import('./pages/Dettes').then(m => ({ default: m.Dettes })));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const Profile = React.lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
 
-// Pages admin
-import Users from './pages/admin/Users';
-import { Orders } from './pages/admin/Orders';
-import { News } from './pages/admin/News';
-import Products from './pages/admin/Products';
-import { OrdersList } from './pages/admin/OrdersList';
-import { NewsList } from './pages/admin/NewsList';
-import { OrderDetail } from './pages/admin/OrderDetail';
-import PaymentsToVerify from './pages/admin/PaymentsToVerify';
+// Pages admin (lazy loading)
+const Users = React.lazy(() => import('./pages/admin/Users'));
+const Orders = React.lazy(() => import('./pages/admin/Orders').then(m => ({ default: m.Orders })));
+const News = React.lazy(() => import('./pages/admin/News').then(m => ({ default: m.News })));
+const Products = React.lazy(() => import('./pages/admin/Products'));
+const OrdersList = React.lazy(() => import('./pages/admin/OrdersList').then(m => ({ default: m.OrdersList })));
+const NewsList = React.lazy(() => import('./pages/admin/NewsList').then(m => ({ default: m.NewsList })));
+const OrderDetail = React.lazy(() => import('./pages/admin/OrderDetail').then(m => ({ default: m.OrderDetail })));
+const PaymentsToVerify = React.lazy(() => import('./pages/admin/PaymentsToVerify'));
 
 // Composant de chargement
 export const LoadingSpinner = () => (
@@ -41,20 +41,28 @@ const BaseLayout: React.FC<{ children: ReactNode }> = (props) => {
   return <LayoutWithChildren>{props.children}</LayoutWithChildren>;
 };
 
-// Composant de mise en page protégée
+// Composant de mise en page protégée avec Suspense
 const ProtectedLayout: React.FC<{ children: ReactNode }> = (props) => {
   return (
     <AuthRoute requiredRole="user">
-      <LayoutWithChildren>{props.children}</LayoutWithChildren>
+      <LayoutWithChildren>
+        <Suspense fallback={<LoadingSpinner />}>
+          {props.children}
+        </Suspense>
+      </LayoutWithChildren>
     </AuthRoute>
   );
 };
 
-// Composant de mise en page admin
+// Composant de mise en page admin avec Suspense
 const AdminLayoutWrapper: React.FC<{ children: ReactNode }> = (props) => {
   return (
     <AuthRoute requiredRole="admin">
-      <AdminLayoutWithChildren>{props.children}</AdminLayoutWithChildren>
+      <AdminLayoutWithChildren>
+        <Suspense fallback={<LoadingSpinner />}>
+          {props.children}
+        </Suspense>
+      </AdminLayoutWithChildren>
     </AuthRoute>
   );
 };

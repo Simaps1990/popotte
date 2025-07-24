@@ -43,99 +43,59 @@ export const userService = {
   // Récupérer tous les utilisateurs avec leur solde de dette
   async getAllUsers(): Promise<UserProfile[]> {
     try {
-      console.log('Début de la récupération des utilisateurs');
-      
-      console.log('Tentative de récupération des utilisateurs depuis Supabase...');
-      
-      // 1. Récupérer d'abord tous les utilisateurs
+      // 1. Récupérer tous les utilisateurs actifs en une seule requête optimisée
       const { data: users, error: usersError } = await supabase
         .from('profiles')
         .select('*')
+        .not('username', 'ilike', 'SUPPRIME_%')
+        .not('email', 'ilike', 'supprime_%')
         .order('username', { ascending: true })
-        .limit(1000); // Limite élevée pour s'assurer de récupérer tous les utilisateurs
+        .limit(500); // Limite raisonnable
 
       if (usersError) {
-        console.error('Erreur lors de la récupération des utilisateurs:', usersError);
-        console.error('Détails de l\'erreur:', JSON.stringify(usersError));
         return [];
       }
 
-      console.log(`Utilisateurs récupérés avec succès (avant filtrage): ${users?.length || 0}`);
-      
       if (!users || users.length === 0) {
-        console.warn('Aucun utilisateur trouvé dans la base de données');
         return [];
       }
 
-      // Filtrage côté client pour exclure les utilisateurs supprimés
-      console.log('Filtrage des utilisateurs supprimés...');
-      
-      // Log détaillé de tous les utilisateurs avant filtrage
-      console.log('LISTE COMPLÈTE DES UTILISATEURS AVANT FILTRAGE:');
-      users.forEach((user: UserProfile) => {
-        console.log(`ID: ${user.id}, Username: ${user.username || 'NON DÉFINI'}, Email: ${user.email || 'NON DÉFINI'}, Role: ${user.role || 'NON DÉFINI'}, Created: ${user.created_at}`);
-      });
-      
+      // Filtrage côté client optimisé (fallback)
       const activeUsers = users.filter((user: UserProfile) => {
-        // Vérifier si l'utilisateur est marqué comme supprimé
-        if (!user.username || !user.email) {
-          console.log(`EXCLU: Utilisateur sans username ou email: ${user.id}`);
-          return false;
-        }
-        
-        // Vérifier les préfixes de suppression dans username et email
-        const isDeleted = 
-          user.username.toUpperCase().includes('SUPPRIME_') || 
-          user.email.toLowerCase().includes('supprime_');
-        
-        if (isDeleted) {
-          console.log(`EXCLU: Utilisateur supprimé détecté: ${user.id}, Username: ${user.username}, Email: ${user.email}`);
-          return false;
-        }
-        
-        console.log(`INCLUS: Utilisateur actif: ${user.id}, Username: ${user.username}, Email: ${user.email}, Role: ${user.role}`);
-        return true;
+        return user.username && user.email && 
+               !user.username.toUpperCase().includes('SUPPRIME_') && 
+               !user.email.toLowerCase().includes('supprime_');
       });
-      
-      console.log(`Filtrage terminé: ${users.length - activeUsers.length} utilisateur(s) exclus, ${activeUsers.length} utilisateur(s) actifs retenus`);
-      
-      // Afficher les IDs des utilisateurs actifs pour faciliter le débogage
-      console.log('Liste des IDs des utilisateurs actifs après filtrage:', 
-        activeUsers.map((u: UserProfile) => u.id).join(', '));
 
+      // 2. Récupérer les dettes impayées en parallèle
+      const [debtsResult] = await Promise.all([
+        supabase
+          .from('debts')
+          .select('user_id, amount')
+          .eq('status', 'unpaid')
+      ]);
 
-      // 2. Récupérer les dettes impayées pour tous les utilisateurs depuis la table 'debts'
-      const { data: allDebts, error: debtsError } = await supabase
-        .from('debts')
-        .select('*')
-        .eq('status', 'unpaid');
+      const { data: allDebts, error: debtsError } = debtsResult;
 
       if (debtsError) {
         console.error('Erreur lors de la récupération des dettes:', debtsError);
+        return activeUsers.map((user: UserProfile) => ({ ...user, debt: 0 }));
       }
-
-      // 3. Organiser les dettes par utilisateur
-      const debtsByUser: Record<string, UserDebt[]> = {};
-      const debtTotalByUser: Record<string, number> = {};
       
-      if (allDebts && Array.isArray(allDebts)) {
-        allDebts.forEach((debt: UserDebt) => {
-          // Initialiser les tableaux et totaux si nécessaire
-          if (!debtsByUser[debt.user_id]) debtsByUser[debt.user_id] = [];
-          if (!debtTotalByUser[debt.user_id]) debtTotalByUser[debt.user_id] = 0;
-          
-          // Ajouter la dette à la liste des dettes de l'utilisateur
-          debtsByUser[debt.user_id].push(debt);
-          
-          // Ajouter le montant de la dette au total de l'utilisateur
-          debtTotalByUser[debt.user_id] += debt.amount || 0;
+      // 3. Calculer les soldes de dettes par utilisateur (optimisé)
+      const debtsByUser = new Map<string, number>();
+      
+      if (allDebts?.length) {
+        allDebts.forEach((debt: any) => {
+          const currentDebt = debtsByUser.get(debt.user_id) || 0;
+          debtsByUser.set(debt.user_id, currentDebt + (debt.amount || 0));
         });
       }
-      // Retourner les utilisateurs actifs avec leurs dettes
+      
+      // 4. Combiner les utilisateurs avec leurs soldes de dettes
       return activeUsers.map((user: UserProfile) => ({
         ...user,
-        debt: debtTotalByUser[user.id] || 0,
-        debtHistory: debtsByUser[user.id] || []
+        debt: Math.round((debtsByUser.get(user.id) || 0) * 100) / 100
       }));
     } catch (error) {
       console.error('Erreur inattendue dans getAllUsers:', error);
@@ -523,16 +483,16 @@ export const userService = {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId);
         
-        console.log(`Relations existantes: ${relatedDebts || 0} dettes, ${relatedOrders || 0} commandes`);
+
         
         // Essayer d'abord le soft delete (plus fiable avec les contraintes FK)
-        console.log('Tentative de soft delete (méthode principale)');
+
         
         const timestamp = Date.now();
         const newUsername = `SUPPRIME_${timestamp}_${userId.substring(0, 8)}`;
         const newEmail = `supprime_${timestamp}@deleted.user`;
         
-        console.log(`Tentative de soft delete avec: Username=${newUsername}, Email=${newEmail}`);
+
         
         const { data: updateData, error: updateError } = await supabase
           .from('profiles')
@@ -549,7 +509,7 @@ export const userService = {
           console.error('Détails:', JSON.stringify(updateError));
           
           // Si le soft delete échoue, on essaie la suppression physique
-          console.log('Tentative alternative: suppression physique');
+
           
           // Force la suppression en cascade si possible
           const { error: deleteError } = await supabase
@@ -562,7 +522,7 @@ export const userService = {
             console.error('Détails:', JSON.stringify(deleteError));
             return false;
           } else {
-            console.log('Suppression physique réussie');
+
             
             // Double vérification pour s'assurer que l'utilisateur a bien été supprimé
             await new Promise(resolve => setTimeout(resolve, 500)); // Attendre un peu pour la propagation
@@ -577,12 +537,12 @@ export const userService = {
               console.warn('ATTENTION: L\'utilisateur existe toujours après suppression!');
               return false;
             } else {
-              console.log('Vérification OK: utilisateur correctement supprimé physiquement');
+
               return true;
             }
           }
         } else {
-          console.log('Soft delete réussi:', updateData);
+
           
           // Vérifier que la mise à jour a bien été appliquée
           const { data: checkUser, error: checkError } = await supabase
@@ -592,15 +552,15 @@ export const userService = {
             .maybeSingle();
           
           if (checkError) {
-            console.log('Erreur lors de la vérification post-update:', checkError);
+
           } else if (checkUser) {
-            console.log('État après mise à jour:', checkUser);
+
             if (!checkUser.username.includes('SUPPRIME_') || 
                 !checkUser.email.includes('supprime_')) {
               console.warn('ATTENTION: La mise à jour ne semble pas avoir été correctement appliquée!');
               return false;
             } else {
-              console.log('Vérification OK: utilisateur correctement marqué comme supprimé');
+
               return true;
             }
           }
