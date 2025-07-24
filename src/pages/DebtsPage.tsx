@@ -190,43 +190,6 @@ export default function DebtsPage() {
             </div>
           )}
 
-          {/* Dettes réglées */}
-          {debtSummary?.debts.some(d => d.status === DebtStatus.PAID) && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-green-600">🟢 Dettes réglées</h2>
-              
-              {debtSummary.debts
-                .filter(debt => debt.status === DebtStatus.PAID)
-                .map(debt => (
-                  <div key={debt.id} className="card border-l-4 border-green-500 bg-green-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm text-gray-500">
-                        Commande: {debt.createdAt ? formatDate(debt.createdAt) : 'Date inconnue'}
-                      </span>
-                      <span className="font-semibold text-green-600">
-                        {debt.amount.toFixed(2)} €
-                      </span>
-                    </div>
-                    
-                    <div className="text-xs text-green-600 mb-2">
-                      Confirmé: {debt.paidAt ? formatDate(debt.paidAt) : 'Date inconnue'}
-                    </div>
-                    
-                    <div className="space-y-1 mb-3">
-                      {(debt.items || []).map((item, index) => (
-                        <div key={index} className="text-sm text-gray-600">
-                          {item.quantity}x {item.name} - {item.unitPrice.toFixed(2)} €
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="text-sm text-green-700 font-medium bg-green-100 p-2 rounded">
-                      ✅ Paiement confirmé
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
 
           {!debtSummary?.debts.length && (
             <div className="text-center py-8">

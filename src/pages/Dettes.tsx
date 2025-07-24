@@ -710,24 +710,7 @@ return (
           ))
         )}
       </div>
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-green-600 mt-6">🟢 Dettes réglées</h2>
-        {paidDebts.length === 0 ? (
-          <div className="text-gray-500 text-sm">Aucune dette réglée.</div>
-        ) : (
-          paidDebts.map((dette) => (
-            <div key={dette.id} className="card border-l-4 border-green-500 bg-white mb-4 p-4">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-sm text-gray-900">{formatDate(dette.created_at)}</span>
-                <span className="font-semibold text-green-600">{dette.amount.toFixed(2)} €</span>
-              </div>
-              <div className="space-y-1 mb-3">
-                <div className="text-sm text-gray-600">Réglée par l'utilisateur</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {/* Section Dettes réglées supprimée comme demandé */}
     </main>
     {/* Le footer global est géré par le composant BottomNavigation */}
   </div>

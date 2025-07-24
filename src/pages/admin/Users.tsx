@@ -18,17 +18,11 @@ const Users: React.FC = () => {
   const [loading, setLoading] = useState({
     users: true,
     userDetails: false,
-    debt: false,
     orders: false
   });
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'hasDebt' | 'noDebt'>('all');
-  const [debtForm, setDebtForm] = useState({
-    amount: '',
-    description: 'Dette ajoutée depuis l\'administration'
-  });
-  const [debtError, setDebtError] = useState('');
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
@@ -287,75 +281,6 @@ const Users: React.FC = () => {
     });
   };
 
-  const handleAddDebt = async () => {
-    console.group('🔄 handleAddDebt - Ajout de dette');
-    try {
-      if (!selectedUser) {
-        console.error('❌ Aucun utilisateur sélectionné');
-        return;
-      }
-      console.log('👤 Utilisateur sélectionné:', selectedUser);
-      setLoading(prev => ({ ...prev, debt: true }));
-      setDebtError('');
-      
-      const amount = parseFloat(debtForm.amount);
-      console.log('💰 Montant de la dette (avant validation):', debtForm.amount, '→', amount);
-      if (isNaN(amount) || amount <= 0) {
-        console.error('❌ Montant invalide:', amount);
-        setDebtError('Le montant doit être un nombre positif');
-        return;
-      }
-      
-      // Récupérer l'ID de l'utilisateur courant depuis Supabase directement
-      console.log('🔍 Récupération de l\'utilisateur administrateur...');
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('❌ Erreur lors de la récupération de l\'utilisateur:', error);
-      }
-      console.log('👮 Données utilisateur admin récupérées:', data);
-      
-      const adminId = data?.user?.id || selectedUser.id; // Fallback sur l'ID de l'utilisateur sélectionné
-      console.log('🔑 ID administrateur pour la création de dette:', adminId);
-      
-      const newDebt = {
-        userId: selectedUser.id,
-        amount,
-        description: debtForm.description || 'Dette ajoutée depuis l\'administration',
-        status: DebtStatus.UNPAID,
-        created_by: adminId,
-        items: [], // Initialiser avec un tableau vide pour éviter l'erreur not-null constraint
-      };
-      
-      console.log('📝 Nouvelle dette à créer:', newDebt);
-      console.log('🚀 Appel de debtService.createDebt...');
-      const result = await debtService.createDebt(newDebt);
-      console.log('📊 Résultat de createDebt:', result);
-      
-      if (result) {
-        console.log('✅ Dette créée avec succès');
-        // Réinitialiser le formulaire
-        setDebtForm({
-          amount: '',
-          description: 'Dette ajoutée depuis l\'administration'
-        });
-        
-        // Rafraîchir les détails de l'utilisateur
-        console.log('🔄 Rafraîchissement des détails de l\'utilisateur...');
-        await fetchUserDetails(selectedUser.id);
-        console.log('✅ Détails de l\'utilisateur rafraîchis');
-      } else {
-        console.error('❌ Échec de la création de dette: résultat null');
-        setDebtError('Erreur lors de l\'ajout de la dette');
-      }
-    } catch (err) {
-      console.error('❌ Exception lors de l\'ajout de la dette:', err);
-      setDebtError('Erreur lors de l\'ajout de la dette');
-    } finally {
-      setLoading(prev => ({ ...prev, debt: false }));
-      console.groupEnd();
-    }
-  };
-  
   const handleDeleteDebt = async (debtId: string) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette dette ?')) {
       return;
@@ -580,74 +505,8 @@ const Users: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="card">
-                <h3 className="font-semibold mb-4">Ajouter une dette</h3>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="Montant (€)"
-                    className="input"
-                    value={debtForm.amount}
-                    onChange={e => setDebtForm({ ...debtForm, amount: e.target.value })}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Description (optionnel)"
-                    className="input"
-                    value={debtForm.description}
-                    onChange={e => setDebtForm({ ...debtForm, description: e.target.value })}
-                  />
-                  <button
-                    className="btn-primary"
-                    disabled={loading.debt || !debtForm.amount || isNaN(Number(debtForm.amount)) || Number(debtForm.amount) <= 0}
-                    onClick={e => { e.preventDefault(); handleAddDebt(); }}
-                  >
-                    {loading.debt ? 'Ajout...' : 'Ajouter la dette'}
-                  </button>
-                  {debtError && <div className="text-red-600 text-sm py-1">{debtError}</div>}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <h3 className="font-semibold">Historique des dettes manuelles</h3>
-                {debtHistory.length === 0 ? (
-                  <div className="card"><div className="text-center text-gray-500 py-2">Aucune dette manuelle</div></div>
-                ) : (
-                  debtHistory.map((debt: UserDebt) => (
-                    <div key={debt.id} className={`card mb-2 ${debt.status === DebtStatus.PAID ? 'border-green-200' : ''}`}>
-                      {/* Ligne unique pour toutes les dettes : date/heure à gauche, statut et prix à droite */}
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="text-sm">{debt.created_at && formatDate(debt.created_at)}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className={`text-sm font-medium ${debt.status === DebtStatus.PAID ? 'text-green-600' : 'text-red-600'}`}>
-                            {debt.status === DebtStatus.PAID ? 'Réglée' : 'Non réglée'}
-                          </div>
-                          <div className="font-semibold">{debt.amount !== undefined ? debt.amount.toFixed(2) : '0.00'} €</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-                        <div className="text-xs text-gray-500">
-                          Ajoutée par les popotiers
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDebt(debt.id || '');
-                          }}
-                          className="flex items-center text-xs text-red-600 hover:text-red-800 transition-colors"
-                          title="Supprimer cette dette"
-                        >
-                          <Trash2 size={14} className="mr-1" />
-                          Supprimer
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              {/* Formulaire d'ajout de dette manuelle supprimé comme demandé */}
+              {/* Section d'historique des dettes manuelles supprimée comme demandé */}
             </div>
           </div>
         )}

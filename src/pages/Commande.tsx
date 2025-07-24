@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Minus, ShoppingCart, Package, Search, Filter } from 'lucide-react'
+import { Plus, Minus, ShoppingCart, Package } from 'lucide-react'
 import { getProducts, getCategories, createOrder } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Product, Category } from '../lib/mockData'
@@ -13,12 +13,10 @@ interface CartItem {
 export function Commande() {
   const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Array<Category & { id: string }>>([])
+  const [categories, setCategories] = useState<Array<Category & { id: string }>>([]) 
   const [cart, setCart] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all')
 
   useEffect(() => {
     fetchProducts()
@@ -167,16 +165,6 @@ export function Commande() {
     }
   }
 
-  // Filtrer les produits selon la recherche et la catégorie et disponibilité
-  const filterProducts = (categoryProducts: Product[]) => {
-    return categoryProducts
-      .filter(product => product.is_available) // Exclure les produits indisponibles
-      .filter(product => 
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-  };
-
   // Grouper les produits par catégorie dans l'ordre défini
   let groupedProducts = categories.reduce((acc, category) => {
     const categoryProducts = products
@@ -197,27 +185,6 @@ export function Commande() {
     groupedProducts['Sans catégorie'] = uncategorizedProducts
   }
 
-  // Appliquer les filtres
-  if (selectedCategory !== 'all') {
-    // Filtrer par catégorie sélectionnée
-    const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name || selectedCategory
-    if (groupedProducts[selectedCategoryName]) {
-      groupedProducts = { [selectedCategoryName]: filterProducts(groupedProducts[selectedCategoryName]) }
-    } else {
-      groupedProducts = {}
-    }
-  } else if (searchTerm) {
-    // Appliquer la recherche à toutes les catégories
-    Object.keys(groupedProducts).forEach(categoryName => {
-      const filteredProducts = filterProducts(groupedProducts[categoryName])
-      if (filteredProducts.length > 0) {
-        groupedProducts[categoryName] = filteredProducts
-      } else {
-        delete groupedProducts[categoryName]
-      }
-    })
-  }
-
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -233,82 +200,11 @@ export function Commande() {
       </div>
 
       {/* Barre de recherche et filtres */}
-      <div className="space-y-4">
-        {/* Recherche et filtre sur la même ligne */}
-        <div className="flex space-x-3">
-          {/* Barre de recherche */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Rechercher un produit..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input pl-10 pr-10"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          
-          {/* Menu déroulant catégorie */}
-          <div className="relative">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="input pr-8 min-w-[140px] appearance-none bg-white"
-              style={{ backgroundColor: '#FFFFFF' }}
-            >
-              <option value="all">Toutes catégories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-          </div>
-        </div>
-        
-        {/* Indicateur de résultats */}
-        {(searchTerm || selectedCategory !== 'all') && (
-          <div className="text-sm text-gray-600">
-            {Object.keys(groupedProducts).length === 0 ? (
-              <span className="text-red-600">Aucun produit trouvé</span>
-            ) : (
-              <span>
-                {Object.values(groupedProducts).reduce((total, products) => total + products.length, 0)} produit(s) trouvé(s)
-                {searchTerm && ` pour "${searchTerm}"`}
-                {selectedCategory !== 'all' && ` dans ${categories.find(c => c.id === selectedCategory)?.name || selectedCategory}`}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Interface de recherche et de filtre supprimée */}
 
       {Object.keys(groupedProducts).length === 0 ? (
         <div className="card text-center py-8">
-          <p className="text-gray-500">
-            {searchTerm || selectedCategory !== 'all' 
-              ? 'Aucun produit ne correspond à vos critères de recherche.' 
-              : 'Aucun produit disponible.'}
-          </p>
-          {(searchTerm || selectedCategory !== 'all') && (
-            <button
-              onClick={() => {
-                setSearchTerm('')
-                setSelectedCategory('all')
-              }}
-              className="mt-2 text-primary-500 hover:text-primary-600 text-sm"
-            >
-              Réinitialiser les filtres
-            </button>
-          )}
+          <p className="text-gray-500">Aucun produit disponible.</p>
         </div>
       ) : (
         Object.entries(groupedProducts).map(([category, categoryProducts]) => (
