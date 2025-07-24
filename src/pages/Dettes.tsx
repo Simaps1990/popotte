@@ -262,9 +262,42 @@ useEffect(() => {
         toast.error('Aucune dette impayée à notifier.');
         return;
       }
+      
+      // Sauvegarde des états actuels pour restauration en cas d'erreur
+      const previousDebts = [...debts];
+      
       const debtIds = unpaidDebts.map(d => d.id);
       const total = unpaidDebts.reduce((sum, d) => sum + d.amount, 0);
-      // Insère dans la table payment_notifications
+      
+      // Mise à jour optimiste de l'interface utilisateur
+      // 1. Mettre à jour le statut des dettes en local
+      setDebts(currentDebts => 
+        currentDebts.map(debt => 
+          debtIds.includes(debt.id) 
+            ? { ...debt, status: 'payment_pending' as OrderStatus, updated_at: new Date().toISOString() } 
+            : debt
+        )
+      );
+      
+      // 2. Créer une notification locale temporaire
+      const tempNotification = {
+        id: `temp-${Date.now()}`,
+        user_id: user.id,
+        debt_ids: debtIds,
+        total_amount: total.toString(),
+        status: 'pending',
+        notified_at: new Date().toISOString()
+      };
+      
+      // Ajouter la notification temporaire à l'interface
+      setPendingNotifications(prev => [...prev, tempNotification]);
+      
+      // 3. Notification de succès immédiate
+      toast.success('Notification envoyée aux popotiers !');
+      setShowNotifyButton(false);
+      
+      // Appels aux services en arrière-plan
+      // 1. Insérer dans la table payment_notifications
       const { data: notifData, error } = await supabase
         .from('payment_notifications')
         .insert([{
@@ -277,34 +310,43 @@ useEffect(() => {
         .select();
       if (error) throw error;
 
-      // Met à jour le statut des dettes concernées
+      // 2. Mettre à jour le statut des dettes concernées
       const { error: updateError } = await supabase
         .from('debts')
         .update({ status: 'payment_pending' })
         .in('id', debtIds);
       if (updateError) throw updateError;
 
-      toast.success('Notification envoyée aux popotiers !');
-      setShowNotifyButton(false);
-      fetchAllDebtsAndOrders();
-      fetchNotifications(); // Ajout pour rafraîchir la section orange
+      // Rafraîchir les données silencieusement pour s'assurer de la cohérence
+      await fetchAllDebtsAndOrders();
+      await fetchNotifications(); // Ajout pour rafraîchir la section orange
     } catch (err) {
+      console.error('Erreur lors de la notification du paiement:', err);
+      
+      // Restaurer l'état précédent en cas d'erreur
+      // Récupérer les dettes non modifiées
+      fetchDebts();
+      
+      // Supprimer la notification temporaire
+      setPendingNotifications(prev => prev.filter(n => !n.id.startsWith('temp-')));
+      
       toast.error('Erreur lors de la notification du paiement');
     }
   };
 
 // Fonction pour payer toutes les dettes en une seule fois
   const handlePayAllDebts = async () => {
-  if (!user) {
-    toast.error("Vous devez être connecté.");
-    return;
-  }
-    if (!user || debts.length === 0) {
+    if (!user) {
+      toast.error("Vous devez être connecté.");
+      return;
+    }
+    if (debts.length === 0) {
       toast.error('Aucune dette à payer');
       return;
     }
 
     try {
+      // Mise à jour immédiate de l'interface utilisateur
       setProcessingBulkPayment(true);
 
       // Calculer le montant total des dettes
@@ -315,16 +357,25 @@ useEffect(() => {
 
       // Créer un tableau d'identifiants de dettes
       const debtIds = debts.map((debt: UserDebt) => debt.id);
-
-      // Toujours rediriger vers le PayPal.me officiel fourni par l'utilisateur
-      toast('Redirection vers le paiement PayPal officiel. Merci d’indiquer le motif dans PayPal !', { icon: '💸' });
+      
+      // Mise à jour instantanée de l'interface utilisateur
+      // Afficher immédiatement le bouton de notification
       setPaymentInitiated(true);
       setShowNotifyButton(true);
+      
+      // Notification visuelle immédiate
+      toast('Redirection vers le paiement PayPal officiel. Merci d\'indiquer le motif dans PayPal !', { icon: '💸' });
+      
+      // Ouvrir PayPal dans un nouvel onglet
       window.open('https://www.paypal.me/popotefor', '_blank');
 
     } catch (error) {
       console.error('Erreur lors du paiement groupé:', error);
       toast.error('Une erreur est survenue lors du paiement groupé');
+      
+      // Réinitialiser l'interface en cas d'erreur
+      setPaymentInitiated(false);
+      setShowNotifyButton(false);
     } finally {
       setProcessingBulkPayment(false);
     }
@@ -335,24 +386,63 @@ useEffect(() => {
     const currentUser = user; // Utiliser une variable locale pour éviter les problèmes de closure
     if (!currentUser) return;
 
+    // Trouver la commande correspondante pour la mise à jour optimiste
+    const orderToUpdate = orders.find(order => order.id === orderId);
+    if (!orderToUpdate) return;
+    
+    // Sauvegarde des états actuels pour restauration en cas d'erreur
+    const previousOrders = [...orders];
+    const previousDebts = [...debts];
+
     try {
+      // Mise à jour optimiste de l'interface utilisateur
       setProcessingPayments((prev: Record<string, boolean>) => ({
         ...prev,
         [orderId]: true
       }));
+      
+      // Mise à jour optimiste du statut de la commande
+      setOrders(currentOrders => 
+        currentOrders.map(order => 
+          order.id === orderId 
+            ? { 
+                ...order, 
+                status: 'payment_pending' as OrderStatus,
+                payment_notified_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              } 
+            : order
+        )
+      );
+      
+      // Mise à jour optimiste des dettes associées à cette commande
+      setDebts(currentDebts => 
+        currentDebts.map(debt => 
+          debt.order_id === orderId 
+            ? { ...debt, status: 'payment_pending' as OrderStatus, updated_at: new Date().toISOString() } 
+            : debt
+        )
+      );
+      
+      // Notification de succès immédiate
+      toast.success('Paiement notifié avec succès');
 
+      // Appel au service en arrière-plan
       await orderService.notifyPayment(orderId);
 
-      // Rafraîchir les données
+      // Rafraîchir les données silencieusement pour s'assurer de la cohérence
       await Promise.all([
         fetchDebts(),
         fetchUserOrders()
       ]);
 
-      toast.success('Paiement notifié avec succès');
-
     } catch (error) {
       console.error('Erreur lors de la notification du paiement:', error);
+      
+      // Restaurer les états précédents en cas d'erreur
+      setOrders(previousOrders);
+      setDebts(previousDebts);
+      
       toast.error('Une erreur est survenue lors de la notification du paiement');
     } finally {
       setProcessingPayments((prev: Record<string, boolean>) => ({

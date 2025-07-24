@@ -40,8 +40,16 @@ export function Profile() {
     e.preventDefault()
     if (!profile) return
 
+    // Sauvegarde des valeurs actuelles pour restauration en cas d'erreur
+    const previousFirstName = firstName
+    const previousLastName = lastName
+    const previousUsername = username
+
     setProfileLoading(true)
     setProfileMessage('')
+    
+    // Mise à jour optimiste de l'interface utilisateur
+    setProfileMessage('Informations mises à jour avec succès !')
     
     console.log('Soumission du profil avec les données:', { firstName, lastName, username })
 
@@ -62,17 +70,20 @@ export function Profile() {
         throw result.error
       }
       
-      // Afficher un message de succès
-      setProfileMessage('Informations mises à jour avec succès !')
       console.log('Mise à jour réussie, profil mis à jour')
       
-      // Attendre un court délai pour que l'utilisateur voie le message de succès
-      // mais ne pas rediriger automatiquement pour éviter la page blanche
+      // Désactiver le chargement après un court délai pour que l'utilisateur voie le message de succès
       setTimeout(() => {
         setProfileLoading(false)
       }, 1000)
     } catch (error: any) {
       console.error('Erreur lors de la mise à jour du profil:', error)
+      
+      // Restaurer les valeurs précédentes en cas d'erreur
+      setFirstName(previousFirstName)
+      setLastName(previousLastName)
+      setUsername(previousUsername)
+      
       setProfileMessage('Erreur lors de la mise à jour : ' + (error.message || 'Erreur inconnue'))
       setProfileLoading(false)
     }

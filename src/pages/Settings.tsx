@@ -115,27 +115,31 @@ const Settings = () => {
   // Gestion de la soumission du profil
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Sauvegarde des valeurs actuelles pour restauration en cas d'erreur
+    const previousFormData = { ...formData };
+    
     try {
       setLoading(true);
-      setSaveStatus({ type: 'loading', message: 'Mise à jour en cours...' });
       
-      // Mise à jour du profil
+      // Mise à jour optimiste de l'interface utilisateur
+      setSaveStatus({ type: 'success', message: 'Profil mis à jour avec succès' });
+      
+      // Mise à jour optimiste du profil local
+      if (profile) {
+        setProfile({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone
+        });
+      }
+      
+      // Mise à jour du profil sur le serveur
       const updatedProfile = await updateProfileService({
         first_name: formData.firstName,
         last_name: formData.lastName,
         phone: formData.phone
       });
-      
-      // Mise à jour des données locales
-      if (updatedProfile) {
-        setProfile({
-          first_name: updatedProfile.first_name,
-          last_name: updatedProfile.last_name,
-          phone: updatedProfile.phone
-        });
-      }
-      
-      setSaveStatus({ type: 'success', message: 'Profil mis à jour avec succès' });
       
       // Rafraîchir les données utilisateur
       const { user: refreshedUser, profile: refreshedProfile } = await getCurrentUserWithProfile();
@@ -163,15 +167,25 @@ const Settings = () => {
       return;
     }
 
+    // Sauvegarde des valeurs actuelles pour restauration en cas d'erreur
+    const previousPasswordData = { ...passwordData };
+    
     try {
       setLoading(true);
-      await changePasswordService(passwordData.currentPassword, passwordData.newPassword);
+      
+      // Mise à jour optimiste de l'interface utilisateur
       setSaveStatus({ type: 'success', message: 'Mot de passe mis à jour avec succès' });
+      
+      // Réinitialiser le formulaire immédiatement pour une meilleure expérience utilisateur
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
+      
+      // Appel au service de changement de mot de passe
+      await changePasswordService(previousPasswordData.currentPassword, previousPasswordData.newPassword);
+      
     } catch (error) {
       setSaveStatus({ type: 'error', message: 'Erreur lors du changement de mot de passe' });
       console.error('Erreur:', error);

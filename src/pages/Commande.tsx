@@ -139,26 +139,39 @@ export function Commande() {
       return
     }
 
+    // Sauvegarde du panier actuel pour restauration en cas d'erreur
+    const currentCart = [...cart]
+    const totalAmount = getCartTotal()
+    
+    // Mise à jour optimiste de l'interface utilisateur
     setSubmitting(true)
+    
+    // Vider le panier immédiatement pour donner un retour visuel instantané
+    setCart([])
+    
     try {
-      const totalAmount = getCartTotal()
-      const items = cart.map(item => ({
+      const items = currentCart.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
         unit_price: item.product.price
         // Le champ variant a été supprimé car il n'est pas nécessaire dans la table order_items
       }))
 
+      // Appel au service de création de commande
       await createOrder({
         user_id: user.id,
         total_amount: totalAmount,
         items
       })
 
-      setCart([])
+      // Notification de succès
       alert('Commande validée avec succès !')
     } catch (error) {
       console.error('Error submitting order:', error)
+      
+      // Restaurer le panier en cas d'erreur
+      setCart(currentCart)
+      
       alert('Une erreur est survenue lors de la validation de la commande.')
     } finally {
       setSubmitting(false)

@@ -47,11 +47,51 @@ export default function DebtsPage() {
   const handleMarkAsPaid = async (debtId: string) => {
     if (!user) return;
     
+    // Optimistic UI update - immediately update the local state
+    if (debtSummary) {
+      const updatedDebts = debtSummary.debts.map(debt => {
+        if (debt.id === debtId) {
+          // Create a copy of the debt with updated status
+          return {
+            ...debt,
+            status: DebtStatus.PENDING,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return debt;
+      });
+      
+      // Recalculate totals
+      let newTotalUnpaid = 0;
+      let newTotalPending = 0;
+      let newTotalPaid = 0;
+      
+      updatedDebts.forEach(debt => {
+        if (debt.status === DebtStatus.UNPAID) {
+          newTotalUnpaid += debt.amount;
+        } else if (debt.status === DebtStatus.PENDING) {
+          newTotalPending += debt.amount;
+        } else if (debt.status === DebtStatus.PAID) {
+          newTotalPaid += debt.amount;
+        }
+      });
+      
+      // Update the state immediately
+      setDebtSummary({
+        ...debtSummary,
+        debts: updatedDebts,
+        totalUnpaid: newTotalUnpaid,
+        totalPending: newTotalPending,
+        totalPaid: newTotalPaid
+      });
+    }
+    
+    // Then make the actual API call
     const success = await debtService.markAsPaid(debtId, user.id);
-    if (success) {
-      await loadDebts();
-    } else {
+    if (!success) {
+      // If the API call fails, revert the optimistic update
       setError('Erreur lors de la mise à jour du statut du paiement');
+      await loadDebts(); // Reload the actual data
     }
   };
 
@@ -148,7 +188,15 @@ export default function DebtsPage() {
                     <span>Régler mes dettes</span>
                   </a>
                   
-                  <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2">
+                  <button 
+                    onClick={() => {
+                      // Find all unpaid debts and mark them as paid
+                      debtSummary?.debts
+                        .filter(debt => debt.status === DebtStatus.UNPAID)
+                        .forEach(debt => handleMarkAsPaid(debt.id));
+                    }}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
+                  >
                     <span>Notifier mon paiement aux popottiers</span>
                   </button>
                 </div>
