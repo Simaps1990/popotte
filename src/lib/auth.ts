@@ -120,33 +120,71 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
 
 export const signIn = async (email: string, password: string) => {
   try {
+    console.log('🔑 Tentative de connexion avec email:', email);
+    
+    // Connexion avec Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+      options: {
+        // Garantir que la session est persistante
+        persistSession: true
+      }
+    });
     
     if (error) {
-      console.error('Erreur de connexion:', error)
-      throw error
+      console.error('❌ Erreur de connexion:', error);
+      throw error;
     }
+    
+    console.log('✅ Connexion réussie, session créée');
+    
+    // Vérifier que la session a bien été créée
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('🔍 Vérification de la session après connexion:', 
+      sessionData?.session ? 'Session active' : 'Pas de session active');
     
     // Récupérer le profil utilisateur
     if (data.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
+      console.log('🔍 Récupération du profil pour:', data.user.id);
+      
+      // Essayer d'abord la table secure_profiles (prioritaire)
+      let profile = null;
+      const { data: secureProfile, error: secureProfileError } = await supabase
+        .from('secure_profiles')
         .select('*')
         .eq('id', data.user.id)
-        .single()
+        .single();
+      
+      if (secureProfileError && secureProfileError.code !== 'PGRST116') {
+        console.warn('⚠️ Erreur lors de la récupération du profil sécurisé:', secureProfileError);
+      }
+      
+      // Si pas de profil sécurisé, essayer la table profiles standard
+      if (!secureProfile) {
+        const { data: standardProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        profile = standardProfile;
+      } else {
+        profile = secureProfile;
+      }
+      
+      console.log('✅ Profil récupéré:', profile ? 'OK' : 'Non trouvé');
       
       return { 
         user: { ...data.user, profile },
         error: null 
-      }
+      };
     }
     
-    return { user: null, error: new Error('Aucun utilisateur retourné') }
+    console.warn('⚠️ Connexion réussie mais aucun utilisateur retourné');
+    return { user: null, error: new Error('Aucun utilisateur retourné') };
   } catch (error) {
-    console.error('Erreur dans signIn:', error)
+    console.error('❌ Erreur dans signIn:', error);
     return { 
       user: null, 
       error: error instanceof Error ? error : new Error('Erreur inconnue lors de la connexion')
@@ -155,7 +193,27 @@ export const signIn = async (email: string, password: string) => {
 }
 
 export const signOut = async () => {
-  return await supabase.auth.signOut()
+  try {
+    console.log('🔒 Déconnexion en cours...');
+    
+    // Déconnexion complète (y compris suppression des sessions persistantes)
+    const { error } = await supabase.auth.signOut({ scope: 'global' });
+    
+    if (error) {
+      console.error('❌ Erreur lors de la déconnexion:', error);
+      throw error;
+    }
+    
+    console.log('✅ Déconnexion réussie');
+    
+    // Forcer un petit délai pour permettre à Supabase de terminer les opérations de nettoyage
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return { error: null };
+  } catch (error) {
+    console.error('❌ Erreur inattendue lors de la déconnexion:', error);
+    return { error };
+  }
 }
 
 export const getCurrentUser = async () => {

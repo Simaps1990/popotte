@@ -117,27 +117,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event: string, session: any) => {
         console.log(`🔔 Événement d'authentification détecté: ${event}`);
         
-        if (isMounted) {
-          // Éviter les boucles infinies lors des mises à jour de profil
-          // Ne mettre à jour les données utilisateur que pour les événements importants
-          if (session?.user) {
-            // Ignorer les événements USER_UPDATED pour éviter les boucles infinies
-            // lors des mises à jour de profil
-            if (event !== 'USER_UPDATED') {
-              console.log(`🔄 Mise à jour des données utilisateur suite à l'événement: ${event}`);
+        if (!isMounted) {
+          console.log('⚠️ Composant démonté, événement ignoré');
+          return;
+        }
+        
+        // Gérer les différents événements d'authentification
+        switch (event) {
+          case 'SIGNED_IN':
+            console.log('🔓 Utilisateur connecté');
+            if (session?.user) {
+              console.log(`🔄 Mise à jour des données utilisateur pour: ${session.user.email}`);
               await updateUserData(session.user);
-            } else {
-              console.log('⚠️ Événement USER_UPDATED ignoré pour éviter une boucle infinie');
-              // Mettre à jour uniquement l'utilisateur sans recharger le profil complet
-              setUser(session.user);
-              setLoading(false);
             }
-          } else {
+            break;
+            
+          case 'SIGNED_OUT':
+            console.log('🔒 Utilisateur déconnecté');
             setUser(null);
             setProfile(null);
             setIsUserAdmin(false);
             setLoading(false);
-          }
+            break;
+            
+          case 'TOKEN_REFRESHED':
+            console.log('🔄 Token rafraîchi');
+            if (session?.user) {
+              // Mise à jour légère pour éviter les boucles infinies
+              setUser(session.user);
+              setLoading(false);
+            }
+            break;
+            
+          case 'USER_UPDATED':
+            console.log('🔄 Utilisateur mis à jour');
+            if (session?.user) {
+              // Mise à jour légère pour éviter les boucles infinies
+              setUser(session.user);
+              setLoading(false);
+            }
+            break;
+            
+          case 'PASSWORD_RECOVERY':
+            console.log('🔑 Récupération de mot de passe');
+            break;
+            
+          default:
+            console.log(`ℹ️ Événement non géré spécifiquement: ${event}`);
+            if (session?.user) {
+              console.log('🔄 Mise à jour des données utilisateur par défaut');
+              await updateUserData(session.user);
+            } else {
+              setUser(null);
+              setProfile(null);
+              setIsUserAdmin(false);
+              setLoading(false);
+            }
         }
       }
     )
@@ -184,10 +219,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const handleSignOut = async () => {
-    await authSignOut()
-    setUser(null)
-    setProfile(null)
-    setIsUserAdmin(false)
+    try {
+      console.log('🔒 Début de la déconnexion dans AuthContext...');
+      
+      // Déconnexion via la fonction auth
+      const { error } = await authSignOut();
+      
+      if (error) {
+        console.error('❌ Erreur lors de la déconnexion:', error);
+      } else {
+        console.log('✅ Déconnexion réussie');
+      }
+      
+      // Réinitialiser l'état local immédiatement
+      setUser(null);
+      setProfile(null);
+      setIsUserAdmin(false);
+      
+      // Forcer un rechargement de la page pour garantir un état propre
+      // Cela garantit que toutes les données en mémoire sont effacées
+      console.log('🔄 Rechargement de la page pour garantir un état propre...');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 300);
+    } catch (error) {
+      console.error('❌ Erreur inattendue lors de la déconnexion:', error);
+    }
   }
 
   const handleUpdateProfile = async (profileData: Partial<UserProfile>) => {
