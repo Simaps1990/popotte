@@ -86,13 +86,17 @@ export function AuthForm() {
         if (error) throw error
         console.log('Connexion réussie, redirection...', user)
         
-        // Attendre un délai plus long pour s'assurer que la session est bien établie
-        console.log('Attente de 2 secondes pour stabiliser la session...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Afficher un message de succès (utiliser setError pour les messages de succès aussi)
+        setError('Connexion réussie! Redirection...')
         
-        // Forcer un rechargement complet de la page pour réinitialiser l'état
-        console.log('Rechargement complet de la page...')
-        window.location.href = '/'
+        // Utiliser une redirection immédiate et directe
+        console.log('🔄 Redirection immédiate vers la page d\'accueil...')
+        
+        // Forcer un rechargement complet pour garantir un état propre
+        setTimeout(() => {
+          console.log('🔄 Exécution de la redirection...')
+          window.location.replace('/')
+        }, 500)
       } else {
         console.log('Tentative d\'inscription...')
         const { user, error } = await signUp({ 
