@@ -12,6 +12,7 @@ TO anon
 USING (published = true);
 
 
+
 -- Créer une politique pour permettre aux utilisateurs authentifiés de lire les actualités publiées
 DROP POLICY IF EXISTS "Allow authenticated users to read published news" ON public.news;
 CREATE POLICY "Allow authenticated users to read published news" 
