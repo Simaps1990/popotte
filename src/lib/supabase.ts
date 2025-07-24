@@ -180,12 +180,18 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
       try {
         console.log(`🔍 getNews - Tentative ${i + 1}/${strategies.length}`);
         
-        // Timeout réduit à 5 secondes pour chaque tentative
+        // Timeout augmenté à 15 secondes pour chaque tentative
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error(`Timeout stratégie ${i + 1}`)), 5000)
+          setTimeout(() => reject(new Error(`Timeout stratégie ${i + 1}`)), 15000)
         );
         
+        console.log(`🕒 getNews - Démarrage stratégie ${i + 1} avec timeout de 15s`);
+        
+        console.log(`🔄 getNews - Exécution stratégie ${i + 1}...`);
+        const startTime = Date.now();
         const result = await Promise.race([strategies[i](), timeoutPromise]) as any;
+        const endTime = Date.now();
+        console.log(`⏱️ getNews - Stratégie ${i + 1} terminée en ${endTime - startTime}ms`);
         const { data, error } = result;
         
         if (!error && data) {
