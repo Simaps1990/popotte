@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test API Supabase</h1>
+    
+    <div class="test-section">
+        <h2>Configuration</h2>
+        <div>
+            <label for="supabaseUrl">URL Supabase:</label>
+            <input type="text" id="supabaseUrl" value="https://xtjzuqyvyzkzchwtjpeo.supabase.co">
+        </div>
+        <div>
+            <label for="supabaseKey">Clé anonyme Supabase:</label>
+            <input type="text" id="supabaseKey" placeholder="Entrez votre clé anonyme Supabase">
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Tests API</h2>
+        <button onclick="testNewsCount()">Test 1: COUNT sur news</button>
+        <button onclick="testNewsSelect()">Test 2: SELECT sur news</button>
+        <button onclick="testTestNewsTable()">Test 3: SELECT sur test_news</button>
+        <button onclick="testDirectSQL()">Test 4: SQL direct</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Fonction pour ajouter un message aux résultats
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML = `<div class="${type}">[${timestamp}] ${message}</div>` + resultsDiv.innerHTML;
+        }
+
+        // Fonction pour afficher un objet JSON
+        function logJson(data, type = 'info') {
+            log(`<pre>${JSON.stringify(data, null, 2)}</pre>`, type);
+        }
+
+        // Test 1: COUNT sur la table news
+        async function testNewsCount() {
+            log('🧪 Test 1: COUNT sur la table news...', 'info');
+            const startTime = Date.now();
+            
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const supabaseKey = document.getElementById('supabaseKey').value;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                log('❌ Erreur: URL ou clé Supabase manquante', 'error');
+                return;
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                
+                const response = await fetch(`${supabaseUrl}/rest/v1/news?select=count`, {
+                    method: 'HEAD',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'count=exact'
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const endTime = Date.now();
+                log(`⏱️ Durée: ${endTime - startTime}ms`, 'info');
+                
+                if (!response.ok) {
+                    log(`❌ Erreur HTTP: ${response.status} ${response.statusText}`, 'error');
+                    return;
+                }
+                
+                const count = response.headers.get('content-range')?.split('/')[1] || 'inconnu';
+                log(`✅ Succès! Nombre d'enregistrements: ${count}`, 'success');
+            } catch (e) {
+                const endTime = Date.now();
+                log(`❌ Exception après ${endTime - startTime}ms: ${e.message}`, 'error');
+            }
+        }
+
+        // Test 2: SELECT sur la table news
+        async function testNewsSelect() {
+            log('🧪 Test 2: SELECT sur la table news...', 'info');
+            const startTime = Date.now();
+            
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const supabaseKey = document.getElementById('supabaseKey').value;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                log('❌ Erreur: URL ou clé Supabase manquante', 'error');
+                return;
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                
+                const response = await fetch(`${supabaseUrl}/rest/v1/news?select=*&order=created_at.desc&limit=3`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const endTime = Date.now();
+                log(`⏱️ Durée: ${endTime - startTime}ms`, 'info');
+                
+                if (!response.ok) {
+                    log(`❌ Erreur HTTP: ${response.status} ${response.statusText}`, 'error');
+                    const errorText = await response.text();
+                    log(`Détails: ${errorText}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                log(`✅ Succès! ${data.length} enregistrements récupérés`, 'success');
+                logJson(data, 'success');
+            } catch (e) {
+                const endTime = Date.now();
+                log(`❌ Exception après ${endTime - startTime}ms: ${e.message}`, 'error');
+            }
+        }
+
+        // Test 3: SELECT sur la table test_news
+        async function testTestNewsTable() {
+            log('🧪 Test 3: SELECT sur la table test_news...', 'info');
+            const startTime = Date.now();
+            
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const supabaseKey = document.getElementById('supabaseKey').value;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                log('❌ Erreur: URL ou clé Supabase manquante', 'error');
+                return;
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                
+                const response = await fetch(`${supabaseUrl}/rest/v1/test_news?select=*`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const endTime = Date.now();
+                log(`⏱️ Durée: ${endTime - startTime}ms`, 'info');
+                
+                if (!response.ok) {
+                    log(`❌ Erreur HTTP: ${response.status} ${response.statusText}`, 'error');
+                    const errorText = await response.text();
+                    log(`Détails: ${errorText}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                log(`✅ Succès! ${data.length} enregistrements récupérés`, 'success');
+                logJson(data, 'success');
+            } catch (e) {
+                const endTime = Date.now();
+                log(`❌ Exception après ${endTime - startTime}ms: ${e.message}`, 'error');
+            }
+        }
+
+        // Test 4: SQL direct via l'API rpc
+        async function testDirectSQL() {
+            log('🧪 Test 4: SQL direct via rpc...', 'info');
+            const startTime = Date.now();
+            
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const supabaseKey = document.getElementById('supabaseKey').value;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                log('❌ Erreur: URL ou clé Supabase manquante', 'error');
+                return;
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                
+                // Utiliser une fonction RPC existante ou créer une fonction SQL simple
+                const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_news_count`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({}),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const endTime = Date.now();
+                log(`⏱️ Durée: ${endTime - startTime}ms`, 'info');
+                
+                if (!response.ok) {
+                    log(`❌ Erreur HTTP: ${response.status} ${response.statusText}`, 'error');
+                    const errorText = await response.text();
+                    log(`Détails: ${errorText}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                log(`✅ Succès! Résultat de la requête SQL directe:`, 'success');
+                logJson(data, 'success');
+            } catch (e) {
+                const endTime = Date.now();
+                log(`❌ Exception après ${endTime - startTime}ms: ${e.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
