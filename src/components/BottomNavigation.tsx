@@ -1,10 +1,18 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Home, ClipboardList, CreditCard, Settings, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
 export function BottomNavigation() {
   const location = useLocation()
   const { user } = useAuth()
+  const { invalidateCache } = useCacheInvalidation()
+
+  // Fonction pour gérer les clics de navigation avec invalidation du cache
+  const handleNavigationClick = (path: string) => {
+    console.log(`🔄 Navigation vers ${path} - Invalidation du cache`);
+    invalidateCache();
+  };
 
   // Vérifie si le chemin actuel correspond au chemin de base ou à un sous-chemin
   const isActive = (path: string) => {
@@ -51,6 +59,7 @@ export function BottomNavigation() {
         <Link
           to="/"
           className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+          onClick={() => handleNavigationClick('/')}
         >
           <Home size={24} style={woodIconStyle(isActive('/'))} />
           <span className="text-xs mt-1" style={woodTextStyle(isActive('/'))}>Accueil</span>
@@ -60,6 +69,7 @@ export function BottomNavigation() {
           <Link
             to="/commande"
             className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+            onClick={() => handleNavigationClick('/commande')}
           >
             <ClipboardList size={24} style={woodIconStyle(isActive('/commande'))} />
             <span className="text-xs mt-1" style={woodTextStyle(isActive('/commande'))}>Commander</span>
@@ -71,6 +81,7 @@ export function BottomNavigation() {
             <Link
               to="/dettes"
               className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+              onClick={() => handleNavigationClick('/dettes')}
             >
               <CreditCard size={24} style={woodIconStyle(isActive('/dettes'))} />
               <span className="text-xs mt-1" style={woodTextStyle(isActive('/dettes'))}>Dettes</span>
@@ -79,6 +90,7 @@ export function BottomNavigation() {
             <Link
               to="/parametres"
               className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+              onClick={() => handleNavigationClick('/parametres')}
             >
               <Settings size={24} style={woodIconStyle(isActive('/parametres'))} />
               <span className="text-xs mt-1" style={woodTextStyle(isActive('/parametres'))}>Paramètres</span>
@@ -90,7 +102,10 @@ export function BottomNavigation() {
           <Link
             to="/auth"
             className="flex flex-col items-center p-2 rounded-lg transition-colors"
-            onClick={() => { console.log('Footer Connexion cliqué') }}
+            onClick={() => { 
+              console.log('Footer Connexion cliqué');
+              handleNavigationClick('/auth');
+            }}
           >
             <Lock size={20} style={woodIconStyle(isActive('/auth'))} className="mb-1" />
             <span className="text-xs" style={woodTextStyle(isActive('/auth'))}>Connexion</span>

@@ -12,6 +12,7 @@ import { orderService } from '../services/orderService';
 import { debtService } from '../services/debtService';
 import { checkDatabaseStructure } from '../lib/supabase';
 import { supabase } from '../lib/supabaseClient';
+import { useRealTimeSubscriptions, useCacheInvalidation } from '../hooks/useRealTimeSubscriptions';
 
 // Fonction utilitaire pour formater les dates
 const formatDate = (dateString: string) => {
@@ -87,6 +88,34 @@ export function Dettes() {
   const [processingPayments, setProcessingPayments] = useState<Record<string, boolean>>({});
   const [pendingNotifications, setPendingNotifications] = useState<PaymentNotification[]>([]);
 
+  // Hook pour l'invalidation du cache
+  const { invalidateCache } = useCacheInvalidation();
+
+  // Callbacks pour les abonnements temps réel
+  const handlePaymentNotificationChange = React.useCallback(() => {
+    console.log('🔔 Notification de paiement modifiée - Rechargement des données');
+    fetchNotifications();
+    fetchAllDebtsAndOrders();
+  }, []);
+
+  const handleDebtChange = React.useCallback(() => {
+    console.log('🔔 Dette modifiée - Rechargement des données');
+    fetchAllDebtsAndOrders();
+  }, []);
+
+  const handleOrderChange = React.useCallback(() => {
+    console.log('🔔 Commande modifiée - Rechargement des données');
+    fetchAllDebtsAndOrders();
+  }, []);
+
+  // Abonnements temps réel
+  useRealTimeSubscriptions({
+    onPaymentNotificationChange: handlePaymentNotificationChange,
+    onDebtChange: handleDebtChange,
+    onOrderChange: handleOrderChange,
+    userId: user?.id
+  });
+
   // Fonction utilitaire pour formater les dates
   const formatDate = (dateString: string) => {
     try {
@@ -118,6 +147,10 @@ export function Dettes() {
       if (!user?.id) return;
       
       try {
+        // Invalider le cache avant de charger les données
+        console.log('🗑️ Invalidation du cache avant chargement des dettes');
+        invalidateCache();
+        
         // On lance la récupération, mais on attend les deux pour mapper
         if (isMounted) {
           await fetchAllDebtsAndOrders();
@@ -177,8 +210,12 @@ const fetchNotifications = async () => {
 };
 
 useEffect(() => {
-  fetchNotifications();
-}, [user?.id]);
+  if (user?.id) {
+    // Invalider le cache avant de charger les notifications
+    invalidateCache();
+    fetchNotifications();
+  }
+}, [user?.id, invalidateCache]);
 
   // Fonction pour récupérer dettes ET commandes, puis faire le mapping
   const fetchAllDebtsAndOrders = async () => {

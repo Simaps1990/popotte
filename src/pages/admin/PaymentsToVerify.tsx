@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import AdminPaymentNotificationCard from "../../components/admin/AdminPaymentNotificationCard";
+import { useRealTimeSubscriptions, useCacheInvalidation } from "../../hooks/useRealTimeSubscriptions";
+import { toast } from 'react-hot-toast';
 
 interface PaymentNotification {
   notification_id: string;
@@ -19,39 +21,116 @@ const PaymentsToVerify: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
+  // Hook pour l'invalidation du cache
+  const { invalidateCache } = useCacheInvalidation();
+
+  // Callback pour les changements de notifications de paiement
+  const handlePaymentNotificationChange = React.useCallback(() => {
+    console.log('🔔 Notification de paiement modifiée - Rechargement automatique');
+    fetchNotifications();
+  }, []);
+
+  // Abonnements temps réel
+  useRealTimeSubscriptions({
+    onPaymentNotificationChange: handlePaymentNotificationChange
+  });
+
   const fetchNotifications = async () => {
     setLoading(true);
     setError(null);
+    
+    // Invalider le cache avant de récupérer les données
+    console.log('🗑️ Invalidation du cache avant récupération des notifications');
+    invalidateCache();
+    
     const { data, error } = await supabase.rpc("rpc_payments_to_verify");
     console.log("[ADMIN DEBUG] Résultat RPC:", data, "Erreur:", error);
-    if (error) setError(error.message);
-    else setNotifications(data || []);
+    if (error) {
+      setError(error.message);
+      toast.error('Erreur lors du chargement des notifications');
+    } else {
+      setNotifications(data || []);
+      console.log(`✅ ${data?.length || 0} notifications chargées`);
+    }
     setLoading(false);
   };
 
   useEffect(() => {
+    console.log('🚀 Initialisation PaymentsToVerify - Chargement des notifications');
     fetchNotifications();
     // eslint-disable-next-line
   }, []);
 
   const handleValidate = async (notification_id: string) => {
     setProcessing(notification_id);
-    const { error } = await supabase.rpc("validate_payment_notification", {
-      notif_id: notification_id,
-    });
-    if (error) alert("Erreur validation : " + error.message);
-    await fetchNotifications();
-    setProcessing(null);
+    
+    try {
+      console.log('✅ Validation de la notification:', notification_id);
+      
+      // Mise à jour optimiste - retirer immédiatement la notification de la liste
+      const previousNotifications = [...notifications];
+      setNotifications(current => current.filter(n => n.notification_id !== notification_id));
+      
+      // Notification visuelle immédiate
+      toast.success('Paiement confirmé avec succès');
+      
+      const { error } = await supabase.rpc("validate_payment_notification", {
+        notif_id: notification_id,
+      });
+      
+      if (error) {
+        console.error('Erreur lors de la validation:', error);
+        // Restaurer la liste en cas d'erreur
+        setNotifications(previousNotifications);
+        toast.error('Erreur lors de la validation : ' + error.message);
+      } else {
+        console.log('✅ Notification validée avec succès');
+        // Forcer une actualisation pour s'assurer de la cohérence
+        await fetchNotifications();
+      }
+    } catch (err) {
+      console.error('Erreur inattendue lors de la validation:', err);
+      toast.error('Erreur inattendue lors de la validation');
+      await fetchNotifications();
+    } finally {
+      setProcessing(null);
+    }
   };
 
   const handleCancel = async (notification_id: string) => {
     setProcessing(notification_id);
-    const { error } = await supabase.rpc("cancel_payment_notification", {
-      notif_id: notification_id,
-    });
-    if (error) alert("Erreur annulation : " + error.message);
-    await fetchNotifications();
-    setProcessing(null);
+    
+    try {
+      console.log('❌ Annulation de la notification:', notification_id);
+      
+      // Mise à jour optimiste - retirer immédiatement la notification de la liste
+      const previousNotifications = [...notifications];
+      setNotifications(current => current.filter(n => n.notification_id !== notification_id));
+      
+      // Notification visuelle immédiate
+      toast.success('Notification supprimée');
+      
+      const { error } = await supabase.rpc("cancel_payment_notification", {
+        notif_id: notification_id,
+      });
+      
+      if (error) {
+        console.error('Erreur lors de l\'annulation:', error);
+        // Restaurer la liste en cas d'erreur
+        setNotifications(previousNotifications);
+        toast.error('Erreur lors de l\'annulation : ' + error.message);
+      } else {
+        console.log('✅ Notification annulée avec succès');
+        // Forcer une actualisation pour s'assurer de la cohérence
+        await fetchNotifications();
+      }
+    } catch (err) {
+      console.error('Erreur inattendue lors de l\'annulation:', err);
+      toast.error('Erreur inattendue lors de l\'annulation');
+      await fetchNotifications();
+    } finally {
+      setProcessing(null);
+    }
   };
 
   console.log("[ADMIN DEBUG] PaymentsToVerify RENDER");

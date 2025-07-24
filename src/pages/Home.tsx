@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar } from 'lucide-react'
 import { getNews, type NewsPost } from '../lib/supabase'
+import { useRealTimeSubscriptions, useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
 const headerUrl = '/header.png'
 
@@ -23,10 +24,25 @@ export function Home() {
   // Utiliser une référence pour suivre si l'effet a déjà été exécuté
   const effectRan = React.useRef(false);
 
+  // Hook pour l'invalidation du cache
+  const { invalidateCache } = useCacheInvalidation();
+
+  // Callback pour les changements de news
+  const handleNewsChange = React.useCallback(() => {
+    console.log('🔔 Actualités modifiées - Rechargement des données');
+    fetchNewsPosts();
+  }, []);
+
+  // Abonnements temps réel
+  useRealTimeSubscriptions({
+    onNewsChange: handleNewsChange
+  });
+
   useEffect(() => {
     // Ne s'exécute qu'une seule fois en mode développement avec React.StrictMode
     if (effectRan.current === false) {
-      console.log('🏁 Premier rendu - Appel API');
+      console.log('🏁 Premier rendu - Appel API avec invalidation du cache');
+      invalidateCache();
       fetchNewsPosts();
       effectRan.current = true;
     }
@@ -35,7 +51,7 @@ export function Home() {
     return () => {
       console.log('🧹 Nettoyage de l\'effet');
     };
-  }, [])
+  }, [invalidateCache])
 
   const fetchNewsPosts = async () => {
     console.group('🔄 fetchNewsPosts');
@@ -43,6 +59,10 @@ export function Home() {
     setError(null);
     
     try {
+      // Invalider le cache avant de récupérer les données
+      console.log('🗑️ Invalidation du cache avant récupération des news');
+      invalidateCache();
+      
       console.log('1. Appel de getNews()...');
       const data = await getNews();
       
