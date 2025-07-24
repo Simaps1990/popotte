@@ -150,6 +150,19 @@ export const checkDatabaseStructure = async (): Promise<{
  */
 export const getNews = async (limit = 3): Promise<NewsPost[]> => {
   try {
+    console.log('🔍 getNews - Début de la fonction');
+    
+    // Vérifier l'état de la session actuelle
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('🔍 getNews - État de la session:', 
+      sessionData?.session ? 'Authentifié' : 'Non authentifié',
+      'User ID:', sessionData?.session?.user?.id || 'aucun');
+    
+    // Afficher les headers qui seront envoyés
+    console.log('🔍 getNews - Headers Supabase:', supabase.supabaseUrl, 
+      supabase.supabaseKey ? 'Clé présente' : 'Clé absente');
+    
+    console.log('🔍 getNews - Exécution de la requête...');
     const { data, error } = await supabase
       .from('news')
       .select('*')
@@ -158,13 +171,14 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
       .limit(limit);
 
     if (error) {
-      console.error('Erreur lors de la récupération des actualités:', error);
+      console.error('❌ getNews - Erreur lors de la récupération des actualités:', error);
       return [];
     }
 
+    console.log(`✅ getNews - ${data?.length || 0} actualités récupérées:`, data);
     return data || [];
   } catch (error) {
-    console.error('Erreur inattendue lors de la récupération des actualités:', error);
+    console.error('❌ getNews - Erreur inattendue:', error);
     return [];
   }
 };
