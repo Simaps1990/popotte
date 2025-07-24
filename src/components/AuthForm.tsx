@@ -81,22 +81,33 @@ export function AuthForm() {
       }
 
       if (mode === 'login') {
-        console.log('Tentative de connexion...')
-        const { user, error } = await signIn(email, password)
-        if (error) throw error
-        console.log('Connexion réussie, redirection...', user)
-        
-        // Afficher un message de succès (utiliser setError pour les messages de succès aussi)
-        setError('Connexion réussie! Redirection...')
-        
-        // Utiliser une redirection immédiate et directe
-        console.log('🔄 Redirection immédiate vers la page d\'accueil...')
-        
-        // Forcer un rechargement complet pour garantir un état propre
-        setTimeout(() => {
-          console.log('🔄 Exécution de la redirection...')
-          window.location.replace('/')
-        }, 500)
+        try {
+          console.log('🔑 Tentative de connexion...')
+          const { user, error } = await signIn(email, password)
+          
+          if (error) {
+            console.error('❌ Erreur de connexion:', error)
+            throw error
+          }
+          
+          console.log('✅ Connexion réussie, session active:', !!user)
+          setError('Connexion réussie! Redirection en cours...')
+          
+          // FORCER LA REDIRECTION IMMÉDIATE
+          console.log('🔄 REDIRECTION FORCÉE VERS LA PAGE D\'ACCUEIL')
+          
+          // Utiliser navigate et window.location pour garantir la redirection
+          navigate('/')
+          
+          // Forcer un rechargement complet en parallèle
+          window.location.href = '/'
+          
+          // Empêcher l'exécution du reste du code
+          return
+        } catch (loginError) {
+          console.error('❌ Erreur dans le bloc de connexion:', loginError)
+          throw loginError
+        }
       } else {
         console.log('Tentative d\'inscription...')
         const { user, error } = await signUp({ 
