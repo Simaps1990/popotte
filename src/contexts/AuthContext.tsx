@@ -27,14 +27,14 @@ export function useAuth() {
   return context
 }
 
+// Variable globale pour éviter la course condition entre les événements
+let isSessionAlreadyProcessed = false;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [isUserAdmin, setIsUserAdmin] = useState(false)
-  
-  // Flag pour éviter la double mise à jour entre SIGNED_IN et INITIAL_SESSION
-  const [sessionProcessed, setSessionProcessed] = useState(false)
 
   const updateUserData = async (user: any) => {
     console.log('🔄 Mise à jour des données utilisateur pour:', user?.email || 'inconnu')
@@ -120,12 +120,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('🔓 Utilisateur connecté - MISE À JOUR IMMÉDIATE');
             clearTimeout(timeoutId); // Annuler le timeout
             if (session?.user) {
-              console.log(`🔄 Mise à jour des données utilisateur pour: ${session.user.email}`);
-              // MISE À JOUR IMMÉDIATE sans attendre updateUserData
+              // Marquer la session comme traitée AVANT toute mise à jour du state React
+              isSessionAlreadyProcessed = true;
+              console.log('🔐 Flag global de session activé: isSessionAlreadyProcessed = true');
+              
+              // Mise à jour immédiate de l'utilisateur sans attendre le profil
               setUser(session.user);
               setLoading(false);
-              setSessionProcessed(true); // Marquer la session comme traitée
               console.log('✅ État utilisateur mis à jour immédiatement');
+              
               // Mettre à jour le profil en arrière-plan
               updateUserData(session.user);
             } else {
@@ -153,16 +156,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           case 'INITIAL_SESSION':
             console.log('🏁 Session initiale');
             // Éviter la double mise à jour si la session a déjà été traitée
-            if (sessionProcessed) {
+            if (isSessionAlreadyProcessed) {
               console.log('⚠️ Session déjà traitée par SIGNED_IN, ignorer INITIAL_SESSION pour éviter la double recharge');
               setLoading(false);
               return;
             }
             if (session?.user) {
               console.log('🔄 Première connexion via INITIAL_SESSION');
+              // Marquer la session comme traitée
+              isSessionAlreadyProcessed = true;
+              console.log('🔐 Flag global de session activé par INITIAL_SESSION');
+              
               setUser(session.user);
               setLoading(false);
-              setSessionProcessed(true); // Marquer comme traitée
               // Mettre à jour le profil en arrière-plan
               updateUserData(session.user);
             } else {
