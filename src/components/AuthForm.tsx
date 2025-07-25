@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { signIn, signUp } from '../lib/auth'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabaseClient'
 
 type AuthMode = 'login' | 'signup'
 
@@ -82,30 +83,113 @@ export function AuthForm() {
 
       if (mode === 'login') {
         try {
-          console.log('🔑 Tentative de connexion...')
+          console.log('🚀 === DÉBUT PROCESSUS DE CONNEXION AVEC LOGGING EXTENSIF ===')
+          console.log('📧 Email:', email)
+          console.log('🔐 Password présent:', !!password)
+          console.log('⏰ Timestamp:', new Date().toISOString())
+          
+          // Vérifier l'état avant connexion
+          console.log('🔍 État avant connexion:')
+          console.log('  - URL actuelle:', window.location.href)
+          console.log('  - User agent:', navigator.userAgent)
+          console.log('  - Local storage keys:', Object.keys(localStorage))
+          
+          console.log('🔑 Appel de signIn...')
+          const startTime = Date.now()
           const { user, error } = await signIn(email, password)
+          const endTime = Date.now()
+          
+          console.log(`⏱️ signIn terminé en ${endTime - startTime}ms`)
+          console.log('📊 Résultat signIn:', {
+            user: user ? {
+              id: user.id,
+              email: user.email,
+              role: user.role
+            } : null,
+            error: error ? {
+              message: error.message,
+              status: (error as any).status || 'N/A',
+              statusText: (error as any).statusText || 'N/A'
+            } : null
+          })
           
           if (error) {
-            console.error('❌ Erreur de connexion:', error)
+            console.error('❌ ERREUR DE CONNEXION DÉTECTÉE:')
+            console.error('  - Message:', error.message)
+            console.error('  - Code:', (error as any).status)
+            console.error('  - Détails:', error)
             throw error
           }
           
-          console.log('✅ Connexion réussie, session active:', !!user)
-          setError('Connexion réussie! Redirection en cours...')
+          if (!user) {
+            console.error('❌ AUCUN UTILISATEUR RETOURNÉ MALGRÉ ABSENCE D\'ERREUR')
+            throw new Error('Aucun utilisateur retourné par signIn')
+          }
           
-          // FORCER LA REDIRECTION IMMÉDIATE
-          console.log('🔄 REDIRECTION FORCÉE VERS LA PAGE D\'ACCUEIL')
+          console.log('✅ CONNEXION RÉUSSIE - ANALYSE DE L\'UTILISATEUR:')
+          console.log('  - ID utilisateur:', user.id)
+          console.log('  - Email:', user.email)
+          console.log('  - Rôle:', user.role)
+          console.log('  - Métadonnées:', user.user_metadata)
           
-          // Utiliser navigate et window.location pour garantir la redirection
+          // Vérifier l'état de la session
+          console.log('🔍 Vérification session après connexion...')
+          const { data: sessionData } = await supabase.auth.getSession()
+          console.log('📊 Session actuelle:', {
+            session: sessionData.session ? {
+              user_id: sessionData.session.user.id,
+              expires_at: sessionData.session.expires_at,
+              access_token: sessionData.session.access_token ? 'présent' : 'absent'
+            } : null
+          })
+          
+          setError('✅ Connexion réussie! Redirection en cours...')
+          
+          console.log('🔄 === DÉBUT PROCESSUS DE REDIRECTION ===')
+          console.log('  - État loading avant redirection:', loading)
+          console.log('  - URL cible: /')
+          
+          // Attendre un court délai pour que la session se stabilise
+          console.log('⏳ Attente 500ms pour stabilisation session...')
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          // Vérifier à nouveau la session
+          const { data: sessionData2 } = await supabase.auth.getSession()
+          console.log('📊 Session après attente:', {
+            session: sessionData2.session ? 'active' : 'inactive',
+            user_id: sessionData2.session?.user?.id
+          })
+          
+          console.log('🚀 REDIRECTION MULTIPLE POUR GARANTIR LE SUCCÈS:')
+          
+          // Méthode 1: React Router navigate
+          console.log('  1. Tentative navigate("/")')
           navigate('/')
           
-          // Forcer un rechargement complet en parallèle
-          window.location.href = '/'
+          // Méthode 2: window.location.href (après délai)
+          console.log('  2. Programmation window.location.href après 100ms')
+          setTimeout(() => {
+            console.log('  2. Exécution window.location.href = "/"')
+            window.location.href = '/'
+          }, 100)
           
-          // Empêcher l'exécution du reste du code
+          // Méthode 3: window.location.replace (après délai plus long)
+          console.log('  3. Programmation window.location.replace après 200ms')
+          setTimeout(() => {
+            console.log('  3. Exécution window.location.replace("/")')
+            window.location.replace('/')
+          }, 200)
+          
+          console.log('🏁 === FIN PROCESSUS DE CONNEXION ===')
           return
+          
         } catch (loginError) {
-          console.error('❌ Erreur dans le bloc de connexion:', loginError)
+          console.error('💥 === ERREUR CRITIQUE DANS LE PROCESSUS DE CONNEXION ===')
+          console.error('  - Type:', typeof loginError)
+          console.error('  - Message:', loginError instanceof Error ? loginError.message : 'Erreur inconnue')
+          console.error('  - Stack:', loginError instanceof Error ? loginError.stack : 'Pas de stack')
+          console.error('  - Objet complet:', loginError)
+          console.error('=== FIN ERREUR CRITIQUE ===')
           throw loginError
         }
       } else {
