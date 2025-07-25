@@ -96,7 +96,37 @@ export function AuthForm() {
           
           console.log('🔑 Appel de signIn...')
           const startTime = Date.now()
-          const { user, error } = await signIn(email, password)
+          
+          // TIMEOUT D'URGENCE - REDIRECTION FORCÉE SI SIGNIN BLOQUE
+          console.log('🚑 Démarrage timeout d\'urgence de 5s pour redirection forcée')
+          const emergencyRedirect = setTimeout(() => {
+            console.log('🚨 TIMEOUT SIGNIN - REDIRECTION D\'URGENCE ACTIVÉE !')
+            console.log('🚨 signIn bloqué depuis 5s, redirection brutale...')
+            
+            // Vérifier si Supabase dit qu'on est connecté
+            supabase.auth.getSession().then(({ data }: { data: any }) => {
+              console.log('🚨 Session d\'urgence:', data.session ? 'active' : 'inactive')
+              if (data.session) {
+                console.log('🚨 SESSION ACTIVE DÉTECTÉE - REDIRECTION BRUTALE IMMÉDIATE')
+                window.location.href = '/'
+              } else {
+                console.log('🚨 Pas de session active, mais redirection quand même...')
+                // Redirection de sécurité même sans session
+                setTimeout(() => window.location.href = '/', 1000)
+              }
+            })
+          }, 5000)
+          
+          let signInResult
+          try {
+            signInResult = await signIn(email, password)
+            clearTimeout(emergencyRedirect) // Annuler le timeout si signIn répond
+          } catch (signInError) {
+            clearTimeout(emergencyRedirect)
+            throw signInError
+          }
+          
+          const { user, error } = signInResult
           const endTime = Date.now()
           
           console.log(`⏱️ signIn terminé en ${endTime - startTime}ms`)
