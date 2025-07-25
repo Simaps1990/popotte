@@ -103,18 +103,32 @@ export function AuthForm() {
             console.log('🚨 TIMEOUT SIGNIN - REDIRECTION D\'URGENCE ACTIVÉE !')
             console.log('🚨 signIn bloqué depuis 5s, redirection brutale...')
             
-            // Vérifier si Supabase dit qu'on est connecté
-            supabase.auth.getSession().then(({ data }: { data: any }) => {
-              console.log('🚨 Session d\'urgence:', data.session ? 'active' : 'inactive')
-              if (data.session) {
-                console.log('🚨 SESSION ACTIVE DÉTECTÉE - REDIRECTION BRUTALE IMMÉDIATE')
-                window.location.href = '/'
-              } else {
-                console.log('🚨 Pas de session active, mais redirection quand même...')
-                // Redirection de sécurité même sans session
-                setTimeout(() => window.location.href = '/', 1000)
-              }
-            })
+            // REDIRECTION BRUTALE IMMÉDIATE SANS VÉRIFICATION
+            console.log('🔥 REDIRECTION INCONDITIONNELLE - AUCUNE VÉRIFICATION !')
+            console.log('🔥 window.location.href = "/" FORCÉ !')
+            
+            // Méthode 1: Redirection immédiate
+            window.location.href = '/'
+            
+            // Méthode 2: Redirection de sécurité après 100ms
+            setTimeout(() => {
+              console.log('🔥 REDIRECTION SÉCURITÉ #2: window.location.replace("/")')
+              window.location.replace('/')
+            }, 100)
+            
+            // Méthode 3: Redirection de sécurité après 500ms
+            setTimeout(() => {
+              console.log('🔥 REDIRECTION SÉCURITÉ #3: window.location.assign("/")')
+              window.location.assign('/')
+            }, 500)
+            
+            // Méthode 4: Redirection ultime après 1s
+            setTimeout(() => {
+              console.log('🔥 REDIRECTION ULTIME: document.location = "/"')
+              document.location.href = '/'
+            }, 1000)
+            
+            console.log('🔥 TOUTES LES MÉTHODES DE REDIRECTION LANCÉES !')
           }, 5000)
           
           let signInResult
