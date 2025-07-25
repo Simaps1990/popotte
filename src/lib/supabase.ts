@@ -185,7 +185,7 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
       title: 'scqc',
       content: 'wx ',
       excerpt: 'Actualité de test',
-      image_url: 'https://xtjzuqyvyzkzchwtjpeo.supabase.co/storage/v1/object/public/public/news/1752351099026_434.png',
+      image_url: null,
       published: true,
       created_at: '2025-07-12T20:11:39.386Z',
       updated_at: '2025-07-12T20:11:57.559Z',
