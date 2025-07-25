@@ -345,7 +345,7 @@ export const createOrder = async (orderData: {
       })) || [];
       
       const { data: debtData, error: debtError } = await supabase
-        .from('user_debts')
+        .from('debts')
         .insert({
           user_id: orderData.user_id,
           order_id: order.id,
@@ -370,7 +370,7 @@ export const createOrder = async (orderData: {
         if (debtData) {
           try {
             const broadcastResult = await supabase
-              .from('user_debts')
+              .from('debts')
               .update({ updated_at: new Date().toISOString() })
               .eq('id', debtData.id);
               
