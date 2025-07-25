@@ -175,7 +175,8 @@ function App() {
   }, []);
   
   return (
-    <React.StrictMode>
+    // Suppression de StrictMode qui cause le double montage/chargement en développement
+    // <React.StrictMode>
       <AuthProvider>
         <Toaster position="top-center" reverseOrder={false} />
         <VisibilityHandler />
@@ -214,7 +215,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
-    </React.StrictMode>
+    // </React.StrictMode>
   );
 }
 
