@@ -148,8 +148,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
           case 'INITIAL_SESSION':
             console.log('🏁 Session initiale');
+            // Éviter la double mise à jour si l'utilisateur est déjà connecté
+            if (user) {
+              console.log('⚠️ Utilisateur déjà connecté, ignorer INITIAL_SESSION pour éviter la double recharge');
+              setLoading(false);
+              return;
+            }
             if (session?.user) {
-              await updateUserData(session.user);
+              console.log('🔄 Première connexion via INITIAL_SESSION');
+              setUser(session.user);
+              setLoading(false);
+              // Mettre à jour le profil en arrière-plan
+              updateUserData(session.user);
             } else {
               setLoading(false);
             }
