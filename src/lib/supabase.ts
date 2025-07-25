@@ -162,66 +162,15 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
       key: supabase.supabaseKey ? 'présente' : 'absente'
     });
     
-    // Stratégie ultra-rapide : timeout de 2s seulement
-    const queryPromise = supabase
+    // FORCER L'ATTENTE DE LA VRAIE BASE DE DONNÉES - PAS DE TIMEOUT
+    console.log('🎯 getNews - ATTENTE FORCÉE DE LA VRAIE BASE DE DONNÉES...');
+    
+    const { data, error, count } = await supabase
       .from('news')
-      .select('id, title, content, excerpt, published, created_at, author_id')
+      .select('*')
       .eq('published', true)
       .order('created_at', { ascending: false })
       .limit(limit);
-    
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout requête directe après 2s')), 2000)
-    );
-    
-    console.log('🚀 getNews - Lancement requête ULTRA-RAPIDE avec timeout de 2s...');
-    let data, error, count;
-    try {
-      const result = await Promise.race([queryPromise, timeoutPromise]) as any;
-      data = result.data;
-      error = result.error;
-      count = result.count;
-    } catch (timeoutError) {
-      console.log('⚡ getNews - Timeout détecté, passage immédiat au fallback');
-      // Créer immédiatement des données de test sans attendre
-      const testData = [
-        {
-          id: 'instant-' + Date.now(),
-          title: '🎉 Bienvenue sur Popotte !',
-          content: 'Votre application fonctionne parfaitement. Le système de commandes, de gestion des dettes et toutes les fonctionnalités sont opérationnelles.',
-          excerpt: 'Application opérationnelle',
-          image_url: null,
-          published: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          author_id: 'f21e582c-7414-4905-9eef-0fe209ef1692'
-        },
-        {
-          id: 'instant-' + (Date.now() + 1),
-          title: '📦 Commandes disponibles',
-          content: 'Découvrez notre sélection d\'alcools, de nourriture et de goodies. Passez vos commandes facilement !',
-          excerpt: 'Système de commandes actif',
-          image_url: null,
-          published: true,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          updated_at: new Date(Date.now() - 3600000).toISOString(),
-          author_id: 'f21e582c-7414-4905-9eef-0fe209ef1692'
-        },
-        {
-          id: 'instant-' + (Date.now() + 2),
-          title: '💳 Gestion des dettes',
-          content: 'Consultez vos dettes en temps réel et effectuez vos paiements facilement.',
-          excerpt: 'Paiements et dettes',
-          image_url: null,
-          published: true,
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-          updated_at: new Date(Date.now() - 7200000).toISOString(),
-          author_id: 'f21e582c-7414-4905-9eef-0fe209ef1692'
-        }
-      ];
-      console.log('✅ getNews - Retour données de test instantanées (3 articles)');
-      return testData;
-    }
     
     const endTime = Date.now();
     console.log(`⏱️ getNews - Requête directe terminée en ${endTime - startTime}ms`);
