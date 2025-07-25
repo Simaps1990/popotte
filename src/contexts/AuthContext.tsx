@@ -83,53 +83,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
     
-    const checkSession = async () => {
-      try {
-        console.log('🔍 Vérification de la session...')
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('❌ Erreur lors de la récupération de la session:', sessionError)
-          if (isMounted) {
-            setLoading(false)
-          }
-          return
-        }
-        
-        console.log('📝 Session récupérée:', session ? 'utilisateur connecté' : 'pas de session')
-        
-        if (session?.user && isMounted) {
-          console.log('👤 Mise à jour des données utilisateur...')
-          await updateUserData(session.user)
-        } else if (isMounted) {
-          console.log('👤 Aucune session active - Mode anonyme')
-          setUser(null)
-          setProfile(null)
-          setIsUserAdmin(false)
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Erreur lors de la vérification de la session:', error)
-        if (isMounted) {
-          setUser(null)
-          setProfile(null)
-          setIsUserAdmin(false)
-          setLoading(false)
-        }
-      }
-    }
+    console.log('🚀 INITIALISATION AUTHCONTEXT - LOGIQUE SIMPLIFIÉE')
+    
+    // PAS DE checkSession() initial - on fait confiance à onAuthStateChange
+    // Juste initialiser en mode loading
+    console.log('🔄 État initial: loading=true, attente des événements Supabase')
 
-    // Vérifier la session active au chargement avec un timeout de sécurité
+    // Timeout de sécurité pour éviter le loading infini
     const timeoutId = setTimeout(() => {
       if (isMounted && loading) {
         console.log('⏱️ Délai de chargement dépassé - Intervention forcée')
+        console.log('🔄 Passage en mode non-connecté par défaut')
+        setUser(null)
+        setProfile(null)
+        setIsUserAdmin(false)
         setLoading(false)
       }
-    }, 5000) // 5 secondes maximum
-    
-    checkSession().finally(() => {
-      clearTimeout(timeoutId)
-    })
+    }, 2000) // 2 secondes maximum
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -144,10 +114,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Gérer les différents événements d'authentification
         switch (event) {
           case 'SIGNED_IN':
-            console.log('🔓 Utilisateur connecté');
+            console.log('🔓 Utilisateur connecté - MISE À JOUR IMMÉDIATE');
+            clearTimeout(timeoutId); // Annuler le timeout
             if (session?.user) {
               console.log(`🔄 Mise à jour des données utilisateur pour: ${session.user.email}`);
-              await updateUserData(session.user);
+              // MISE À JOUR IMMÉDIATE sans attendre updateUserData
+              setUser(session.user);
+              setLoading(false);
+              console.log('✅ État utilisateur mis à jour immédiatement');
+              // Puis mettre à jour le profil en arrière-plan
+              updateUserData(session.user);
             } else {
               setLoading(false);
             }
