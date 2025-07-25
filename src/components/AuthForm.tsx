@@ -124,12 +124,15 @@ export function AuthForm() {
         }
         
         console.log('Inscription réussie, utilisateur:', user)
-        // Attendre un court instant avant de rediriger
+        setError('Connexion réussie! Redirection en cours...')
+        
+        // Attendre un peu pour que la session soit bien établie
         console.log('Attente de 1 seconde pour stabiliser la session...')
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // Utiliser navigate au lieu de window.location.href pour une transition plus fluide
-        navigate('/')
+        // SOLUTION RADICALE: Forcer le rechargement de la page
+        console.log('🔄 Redirection forcée avec rechargement...')
+        window.location.href = '/'
       }
     } catch (error) {
       console.error('Erreur lors de la soumission:', error)
