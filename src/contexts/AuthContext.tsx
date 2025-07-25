@@ -88,6 +88,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     console.log('🚀 INITIALISATION AUTHCONTEXT - LOGIQUE SIMPLIFIÉE')
     
+    // Vérifier immédiatement si l'utilisateur est déjà connecté
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user && isMounted) {
+          console.log('🔍 Session existante détectée au chargement initial')
+          setUser(session.user)
+          setLoading(false)
+          // Ne pas appeler updateUserData ici pour éviter le double chargement
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de la session existante:', error)
+      }
+    }
+    
+    // Vérifier la session existante immédiatement
+    checkExistingSession()
+    
     // PAS DE checkSession() initial - on fait confiance à onAuthStateChange
     // Juste initialiser en mode loading
     console.log('🔄 État initial: loading=true, attente des événements Supabase')
@@ -124,13 +142,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isSessionAlreadyProcessed = true;
               console.log('🔐 Flag global de session activé: isSessionAlreadyProcessed = true');
               
-              // Mise à jour immédiate de l'utilisateur sans attendre le profil
-              setUser(session.user);
-              setLoading(false);
-              console.log('✅ État utilisateur mis à jour immédiatement');
-              
-              // Mettre à jour le profil en arrière-plan
-              updateUserData(session.user);
+              // Vérifier si l'utilisateur est déjà défini pour éviter les doubles chargements
+              if (user?.id === session.user.id) {
+                console.log('⚠️ Utilisateur déjà défini, mise à jour légère uniquement');
+                setLoading(false);
+              } else {
+                // Mise à jour immédiate de l'utilisateur sans attendre le profil
+                setUser(session.user);
+                setLoading(false);
+                console.log('✅ État utilisateur mis à jour immédiatement');
+                
+                // Mettre à jour le profil en arrière-plan
+                updateUserData(session.user);
+              }
             } else {
               setLoading(false);
             }
@@ -167,10 +191,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isSessionAlreadyProcessed = true;
               console.log('🔐 Flag global de session activé par INITIAL_SESSION');
               
-              setUser(session.user);
-              setLoading(false);
-              // Mettre à jour le profil en arrière-plan
-              updateUserData(session.user);
+              // Vérifier si l'utilisateur est déjà défini pour éviter les doubles chargements
+              if (user?.id === session.user.id) {
+                console.log('⚠️ Utilisateur déjà défini dans INITIAL_SESSION, éviter la mise à jour');
+                setLoading(false);
+              } else {
+                setUser(session.user);
+                setLoading(false);
+                // Mettre à jour le profil en arrière-plan, mais avec un délai pour éviter les doubles chargements
+                setTimeout(() => {
+                  if (isMounted) {
+                    updateUserData(session.user);
+                  }
+                }, 500);
+              }
             } else {
               setLoading(false);
             }

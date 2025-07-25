@@ -149,9 +149,29 @@ export const useRealTimeSubscriptions = ({
 /**
  * Hook pour forcer l'invalidation du cache et le rechargement des données
  * À utiliser lors des changements de page/navigation
+ * Inclut un mécanisme de debounce pour éviter les invalidations multiples
  */
 export const useCacheInvalidation = () => {
+  // Référence pour suivre si une invalidation est en cours
+  const isInvalidatingRef = useRef(false);
+  // Référence pour suivre le dernier timestamp d'invalidation
+  const lastInvalidationRef = useRef(0);
+  // Délai minimum entre deux invalidations (en ms)
+  const DEBOUNCE_DELAY = 2000; // 2 secondes
+
   const invalidateCache = () => {
+    const now = Date.now();
+    
+    // Si une invalidation est déjà en cours ou si la dernière invalidation est trop récente, on ignore
+    if (isInvalidatingRef.current || (now - lastInvalidationRef.current < DEBOUNCE_DELAY)) {
+      console.log('🔄 Invalidation du cache ignorée (déjà en cours ou trop récente)');
+      return;
+    }
+    
+    // Marquer le début de l'invalidation
+    isInvalidatingRef.current = true;
+    lastInvalidationRef.current = now;
+    
     console.log('🗑️ Invalidation du cache local');
     
     // Vider le cache du navigateur pour les données de l'application
@@ -174,6 +194,11 @@ export const useCacheInvalidation = () => {
     keysToRemove.forEach(key => localStorage.removeItem(key));
     
     console.log('✅ Cache invalidé');
+    
+    // Réinitialiser le flag après un court délai
+    setTimeout(() => {
+      isInvalidatingRef.current = false;
+    }, 100);
   };
 
   return { invalidateCache };

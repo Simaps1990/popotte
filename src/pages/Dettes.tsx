@@ -88,8 +88,9 @@ export function Dettes() {
   const [processingPayments, setProcessingPayments] = useState<Record<string, boolean>>({});
   const [pendingNotifications, setPendingNotifications] = useState<PaymentNotification[]>([]);
 
-  // Hook pour l'invalidation du cache
+  // Hook pour l'invalidation du cache - avec référence pour éviter les appels multiples
   const { invalidateCache } = useCacheInvalidation();
+  const cacheInvalidatedRef = React.useRef(false);
 
   // Callbacks pour les abonnements temps réel
   const handlePaymentNotificationChange = React.useCallback(() => {
@@ -144,21 +145,24 @@ export function Dettes() {
     };
     
     const loadData = async () => {
-      if (!user?.id) return;
+      setLoading(true);
+      setError(null);
       
-      try {
-        // Invalider le cache avant de charger les données
+      // Invalider le cache avant de charger les données - UNE SEULE FOIS
+      if (!cacheInvalidatedRef.current) {
         console.log('🗑️ Invalidation du cache avant chargement des dettes');
         invalidateCache();
-        
-        // On lance la récupération, mais on attend les deux pour mapper
-        if (isMounted) {
-          await fetchAllDebtsAndOrders();
-          await fetchNotifications();
-          console.log('✅ Dettes et commandes chargées avec succès');
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors du chargement des dettes et commandes:', error);
+        cacheInvalidatedRef.current = true;
+      }
+      
+      try {
+        await fetchAllDebtsAndOrders();
+        await fetchNotifications();
+        setLoading(false);
+      } catch (err) {
+        setError('Erreur lors du chargement des données');
+        setLoading(false);
+        console.error('Erreur dans loadData:', err);
       }
     };
 
@@ -198,92 +202,61 @@ export function Dettes() {
   }, [user?.id]);
 
   // Fonction pour récupérer les notifications de paiement en attente
-const fetchNotifications = async () => {
-  if (!user?.id) return;
-  const { data, error } = await supabase
-    .from('payment_notifications')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'pending')
-    .order('notified_at', { ascending: false });
-  if (!error && data) setPendingNotifications(data);
-};
+  const fetchNotifications = async () => {
+    if (!user?.id) return;
 
-useEffect(() => {
-  if (user?.id) {
-    // Invalider le cache avant de charger les notifications
-    invalidateCache();
-    fetchNotifications();
-  }
-}, [user?.id, invalidateCache]);
+    try {
+      // Ne pas invalider le cache à chaque appel
+      const { data, error } = await supabase
+        .from('payment_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .order('notified_at', { ascending: false });
+
+      if (error) throw error;
+      setPendingNotifications(data || []);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des notifications:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id]);
 
   // Fonction pour récupérer dettes ET commandes, puis faire le mapping
   const fetchAllDebtsAndOrders = async () => {
     if (!user?.id) return;
-    setLoading(true);
+
+    console.log('[DEBUG fetchAllDebtsAndOrders] user.id =', user.id);
+    
     try {
-      // 1. Récupérer dettes (via fetchDebts logique)
-      let debtsData: UserDebt[] = [];
-      try {
-        console.log('[DEBUG fetchAllDebtsAndOrders] user.id =', user.id);
-        // FORCER LA FALLBACK DIRECTE
-        const { data: debtsFallback, error: debtsError } = await supabase
-          .from('debts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        console.log('[DEBUG fetchAllDebtsAndOrders] debtsFallback =', debtsFallback, 'debtsError =', debtsError);
-        debtsData = debtsFallback || [];
-        // Ancien code RPC commenté pour debug
-        // const { data: debtsFromRPC, error: rpcError } = await supabase
-        //   .rpc('get_user_debts', { user_id_param: user.id });
-        // if (rpcError) {
-        //   // fallback
-        //   const { data: debtsFallback, error: debtsError } = await supabase
-        //     .from('debts')
-        //     .select('*')
-        //     .eq('user_id', user.id)
-        //     .order('created_at', { ascending: false });
-        //   if (debtsError) throw debtsError;
-        //   debtsData = debtsFallback || [];
-        // } else {
-        //   debtsData = Array.isArray(debtsFromRPC)
-        //     ? debtsFromRPC.map(debt => ({
-        //         ...debt,
-        //         amount: typeof debt.amount === 'string' ? parseFloat(debt.amount) : debt.amount
-        //       }))
-        //     : [];
-        // }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des dettes:', error);
-        debtsData = [];
-      }
+      // Récupérer les dettes
+      const { data: debtsData, error: debtsError } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      // 2. Récupérer commandes
-      let ordersData: Order[] = [];
-      try {
-        ordersData = await orderService.getUserOrders(user.id);
-      } catch (error) {
-        console.error('Erreur lors de la récupération des commandes:', error);
-        ordersData = [];
-      }
-
-      // 3. Mapping dettes enrichies
-      const ordersMap = Object.fromEntries((ordersData || []).map(order => [order.id, order]));
-      const debtsWithOrders = (debtsData || []).map(debt => ({
-        ...debt,
-        order: debt.order_id ? ordersMap[debt.order_id] || null : null
-      }));
-      console.log('[DEBUG Dettes enrichies]', debtsWithOrders);
-      setDebts(debtsWithOrders);
-      setOrders(ordersData || []);
-      setError(null);
+      console.log('[DEBUG fetchAllDebtsAndOrders] debtsFallback =', debtsData || [], 'debtsError =', debtsError);
+      
+      // Récupérer les commandes
+      console.log('Récupération des commandes pour l\'utilisateur:', user.id);
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (id, order_id, product_id, quantity, unit_price, total_price, notes, products (name))
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      // Traitement des données si nécessaire
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
-      setDebts([]);
-      setOrders([]);
-    } finally {
-      setLoading(false);
+      console.error('Erreur lors du chargement des dettes et commandes:', error);
     }
   };
 
@@ -841,4 +814,5 @@ return (
     </main>
     {/* Le footer global est géré par le composant BottomNavigation */}
   </div>
-);}
+);
+}
