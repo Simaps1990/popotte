@@ -44,28 +44,37 @@ export const userService = {
   async getAllUsers(): Promise<UserProfile[]> {
     try {
       // 1. Récupérer tous les utilisateurs actifs en une seule requête optimisée
+      // Augmenter la limite et simplifier les filtres pour s'assurer de récupérer tous les utilisateurs
       const { data: users, error: usersError } = await supabase
         .from('profiles')
         .select('*')
         .not('username', 'ilike', 'SUPPRIME_%')
         .not('email', 'ilike', 'supprime_%')
         .order('username', { ascending: true })
-        .limit(500); // Limite raisonnable
+        .limit(1000); // Augmentation de la limite pour s'assurer de récupérer tous les utilisateurs
 
       if (usersError) {
+        console.error('Erreur lors de la récupération des utilisateurs:', usersError);
         return [];
       }
 
       if (!users || users.length === 0) {
+        console.log('Aucun utilisateur trouvé');
         return [];
       }
 
-      // Filtrage côté client optimisé (fallback)
+      console.log(`${users.length} utilisateurs récupérés de la base de données`);
+
+      // Filtrage côté client moins restrictif
       const activeUsers = users.filter((user: UserProfile) => {
-        return user.username && user.email && 
-               !user.username.toUpperCase().includes('SUPPRIME_') && 
-               !user.email.toLowerCase().includes('supprime_');
+        // Vérifier que l'utilisateur a un nom d'utilisateur et un email valides
+        // et qu'il n'est pas marqué comme supprimé
+        return user && user.id && 
+               !(user.username?.toUpperCase().includes('SUPPRIME_')) && 
+               !(user.email?.toLowerCase().includes('supprime_'));
       });
+
+      console.log(`${activeUsers.length} utilisateurs actifs après filtrage`);
 
       // 2. Récupérer les dettes impayées en parallèle
       const [debtsResult] = await Promise.all([
@@ -82,13 +91,17 @@ export const userService = {
         return activeUsers.map((user: UserProfile) => ({ ...user, debt: 0 }));
       }
       
+      console.log(`${allDebts?.length || 0} dettes impayées récupérées`);
+      
       // 3. Calculer les soldes de dettes par utilisateur (optimisé)
       const debtsByUser = new Map<string, number>();
       
       if (allDebts?.length) {
         allDebts.forEach((debt: any) => {
-          const currentDebt = debtsByUser.get(debt.user_id) || 0;
-          debtsByUser.set(debt.user_id, currentDebt + (debt.amount || 0));
+          if (debt && debt.user_id) { // Vérification supplémentaire
+            const currentDebt = debtsByUser.get(debt.user_id) || 0;
+            debtsByUser.set(debt.user_id, currentDebt + (debt.amount || 0));
+          }
         });
       }
       
@@ -181,16 +194,47 @@ export const userService = {
     user_id: string;
     amount: number;
     description?: string;
-    created_by: string; // On garde ce paramètre pour la compatibilité mais on ne l'utilise pas dans l'insertion
+    created_by: string;
   }): Promise<UserDebt | null> {
     try {
+      // Validation des données
+      if (!debtData.user_id) {
+        console.error('Erreur: ID utilisateur manquant');
+        return null;
+      }
+
+      if (isNaN(debtData.amount) || debtData.amount <= 0) {
+        console.error('Erreur: Montant invalide', debtData.amount);
+        return null;
+      }
+
+      // Vérifier que l'utilisateur existe
+      const { data: userExists, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', debtData.user_id)
+        .single();
+
+      if (userError || !userExists) {
+        console.error('Erreur: Utilisateur introuvable', debtData.user_id, userError);
+        return null;
+      }
+
+      const now = new Date().toISOString();
+
+      // Insertion avec tous les champs nécessaires
       const { data, error } = await supabase
         .from('debts')
         .insert([{
           user_id: debtData.user_id,
           amount: debtData.amount,
-          description: debtData.description || 'Dette',
-          status: 'unpaid'
+          description: debtData.description || 'Dette manuelle',
+          status: 'unpaid',
+          created_by: debtData.created_by,
+          created_at: now,
+          updated_at: now,
+          // Pas de order_id pour une dette manuelle
+          items: [] // Tableau vide pour les dettes manuelles
         }])
         .select('*')
         .single();
@@ -200,6 +244,8 @@ export const userService = {
         return null;
       }
 
+      console.log('Dette ajoutée avec succès:', data);
+
       // Convertir la réponse au format UserDebt
       return {
         id: data.id || '',
@@ -207,8 +253,9 @@ export const userService = {
         amount: data.amount,
         description: data.description || '',
         created_at: data.created_at,
-        created_by: data.created_by,
-        status: data.status || 'unpaid'
+        created_by: data.created_by || debtData.created_by,
+        status: data.status || 'unpaid',
+        order_id: data.order_id
       };
     } catch (error) {
       console.error('Erreur inattendue lors de l\'ajout de la dette:', error);

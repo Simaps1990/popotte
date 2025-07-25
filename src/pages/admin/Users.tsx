@@ -23,6 +23,8 @@ const Users: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'hasDebt' | 'noDebt'>('all');
+  const [newDebt, setNewDebt] = useState<{ amount: number; description: string }>({ amount: 0, description: '' });
+  const [addingDebt, setAddingDebt] = useState(false);
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
@@ -32,8 +34,15 @@ const Users: React.FC = () => {
       // Vider la liste actuelle pour éviter les problèmes de mise à jour
       setUsers([]);
       
+      console.log('Récupération de tous les utilisateurs...');
       const users = await userService.getAllUsers();
       console.log('Utilisateurs récupérés:', users.length);
+      
+      if (users.length === 0) {
+        console.warn('Aucun utilisateur récupéré, vérifiez la fonction getAllUsers');
+        setError('Aucun utilisateur trouvé. Veuillez réessayer ou contacter le support.');
+        return;
+      }
       
       // Si un ID d'utilisateur est fourni à exclure (cas de suppression), on le filtre immédiatement
       const filteredUsers = excludeUserId 
@@ -42,13 +51,35 @@ const Users: React.FC = () => {
       
       console.log(`Utilisateurs après filtrage: ${filteredUsers.length} ${excludeUserId ? `(exclusion de ${excludeUserId})` : ''}`);
       
-      const usersWithDebtsAndOrders = await Promise.all(filteredUsers.map(async (user) => {
-        const debtHistory = await userService.getUserDebtHistory(user.id);
-        const orders = await userService.getUserOrders(user.id);
-        return { ...user, debtHistory, orders };
-      }));
+      // Optimisation : traitement par lots pour éviter de surcharger l'API
+      const batchSize = 10;
+      const userBatches = [];
       
-      setUsers(usersWithDebtsAndOrders);
+      for (let i = 0; i < filteredUsers.length; i += batchSize) {
+        userBatches.push(filteredUsers.slice(i, i + batchSize));
+      }
+      
+      let processedUsers: UserProfile[] = [];
+      
+      for (const batch of userBatches) {
+        const batchResults = await Promise.all(batch.map(async (user) => {
+          try {
+            const debtHistory = await userService.getUserDebtHistory(user.id);
+            const orders = await userService.getUserOrders(user.id);
+            return { ...user, debtHistory, orders };
+          } catch (error) {
+            console.error(`Erreur lors du chargement des données pour l'utilisateur ${user.id}:`, error);
+            // Retourner l'utilisateur sans données supplémentaires en cas d'erreur
+            return { ...user, debtHistory: [], orders: [] };
+          }
+        }));
+        
+        processedUsers = [...processedUsers, ...batchResults];
+        // Mise à jour progressive de l'interface utilisateur
+        setUsers(currentUsers => [...currentUsers, ...batchResults]);
+      }
+      
+      console.log(`Traitement terminé pour ${processedUsers.length} utilisateurs`);
     } catch (err) {
       console.error('Erreur lors du chargement des utilisateurs:', err);
       setError('Erreur lors du chargement des utilisateurs');
@@ -271,7 +302,8 @@ const Users: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
@@ -279,6 +311,53 @@ const Users: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleAddDebt = async () => {
+    if (!selectedUser) return;
+    
+    // Validation des données
+    if (isNaN(newDebt.amount) || newDebt.amount <= 0) {
+      alert('Veuillez entrer un montant valide supérieur à 0');
+      return;
+    }
+    
+    if (!newDebt.description.trim()) {
+      alert('Veuillez entrer une description pour la dette');
+      return;
+    }
+    
+    try {
+      setAddingDebt(true);
+      
+      // Ajout de la dette via le service utilisateur
+      const result = await userService.addUserDebt({
+        user_id: selectedUser.id,
+        amount: newDebt.amount,
+        description: newDebt.description,
+        created_by: currentUser?.id || ''
+      });
+      
+      if (result) {
+        console.log('Dette ajoutée avec succès:', result);
+        
+        // Réinitialiser le formulaire
+        setNewDebt({ amount: 0, description: '' });
+        
+        // Rafraîchir les détails de l'utilisateur
+        await fetchUserDetails(selectedUser.id);
+        
+        // Notification de succès
+        alert(`Dette de ${newDebt.amount} € ajoutée avec succès à ${selectedUser.username}`);
+      } else {
+        alert('Erreur lors de l\'ajout de la dette. Veuillez réessayer.');
+      }
+    } catch (err) {
+      console.error('Erreur lors de l\'ajout de la dette:', err);
+      alert('Une erreur est survenue lors de l\'ajout de la dette.');
+    } finally {
+      setAddingDebt(false);
+    }
   };
 
   const handleDeleteDebt = async (debtId: string) => {
@@ -504,9 +583,121 @@ const Users: React.FC = () => {
                     </button>
                   </div>
                 </div>
+                
+                {/* Formulaire d'ajout de dette manuelle */}
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="font-medium mb-3">Ajouter une dette manuelle</h4>
+                  <div className="bg-white shadow rounded-lg p-4">
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="debtAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                          Montant (€)
+                        </label>
+                        <input
+                          type="number"
+                          id="debtAmount"
+                          min="0.01"
+                          step="0.01"
+                          value={newDebt.amount}
+                          onChange={(e) => setNewDebt({ ...newDebt, amount: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="0.00"
+                          disabled={addingDebt}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="debtDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <input
+                          type="text"
+                          id="debtDescription"
+                          value={newDebt.description}
+                          onChange={(e) => setNewDebt({ ...newDebt, description: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="Description de la dette"
+                          disabled={addingDebt}
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddDebt}
+                        disabled={addingDebt || newDebt.amount <= 0 || !newDebt.description.trim()}
+                        className={`w-full py-2 px-4 rounded-md text-white font-medium ${addingDebt || newDebt.amount <= 0 || !newDebt.description.trim() ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} transition-colors`}
+                      >
+                        {addingDebt ? (
+                          <span className="flex items-center justify-center">
+                            <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                            Ajout en cours...
+                          </span>
+                        ) : (
+                          'Ajouter la dette'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Section d'historique des dettes manuelles */}
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="font-medium mb-3">Historique des dettes manuelles</h4>
+                  <div className="bg-white shadow rounded-lg overflow-hidden">
+                    {loading.userDetails ? (
+                      <div className="p-4 flex justify-center">
+                        <Loader2 className="animate-spin h-6 w-6 text-primary-500" />
+                      </div>
+                    ) : debtHistory.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {debtHistory.map((debt) => (
+                              <tr key={debt.id}>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDate(debt.created_at || '')}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{debt.description}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-red-600">{(debt.amount || 0).toFixed(2)} €</td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    debt.status === 'unpaid' ? 'bg-red-100 text-red-800' : 
+                                    debt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                    'bg-green-100 text-green-800'
+                                  }`}>
+                                    {debt.status === 'unpaid' ? 'Non payée' : 
+                                     debt.status === 'pending' ? 'En attente' : 
+                                     'Payée'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                  {debt.status === 'unpaid' && (
+                                    <button
+                                      onClick={() => handleDeleteDebt(debt.id)}
+                                      className="text-red-600 hover:text-red-800 transition-colors"
+                                      title="Supprimer la dette"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-gray-500">
+                        Aucune dette manuelle pour cet utilisateur
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              {/* Formulaire d'ajout de dette manuelle supprimé comme demandé */}
-              {/* Section d'historique des dettes manuelles supprimée comme demandé */}
             </div>
           </div>
         )}

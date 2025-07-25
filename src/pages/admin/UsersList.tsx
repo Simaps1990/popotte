@@ -16,28 +16,54 @@ export default function UsersList() {
     
     try {
       setIsLoading(true);
+      setError(null);
+      
+      console.log('Chargement des utilisateurs...');
       const usersData = await userService.getAllUsers();
-      setUsers(usersData);
+      console.log(`${usersData.length} utilisateurs récupérés`);
       
-      // Charger les dettes pour chaque utilisateur
-      const debtsMap: Record<string, { unpaid: number; pending: number }> = {};
-      
-      for (const user of usersData) {
-        const debts = await debtService.getUserDebts(user.id);
-        
-        debtsMap[user.id] = {
-          unpaid: debts
-            .filter(d => d.status === DebtStatus.UNPAID)
-            .reduce((sum, debt) => sum + debt.amount, 0),
-          pending: debts
-            .filter(d => d.status === DebtStatus.PENDING)
-            .reduce((sum, debt) => sum + debt.amount, 0)
-        };
+      if (usersData.length === 0) {
+        console.warn('Aucun utilisateur récupéré, vérifiez la fonction getAllUsers');
+        setError('Aucun utilisateur trouvé. Veuillez réessayer ou contacter le support.');
+        return;
       }
       
+      setUsers(usersData);
+      
+      // Charger les dettes pour chaque utilisateur avec optimisation
+      console.log('Chargement des dettes pour chaque utilisateur...');
+      const debtsMap: Record<string, { unpaid: number; pending: number }> = {};
+      
+      // Initialiser la map pour tous les utilisateurs
+      usersData.forEach(user => {
+        debtsMap[user.id] = { unpaid: 0, pending: 0 };
+      });
+      
+      // Charger les dettes en parallèle pour améliorer les performances
+      await Promise.all(usersData.map(async (user) => {
+        try {
+          const debts = await debtService.getUserDebts(user.id);
+          
+          if (debts && debts.length > 0) {
+            debtsMap[user.id] = {
+              unpaid: debts
+                .filter(d => d.status === DebtStatus.UNPAID)
+                .reduce((sum, debt) => sum + debt.amount, 0),
+              pending: debts
+                .filter(d => d.status === DebtStatus.PENDING)
+                .reduce((sum, debt) => sum + debt.amount, 0)
+            };
+          }
+        } catch (error) {
+          console.error(`Erreur lors du chargement des dettes pour l'utilisateur ${user.id}:`, error);
+          // Ne pas bloquer le chargement des autres utilisateurs en cas d'erreur
+        }
+      }));
+      
+      console.log('Dettes chargées avec succès');
       setUserDebts(debtsMap);
     } catch (err) {
-      console.error('Error loading users:', err);
+      console.error('Erreur lors du chargement des utilisateurs:', err);
       setError('Erreur lors du chargement des utilisateurs');
     } finally {
       setIsLoading(false);
