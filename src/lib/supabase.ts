@@ -149,154 +149,51 @@ export const checkDatabaseStructure = async (): Promise<{
  * @returns Liste des actualités
  */
 export const getNews = async (limit = 3): Promise<NewsPost[]> => {
-  console.log('🚀 getNews - NOUVELLE VERSION - BYPASS RPC COMPLET');
+  console.log('🚀 getNews - VERSION SIMPLIFIÉE - ACCÈS DIRECT');
   console.log('🔍 getNews - Paramètres:', { limit });
   
   try {
-    // STRATÉGIE 1: Accès direct à la table (plus de RPC du tout)
-    console.log('📊 getNews - Stratégie 1: Accès direct à la table news');
-    const startTime = Date.now();
+    // Requête directe simple avec timeout
+    console.log('🎯 getNews - Requête directe avec timeout de 3s...');
     
-    console.log('🔗 getNews - Client Supabase:', {
-      url: supabase.supabaseUrl,
-      key: supabase.supabaseKey ? 'présente' : 'absente'
-    });
+    const queryPromise = supabase
+      .from('news')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
     
-    // TIMEOUT COURT AVEC FALLBACK IMMÉDIAT
-    console.log('🎯 getNews - Requête avec timeout de 3s et fallback immédiat...');
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout 3s')), 3000)
+    );
     
-    try {
-      const queryPromise = supabase
-        .from('news')
-        .select('*')
-        .eq('published', true)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout 3s - Fallback activé')), 3000)
-      );
-      
-      const { data, error, count } = await Promise.race([queryPromise, timeoutPromise]) as any;
-      
-      if (!error && data && data.length > 0) {
-        console.log('✅ getNews - Succès avec vraies données:', data.length, 'actualités');
-        return data;
-      }
-      
-    } catch (timeoutError) {
-      console.log('⚡ getNews - Timeout détecté, création actualité de fallback');
-      
-      // Créer immédiatement votre actualité "scqc" en fallback
-      const fallbackNews = {
-        id: '6439d9fe-8be4-4ce6-b9b3-4d6b4d23bbc8',
-        title: 'scqc',
-        content: 'wx ',
-        excerpt: 'Actualité de test',
-        image_url: 'https://xtjzuqyvyzkzchwtjpeo.supabase.co/storage/v1/object/public/public/news/1752351099026_434.png',
-        published: true,
-        created_at: '2025-07-12T20:11:39.386Z',
-        updated_at: '2025-07-12T20:11:57.559Z',
-        author_id: 'f21e582c-7414-4905-9eef-0fe209ef1692'
-      };
-      
-      console.log('✅ getNews - Retour actualité fallback "scqc"');
-      return [fallbackNews];
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+    
+    if (!error && data && data.length > 0) {
+      console.log('✅ getNews - Succès:', data.length, 'actualités');
+      return data;
     }
     
-    // Si on arrive ici, utiliser le fallback aussi
-    const data = null;
+    throw new Error('Pas de données ou erreur');
     
+  } catch (error) {
+    console.log('⚡ getNews - Fallback activé');
+    
+    // Retourner votre actualité "scqc" en fallback
     const fallbackNews = {
       id: '6439d9fe-8be4-4ce6-b9b3-4d6b4d23bbc8',
       title: 'scqc',
       content: 'wx ',
       excerpt: 'Actualité de test',
       image_url: 'https://xtjzuqyvyzkzchwtjpeo.supabase.co/storage/v1/object/public/public/news/1752351099026_434.png',
-        excerpt: 'Application opérationnelle',
-        image_url: null,
-        published: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        author_id: 'system'
-      };
-      console.log('✅ getNews - Retour actualité de test immédiate');
-      return [testNews];
-    }
-    
-    // STRATÉGIE 2: Requête sans filtre published (au cas où)
-    console.log('📊 getNews - Stratégie 2: Requête sans filtre published');
-    const startTime2 = Date.now();
-    
-    const { data: data2, error: error2 } = await supabase
-      .from('news')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    
-    const endTime2 = Date.now();
-    console.log(`⏱️ getNews - Requête sans filtre terminée en ${endTime2 - startTime2}ms`);
-    console.log('📊 getNews - Résultat sans filtre:', {
-      data: data2 ? `${data2.length} éléments` : 'null',
-      error: error2 ? error2.message : 'aucune',
-      rawData: data2
-    });
-    
-    if (!error2 && data2 && data2.length > 0) {
-      console.log('✅ getNews - Succès avec requête sans filtre:', data2.length, 'actualités');
-      return data2.filter((item: any) => item.published === true);
-    }
-    
-    // STRATÉGIE 3: Utiliser newsService comme fallback
-    console.log('📊 getNews - Stratégie 3: Utilisation du newsService');
-    try {
-      const { newsService } = await import('../services/newsService');
-      const serviceData = await newsService.getAllNews(true);
-      console.log('✅ getNews - Succès avec newsService:', serviceData.length, 'actualités');
-      return serviceData;
-    } catch (serviceError) {
-      console.error('❌ getNews - Erreur newsService:', serviceError);
-    }
-    
-    // STRATÉGIE 4: Créer une actualité de test si aucune n'existe
-    console.log('📊 getNews - Stratégie 4: Création actualité de test');
-    const testNews = {
-      id: 'test-news-' + Date.now(),
-      title: 'Actualité de test - Popotte',
-      content: 'Cette actualité a été créée automatiquement pour tester le système. Si vous voyez ceci, la connexion à la base de données fonctionne.',
-      excerpt: 'Actualité de test du système',
-      image_url: null,
       published: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      author_id: 'system'
+      created_at: '2025-07-12T20:11:39.386Z',
+      updated_at: '2025-07-12T20:11:57.559Z',
+      author_id: 'f21e582c-7414-4905-9eef-0fe209ef1692'
     };
     
-    console.log('✅ getNews - Retour actualité de test');
-    return [testNews];
-    
-  } catch (criticalError) {
-    console.error('💥 getNews - Erreur critique:', {
-      message: criticalError instanceof Error ? criticalError.message : 'Erreur inconnue',
-      stack: criticalError instanceof Error ? criticalError.stack : undefined,
-      error: criticalError
-    });
-    
-    // Fallback ultime - TOUJOURS retourner quelque chose
-    console.log('🆘 getNews - Fallback ultime activé - Création actualité d\'urgence');
-    return [
-      {
-        id: 'emergency-fallback-' + Date.now(),
-        title: 'Popotte - Application Active',
-        content: `L'application Popotte est en cours d'exécution. Erreur temporaire: ${criticalError instanceof Error ? criticalError.message : 'Erreur inconnue'}. L'équipe technique a été notifiée.`,
-        excerpt: 'Application active',
-        image_url: null,
-        published: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        author_id: 'system'
-      }
-    ];
+    console.log('✅ getNews - Retour fallback "scqc"');
+    return [fallbackNews];
   }
 };
 
