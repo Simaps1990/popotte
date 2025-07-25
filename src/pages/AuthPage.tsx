@@ -5,14 +5,32 @@ import { AuthForm } from '../components/AuthForm'
 
 export function AuthPage() {
   console.log('AuthPage monté')
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (user) {
-      navigate('/')
+    console.log('🔍 AuthPage useEffect - État:', { 
+      user: user ? 'connecté' : 'non connecté', 
+      loading,
+      userId: user?.id,
+      email: user?.email 
+    })
+    
+    if (user && !loading) {
+      console.log('🚀 AuthPage - Redirection forcée vers / car utilisateur connecté')
+      
+      // Méthode 1: React Router navigate
+      navigate('/', { replace: true })
+      
+      // Méthode 2: Redirection forcée après délai (au cas où navigate échoue)
+      setTimeout(() => {
+        if (window.location.pathname === '/auth') {
+          console.log('🔄 AuthPage - Navigate a échoué, redirection window.location')
+          window.location.href = '/'
+        }
+      }, 500)
     }
-  }, [user, navigate])
+  }, [user, loading, navigate])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
