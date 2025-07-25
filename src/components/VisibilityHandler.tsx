@@ -14,39 +14,49 @@ const VisibilityHandler: React.FC = () => {
   const hasIntervenedRef = useRef(false);
   
   // Fonction pour masquer le spinner de chargement et restaurer l'interface
-  const hideLoadingSpinner = () => {
-    // Si on a déjà traité ce cycle de chargement, ne pas réintervenir
-    if (hasIntervenedRef.current) return true;
+// TEMPORAIREMENT DÉSACTIVÉE POUR PERMETTRE LE CHARGEMENT DES ACTUALITÉS
+const hideLoadingSpinner = () => {
+  console.log('⏸️ hideLoadingSpinner - DÉSACTIVÉ TEMPORAIREMENT pour permettre le chargement des actualités');
+  
+  // Ne plus interrompre les requêtes Supabase
+  // Laisser les spinners faire leur travail normalement
+  return false;
+  
+  // CODE ORIGINAL DÉSACTIVÉ :
+  /*
+  // Si on a déjà traité ce cycle de chargement, ne pas réintervenir
+  if (hasIntervenedRef.current) return true;
+  
+  // Rechercher le spinner de chargement dans le DOM
+  const spinnerElement = document.querySelector('.animate-spin');
+  const loadingContainer = spinnerElement?.parentElement;
+  
+  // Si le spinner est trouvé, le masquer
+  if (spinnerElement && loadingContainer) {
+    console.log('🛑 Spinner de chargement détecté - Arrêt forcé');
     
-    // Rechercher le spinner de chargement dans le DOM
-    const spinnerElement = document.querySelector('.animate-spin');
-    const loadingContainer = spinnerElement?.parentElement;
+    // Utiliser un cast pour résoudre l'erreur TypeScript
+    (loadingContainer as HTMLElement).style.display = 'none';
     
-    // Si le spinner est trouvé, le masquer
-    if (spinnerElement && loadingContainer) {
-      console.log('🛑 Spinner de chargement détecté - Arrêt forcé');
-      
-      // Utiliser un cast pour résoudre l'erreur TypeScript
-      (loadingContainer as HTMLElement).style.display = 'none';
-      
-      // Forçage de l'état de chargement à false dans le contexte Auth
-      if (setLoadingState) {
-        setLoadingState(false);
-      }
-      
-      // Marquer que nous sommes intervenus
-      hasIntervenedRef.current = true;
-      
-      // Réinitialiser le flag après un délai pour permettre de futures interventions
-      setTimeout(() => {
-        hasIntervenedRef.current = false;
-      }, 2000);
-      
-      return true;
+    // Forçage de l'état de chargement à false dans le contexte Auth
+    if (setLoadingState) {
+      setLoadingState(false);
     }
     
-    return false;
-  };
+    // Marquer que nous sommes intervenus
+    hasIntervenedRef.current = true;
+    
+    // Réinitialiser le flag après un délai pour permettre de futures interventions
+    setTimeout(() => {
+      hasIntervenedRef.current = false;
+    }, 2000);
+    
+    return true;
+  }
+  
+  return false;
+  */
+};
   
   // Fonction pour restaurer l'interface utilisateur
   const restoreUI = () => {
