@@ -1,17 +1,20 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Home, ClipboardList, CreditCard, Settings, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
+// Suppression de l'import qui cause les rechargements
+// import { useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
 export function BottomNavigation() {
   const location = useLocation()
   const { user } = useAuth()
-  const { invalidateCache } = useCacheInvalidation()
+  // Suppression de l'invalidation du cache qui cause les rechargements
+  // const { invalidateCache } = useCacheInvalidation()
 
-  // Fonction pour gérer les clics de navigation avec invalidation du cache
+  // Fonction pour gérer les clics de navigation sans invalidation du cache
   const handleNavigationClick = (path: string) => {
-    console.log(`🔄 Navigation vers ${path} - Invalidation du cache`);
-    invalidateCache();
+    console.log(`🔄 Navigation vers ${path} - Sans invalidation du cache`);
+    // Suppression de l'invalidation du cache
+    // invalidateCache();
   };
 
   // Vérifie si le chemin actuel correspond au chemin de base ou à un sous-chemin

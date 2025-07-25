@@ -24,8 +24,8 @@ export function Home() {
   // Utiliser une référence pour suivre si l'effet a déjà été exécuté
   const effectRan = React.useRef(false);
 
-  // Hook pour l'invalidation du cache
-  const { invalidateCache } = useCacheInvalidation();
+  // Suppression de l'invalidation du cache qui cause les rechargements
+  // const { invalidateCache } = useCacheInvalidation();
 
   // Callback pour les changements de news
   const handleNewsChange = React.useCallback(() => {
@@ -41,8 +41,8 @@ export function Home() {
   useEffect(() => {
     // Ne s'exécute qu'une seule fois en mode développement avec React.StrictMode
     if (effectRan.current === false) {
-      console.log('🏁 Premier rendu - Appel API avec invalidation du cache');
-      invalidateCache();
+      console.log('🏁 Premier rendu - Appel API sans invalidation du cache');
+      // Suppression de l'invalidation du cache
       fetchNewsPosts();
       effectRan.current = true;
     }
@@ -51,7 +51,7 @@ export function Home() {
     return () => {
       console.log('🧹 Nettoyage de l\'effet');
     };
-  }, [invalidateCache])
+  }, [])
 
   const fetchNewsPosts = async () => {
     console.group('🔄 fetchNewsPosts');
@@ -59,9 +59,8 @@ export function Home() {
     setError(null);
     
     try {
-      // Invalider le cache avant de récupérer les données
-      console.log('🗑️ Invalidation du cache avant récupération des news');
-      invalidateCache();
+      // Ne plus invalider le cache avant de récupérer les données
+      console.log('🔄 Récupération des news sans invalidation du cache');
       
       console.log('1. Appel de getNews()...');
       const data = await getNews();
