@@ -32,6 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [isUserAdmin, setIsUserAdmin] = useState(false)
+  
+  // Flag pour éviter la double mise à jour entre SIGNED_IN et INITIAL_SESSION
+  const [sessionProcessed, setSessionProcessed] = useState(false)
 
   const updateUserData = async (user: any) => {
     console.log('🔄 Mise à jour des données utilisateur pour:', user?.email || 'inconnu')
@@ -121,8 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // MISE À JOUR IMMÉDIATE sans attendre updateUserData
               setUser(session.user);
               setLoading(false);
+              setSessionProcessed(true); // Marquer la session comme traitée
               console.log('✅ État utilisateur mis à jour immédiatement');
-              // Puis mettre à jour le profil en arrière-plan
+              // Mettre à jour le profil en arrière-plan
               updateUserData(session.user);
             } else {
               setLoading(false);
@@ -148,9 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
           case 'INITIAL_SESSION':
             console.log('🏁 Session initiale');
-            // Éviter la double mise à jour si l'utilisateur est déjà connecté
-            if (user) {
-              console.log('⚠️ Utilisateur déjà connecté, ignorer INITIAL_SESSION pour éviter la double recharge');
+            // Éviter la double mise à jour si la session a déjà été traitée
+            if (sessionProcessed) {
+              console.log('⚠️ Session déjà traitée par SIGNED_IN, ignorer INITIAL_SESSION pour éviter la double recharge');
               setLoading(false);
               return;
             }
@@ -158,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.log('🔄 Première connexion via INITIAL_SESSION');
               setUser(session.user);
               setLoading(false);
+              setSessionProcessed(true); // Marquer comme traitée
               // Mettre à jour le profil en arrière-plan
               updateUserData(session.user);
             } else {
