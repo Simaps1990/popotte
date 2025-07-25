@@ -180,6 +180,37 @@ export function AuthForm() {
             window.location.replace('/')
           }, 200)
           
+          // MÉTHODE 4: REDIRECTION BRUTALE IMMÉDIATE (NOUVEAU)
+          console.log('  4. 🔥 REDIRECTION BRUTALE IMMÉDIATE - AUCUNE ÉCHAPPATOIRE !')
+          console.log('  4. 🔥 Current pathname:', window.location.pathname)
+          
+          // Forcer immédiatement
+          if (window.location.pathname === '/auth') {
+            console.log('  4. 🔥 FORCE IMMÉDIATE: window.location.href = "/"')
+            window.location.href = '/'
+          }
+          
+          // Vérification forcée toutes les 50ms pendant 2 secondes
+          let attempts = 0
+          const forceRedirect = setInterval(() => {
+            attempts++
+            console.log(`  4. 🔥 VÉRIFICATION FORCÉE #${attempts} - pathname:`, window.location.pathname)
+            
+            if (window.location.pathname === '/auth') {
+              console.log(`  4. 🔥 TENTATIVE FORCÉE #${attempts}: window.location.href = "/"`)
+              window.location.href = '/'
+            } else {
+              console.log(`  4. ✅ REDIRECTION RÉUSSIE après ${attempts} tentatives !`)
+              clearInterval(forceRedirect)
+            }
+            
+            // Arrêter après 40 tentatives (2 secondes)
+            if (attempts >= 40) {
+              console.log('  4. 💥 ÉCHEC TOTAL - REDIRECTION IMPOSSIBLE APRÈS 40 TENTATIVES')
+              clearInterval(forceRedirect)
+            }
+          }, 50)
+          
           console.log('🏁 === FIN PROCESSUS DE CONNEXION ===')
           return
           
