@@ -675,9 +675,9 @@ const Users: React.FC = () => {
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                  {debt.status === 'unpaid' && (
+                                  {debt.status === 'unpaid' && debt.id && (
                                     <button
-                                      onClick={() => handleDeleteDebt(debt.id)}
+                                      onClick={() => handleDeleteDebt(debt.id!)}
                                       className="text-red-600 hover:text-red-800 transition-colors"
                                       title="Supprimer la dette"
                                     >
