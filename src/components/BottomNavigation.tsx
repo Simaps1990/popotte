@@ -1,23 +1,22 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Home, ClipboardList, CreditCard, Settings, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useForceReload } from '../hooks/useForceReload'
 // Suppression de l'import qui cause les rechargements
 // import { useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
 export function BottomNavigation() {
   const location = useLocation()
   const { user } = useAuth()
-  // Suppression de l'invalidation du cache qui cause les rechargements
-  // const { invalidateCache } = useCacheInvalidation()
+  const { forceReload } = useForceReload()
   
   // Détecter si nous sommes sur la page de login
   const isLoginPage = location.pathname === '/auth'
 
-  // Fonction pour gérer les clics de navigation sans invalidation du cache
+  // Fonction pour gérer les clics de navigation avec rechargement forcé
   const handleNavigationClick = (path: string) => {
-    console.log(`🔄 Navigation vers ${path} - Sans invalidation du cache`);
-    // Suppression de l'invalidation du cache
-    // invalidateCache();
+    console.log(`🔄 Navigation vers ${path} - Avec rechargement forcé`);
+    forceReload(path);
   };
 
   // Vérifie si le chemin actuel correspond au chemin de base ou à un sous-chemin
