@@ -73,7 +73,7 @@ export function PendingDebtSummaryPanel({ className = '' }: PendingDebtSummaryPa
   }
 
   return (
-    <div className={`card border-l-4 ${totalPending > 0 ? 'border-orange-500 bg-white' : 'border-gray-500 bg-white'} ${className}`}>
+    <div className={`card border-l-4 !bg-white ${totalPending > 0 ? 'border-orange-500' : 'border-gray-500'} ${className}`}>
       <div className="flex items-center space-x-4 p-4">
         <div className={`w-12 h-12 ${totalPending > 0 ? 'bg-orange-100' : 'bg-gray-100'} rounded-full flex items-center justify-center`}>
           <Clock className={`h-6 w-6 ${totalPending > 0 ? 'text-orange-600' : 'text-gray-600'}`} />
