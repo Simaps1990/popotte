@@ -13,9 +13,10 @@ export function BottomNavigation() {
   // Détecter si nous sommes sur la page de login
   const isLoginPage = location.pathname === '/auth'
 
-  // Fonction pour gérer les clics de navigation avec rechargement forcé
+  // Fonction pour gérer les clics de navigation avec rechargement des données
   const handleNavigationClick = (path: string) => {
-    console.log(`🔄 Navigation vers ${path} - Avec rechargement forcé`);
+    console.log(`🔄 Navigation vers ${path} - Avec rafraîchissement des données`);
+    // Utiliser la nouvelle approche qui préserve la session
     forceReload(path);
   };
 

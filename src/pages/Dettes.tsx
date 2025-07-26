@@ -13,6 +13,7 @@ import { debtService } from '../services/debtService';
 import { checkDatabaseStructure } from '../lib/supabase';
 import { supabase } from '../lib/supabaseClient';
 import { useRealTimeSubscriptions, useCacheInvalidation } from '../hooks/useRealTimeSubscriptions';
+import { useDataRefresh } from '../hooks/useDataRefresh';
 
 // Fonction utilitaire pour formater les dates
 const formatDate = (dateString: string) => {
@@ -91,6 +92,12 @@ export function Dettes() {
   // Hook pour l'invalidation du cache - avec référence pour éviter les appels multiples
   const { invalidateCache } = useCacheInvalidation();
   const cacheInvalidatedRef = React.useRef(false);
+  
+  // Hook pour recharger les données lors de la navigation
+  useDataRefresh(() => {
+    console.log('🔄 Rechargement des données de la page Dettes');
+    fetchAllDebtsAndOrders();
+  });
 
   // Callbacks pour les abonnements temps réel
   const handlePaymentNotificationChange = React.useCallback(() => {
