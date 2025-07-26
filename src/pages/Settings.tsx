@@ -210,39 +210,9 @@ const Settings = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
         </div>
-          
-          {isAdmin && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-800">Statistiques financières</h2>
-              
-              <div className="grid grid-cols-1 gap-4">
-                {/* Carte Dettes en cours */}
-                <div className="card border-l-4 border-red-500 bg-red-50">
-                  <div className="flex items-center space-x-4 p-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
-                        <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                        <line x1="2" x2="22" y1="10" y2="10"></line>
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-red-900">Dettes en cours</h3>
-                      <p className="text-sm text-red-600">Total à régler par les membres</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-red-600">23.50 €</div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Carte Ventes confirmées */}
-                {/* Section "Ventes confirmées - Chiffre d'affaires par année" supprimée comme demandé */}
-              </div>
-            </div>
-          )}
 
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800">Fonctionnalités</h2>
             
             {/* Statistiques financières - visible pour tous les utilisateurs */}
             <div className="mb-6">
