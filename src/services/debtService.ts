@@ -48,20 +48,26 @@ export const debtService = {
   // Récupérer le total global de toutes les dettes en cours de tous les utilisateurs
   async getGlobalDebtSummary(): Promise<{ totalUnpaid: number; totalPending: number; totalPaid: number }> {
     try {
-      console.log('🔍 [getGlobalDebtSummary] Début de la récupération des dettes globales');
+      console.log('🔍 [getGlobalDebtSummary] === DÉBUT DIAGNOSTIC COMPLET ===');
+      console.log('🔍 [getGlobalDebtSummary] Timestamp:', new Date().toISOString());
       
-      // Récupérer toutes les dettes de tous les utilisateurs
+      // Récupérer toutes les dettes de tous les utilisateurs avec plus de détails
       const { data: allDebts, error } = await supabase
         .from('debts')
-        .select('amount, status');
+        .select('id, amount, status, user_id, description, created_at')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ [getGlobalDebtSummary] Erreur Supabase:', error);
         throw error;
       }
 
-      console.log('📊 [getGlobalDebtSummary] Dettes récupérées:', allDebts?.length || 0, 'dettes');
-      console.log('📋 [getGlobalDebtSummary] Détail des dettes:', allDebts);
+      console.log('📊 [getGlobalDebtSummary] TOTAL dettes récupérées:', allDebts?.length || 0);
+      
+      // Afficher chaque dette individuellement
+      allDebts?.forEach((debt: any, index: number) => {
+        console.log(`📋 [${index + 1}] ID: ${debt.id}, Montant: ${debt.amount}€, Statut: '${debt.status}', User: ${debt.user_id}, Description: '${debt.description}'`);
+      });
 
       const summary = {
         totalUnpaid: 0,
@@ -69,28 +75,43 @@ export const debtService = {
         totalPaid: 0
       };
 
-      // Calculer les totaux par statut
+      let unpaidCount = 0;
+      let pendingCount = 0;
+      let paidCount = 0;
+
+      // Calculer les totaux par statut avec comptage
       allDebts?.forEach((debt: { amount: number; status: string }) => {
-        console.log(`💰 [getGlobalDebtSummary] Dette: ${debt.amount}€, statut: '${debt.status}'`);
+        const amount = Number(debt.amount) || 0;
         
         if (debt.status === 'unpaid') {
-          summary.totalUnpaid += debt.amount;
+          summary.totalUnpaid += amount;
+          unpaidCount++;
+          console.log(`💰 [UNPAID] +${amount}€ (total unpaid: ${summary.totalUnpaid}€)`);
         } else if (debt.status === 'payment_pending') {
-          summary.totalPending += debt.amount;
+          summary.totalPending += amount;
+          pendingCount++;
+          console.log(`⏳ [PENDING] +${amount}€ (total pending: ${summary.totalPending}€)`);
         } else if (debt.status === 'paid') {
-          summary.totalPaid += debt.amount;
+          summary.totalPaid += amount;
+          paidCount++;
+          console.log(`✅ [PAID] +${amount}€ (total paid: ${summary.totalPaid}€)`);
+        } else {
+          console.warn(`⚠️ [UNKNOWN STATUS] Dette avec statut inconnu: '${debt.status}', montant: ${amount}€`);
         }
       });
 
-      console.log('✅ [getGlobalDebtSummary] Résumé calculé:', summary);
+      console.log('📊 [getGlobalDebtSummary] === RÉSUMÉ FINAL ===');
+      console.log(`💰 UNPAID: ${unpaidCount} dettes = ${summary.totalUnpaid.toFixed(2)}€`);
+      console.log(`⏳ PENDING: ${pendingCount} dettes = ${summary.totalPending.toFixed(2)}€`);
+      console.log(`✅ PAID: ${paidCount} dettes = ${summary.totalPaid.toFixed(2)}€`);
+      console.log('📊 [getGlobalDebtSummary] === FIN DIAGNOSTIC ===');
+      console.log('📊 [getGlobalDebtSummary] === DÉTAILS DE LA RÉPONSE ===');
+      console.log('📊 [getGlobalDebtSummary] Réponse complète:', JSON.stringify(summary, null, 2));
+      console.log('📊 [getGlobalDebtSummary] === FIN DÉTAILS ===');
       return summary;
     } catch (error) {
-      console.error('❌ [getGlobalDebtSummary] Erreur lors de la récupération:', error);
-      return {
-        totalUnpaid: 0,
-        totalPending: 0,
-        totalPaid: 0
-      };
+      console.error('❌ [getGlobalDebtSummary] Erreur complète:', error);
+      throw error;
     }
   },
 

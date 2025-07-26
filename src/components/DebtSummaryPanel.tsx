@@ -20,15 +20,23 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
   const fetchGlobalDebtSummary = async () => {
     try {
       setLoading(true);
-      console.log('🔄 DebtSummaryPanel - Chargement du résumé global des dettes');
+      setError(null);
+      console.log('🔄 [DebtSummaryPanel] === DÉBUT RECHARGEMENT FORCÉ ===');
+      console.log('🔄 [DebtSummaryPanel] Timestamp:', new Date().toISOString());
+      console.log('🔄 [DebtSummaryPanel] Valeurs actuelles - Unpaid:', totalUnpaid, '€, Pending:', totalPending, '€');
       
       const summary = await debtService.getGlobalDebtSummary();
+      
+      console.log('📊 [DebtSummaryPanel] Nouvelles valeurs reçues:', summary);
+      console.log('📊 [DebtSummaryPanel] Mise à jour - Unpaid:', summary.totalUnpaid, '€, Pending:', summary.totalPending, '€');
+      
       setTotalUnpaid(summary.totalUnpaid);
       setTotalPending(summary.totalPending);
       
-      console.log('✅ DebtSummaryPanel - Résumé global des dettes chargé:', summary);
+      console.log('✅ [DebtSummaryPanel] État mis à jour avec succès');
+      console.log('✅ [DebtSummaryPanel] === FIN RECHARGEMENT ===');
     } catch (err) {
-      console.error('❌ DebtSummaryPanel - Erreur lors du chargement des dettes globales:', err);
+      console.error('❌ [DebtSummaryPanel] Erreur lors du chargement des dettes globales:', err);
       setError('Erreur lors du chargement des dettes');
     } finally {
       setLoading(false);
@@ -40,14 +48,21 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
     console.log('🔄 [DebtSummaryPanel] Configuration de l\'abonnement aux dettes globales');
     
     const subscription = supabase
-      .channel('global-debts')
+      .channel('global-debts-panel')
       .on('postgres_changes', {
         event: '*', // Tous les événements (INSERT, UPDATE, DELETE)
         schema: 'public',
         table: 'debts'
       }, (payload: any) => {
-        console.log('🔄 [DebtSummaryPanel] Changement détecté dans les dettes:', payload);
-        fetchGlobalDebtSummary();
+        console.log('🔄 [DebtSummaryPanel] === CHANGEMENT DÉTECTÉ ===');
+        console.log('🔄 [DebtSummaryPanel] Type:', payload.eventType);
+        console.log('🔄 [DebtSummaryPanel] Données:', payload);
+        console.log('🔄 [DebtSummaryPanel] Rechargement forcé des données...');
+        
+        // Attendre un court délai pour s'assurer que les changements sont propagés
+        setTimeout(() => {
+          fetchGlobalDebtSummary();
+        }, 500);
       })
       .subscribe();
 
