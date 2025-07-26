@@ -104,8 +104,7 @@ export const debtService = {
         amount: debtData.amount,
         description: debtData.description,
         status: debtData.status,
-        // Suppression du champ items qui n'existe pas dans la table debts
-        created_by: debtData.created_by || debtData.createdBy,
+        // Suppression des champs items et created_by qui n'existent pas dans la table debts
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

@@ -336,8 +336,7 @@ const Users: React.FC = () => {
         userId: selectedUser.id,
         amount: parseFloat(newDebt.amount),
         description: newDebt.description,
-        status: DebtStatus.UNPAID,
-        created_by: currentUser?.id || ''
+        status: DebtStatus.UNPAID
       });
       
       if (result) {
