@@ -456,6 +456,28 @@ const Users: React.FC = () => {
     setEditingDebt(null);
   };
 
+  // Fonction pour gérer le retour à la liste des utilisateurs
+  const handleBackToUserList = async () => {
+    try {
+      // Supprimer l'utilisateur sélectionné du localStorage
+      localStorage.removeItem('selectedUserId');
+      
+      // Supprimer les paramètres d'URL
+      setSearchParams({});
+      
+      // Recharger la liste des utilisateurs pour avoir les totaux à jour
+      console.log('Rechargement de la liste des utilisateurs avant retour...');
+      await fetchUsers();
+      
+      // Revenir à la liste des utilisateurs
+      setSelectedUser(null);
+    } catch (error) {
+      console.error('Erreur lors du retour à la liste:', error);
+      // En cas d'erreur, revenir quand même à la liste
+      setSelectedUser(null);
+    }
+  };
+
   const handleUpdateDebt = async () => {
     if (!editingDebt || !editingDebt.id) return;
     
@@ -712,7 +734,7 @@ const Users: React.FC = () => {
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-gray-900">Gestion de {selectedUser.username}</h1>
               <button
-                onClick={() => setSelectedUser(null)}
+                onClick={handleBackToUserList}
                 className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
