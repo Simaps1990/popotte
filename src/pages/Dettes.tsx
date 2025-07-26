@@ -88,6 +88,8 @@ export function Dettes() {
   const [processingBulkPayment, setProcessingBulkPayment] = useState(false);
   const [processingPayments, setProcessingPayments] = useState<Record<string, boolean>>({});
   const [pendingNotifications, setPendingNotifications] = useState<PaymentNotification[]>([]);
+  
+  // Note: unpaidDebts et unpaidTotal sont définis plus bas dans le code
 
   // Hook pour l'invalidation du cache - avec référence pour éviter les appels multiples
   const { invalidateCache } = useCacheInvalidation();
@@ -239,6 +241,7 @@ export function Dettes() {
     if (!user?.id) return;
 
     console.log('[DEBUG fetchAllDebtsAndOrders] user.id =', user.id);
+    setLoading(true);
     
     try {
       // Récupérer les dettes
@@ -250,6 +253,11 @@ export function Dettes() {
 
       console.log('[DEBUG fetchAllDebtsAndOrders] debtsFallback =', debtsData || [], 'debtsError =', debtsError);
       
+      if (debtsError) {
+        console.error('Erreur lors de la récupération des dettes:', debtsError);
+        throw debtsError;
+      }
+      
       // Récupérer les commandes
       console.log('Récupération des commandes pour l\'utilisateur:', user.id);
       const { data: ordersData, error: ordersError } = await supabase
@@ -260,8 +268,16 @@ export function Dettes() {
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-        
-      // Traitement des données si nécessaire
+      
+      if (ordersError) {
+        console.error('Erreur lors de la récupération des commandes:', ordersError);
+        throw ordersError;
+      }
+      
+      // Mise à jour des états avec les données récupérées
+      console.log('Mise à jour des états avec les données récupérées:', { debts: debtsData, orders: ordersData });
+      setDebts(debtsData || []);
+      setOrders(ordersData || []);
     } catch (error) {
       console.error('Erreur lors du chargement des dettes et commandes:', error);
     }
