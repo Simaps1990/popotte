@@ -23,7 +23,7 @@ const Users: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'hasDebt' | 'noDebt'>('all');
-  const [newDebt, setNewDebt] = useState<{ amount: number; description: string }>({ amount: 0, description: '' });
+  const [newDebt, setNewDebt] = useState<{ amount: string; description: string }>({ amount: '', description: '' });
   const [addingDebt, setAddingDebt] = useState(false);
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
@@ -317,7 +317,8 @@ const Users: React.FC = () => {
     if (!selectedUser) return;
     
     // Validation des données
-    if (isNaN(newDebt.amount) || newDebt.amount <= 0) {
+    const amount = parseFloat(newDebt.amount);
+    if (isNaN(amount) || amount <= 0) {
       alert('Veuillez entrer un montant valide supérieur à 0');
       return;
     }
@@ -330,11 +331,12 @@ const Users: React.FC = () => {
     try {
       setAddingDebt(true);
       
-      // Ajout de la dette via le service utilisateur
-      const result = await userService.addUserDebt({
-        user_id: selectedUser.id,
-        amount: newDebt.amount,
+      // Ajout de la dette via le service de dette
+      const result = await debtService.createDebt({
+        userId: selectedUser.id,
+        amount: parseFloat(newDebt.amount),
         description: newDebt.description,
+        status: DebtStatus.UNPAID,
         created_by: currentUser?.id || ''
       });
       
@@ -342,13 +344,13 @@ const Users: React.FC = () => {
         console.log('Dette ajoutée avec succès:', result);
         
         // Réinitialiser le formulaire
-        setNewDebt({ amount: 0, description: '' });
+        setNewDebt({ amount: '', description: '' });
         
         // Rafraîchir les détails de l'utilisateur
         await fetchUserDetails(selectedUser.id);
         
         // Notification de succès
-        alert(`Dette de ${newDebt.amount} € ajoutée avec succès à ${selectedUser.username}`);
+        alert(`Dette de ${parseFloat(newDebt.amount).toFixed(2)} € ajoutée avec succès à ${selectedUser.username}`);
       } else {
         alert('Erreur lors de l\'ajout de la dette. Veuillez réessayer.');
       }
@@ -593,7 +595,12 @@ const Users: React.FC = () => {
                           min="0.01"
                           step="0.01"
                           value={newDebt.amount}
-                          onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                          onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
+                          onFocus={(e) => {
+                            if (e.target.value === '0' || e.target.value === '0.00') {
+                              setNewDebt({ ...newDebt, amount: '' });
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                           placeholder="0.00"
                           disabled={addingDebt}
@@ -615,8 +622,8 @@ const Users: React.FC = () => {
                       </div>
                       <button
                         onClick={handleAddDebt}
-                        disabled={addingDebt || newDebt.amount <= 0 || !newDebt.description.trim()}
-                        className={`w-full py-2 px-4 rounded-md text-white font-medium ${addingDebt || newDebt.amount <= 0 || !newDebt.description.trim() ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} transition-colors`}
+                        disabled={addingDebt || !newDebt.amount || parseFloat(newDebt.amount) <= 0 || !newDebt.description.trim()}
+                        className={`w-full py-2 px-4 rounded-md text-white font-medium ${addingDebt || !newDebt.amount || parseFloat(newDebt.amount) <= 0 || !newDebt.description.trim() ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} transition-colors`}
                       >
                         {addingDebt ? (
                           <span className="flex items-center justify-center">

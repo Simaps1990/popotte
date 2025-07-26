@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 
 export default function DebtsPage() {
   const { user } = useAuth();
-  const [debtSummary, setDebtSummary] = useState<DebtSummary | null>(null);
+  const [debtSummary, setDebtSummary] = useState<DebtSummary & { forceUpdate?: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +84,16 @@ export default function DebtsPage() {
         totalPending: newTotalPending,
         totalPaid: newTotalPaid
       });
+
+      // Force re-render of both sections
+      setTimeout(() => {
+        if (debtSummary) {
+          setDebtSummary({
+            ...debtSummary,
+            forceUpdate: Date.now() // Add a timestamp to force re-render
+          });
+        }
+      }, 50);
     }
     
     // Then make the actual API call
@@ -189,11 +199,17 @@ export default function DebtsPage() {
                   </a>
                   
                   <button 
-                    onClick={() => {
+                    onClick={async () => {
                       // Find all unpaid debts and mark them as paid
-                      debtSummary?.debts
-                        .filter(debt => debt.status === DebtStatus.UNPAID)
-                        .forEach(debt => handleMarkAsPaid(debt.id));
+                      const unpaidDebts = debtSummary?.debts
+                        .filter(debt => debt.status === DebtStatus.UNPAID);
+                      
+                      // Process each debt sequentially to ensure state updates properly
+                      if (unpaidDebts && unpaidDebts.length > 0) {
+                        for (const debt of unpaidDebts) {
+                          await handleMarkAsPaid(debt.id);
+                        }
+                      }
                     }}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
                   >
