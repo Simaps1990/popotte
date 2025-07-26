@@ -136,17 +136,43 @@ const Products = () => {
   
   // Fonction pour tester directement la disponibilité d'un produit
   const toggleProductAvailability = async (product: Product) => {
+    const newAvailability = !product.is_available;
+    
+    console.log('🔄 [toggleProductAvailability] Début - Produit:', product.name, 'Ancien statut:', product.is_available, 'Nouveau statut:', newAvailability);
+    
+    // Optimistic update - mise à jour immédiate de l'UI
+    const optimisticProduct = { ...product, is_available: newAvailability };
+    setProducts(prevProducts => {
+      const updated = prevProducts.map(p => p.id === product.id ? optimisticProduct : p);
+      console.log('✨ [toggleProductAvailability] Optimistic update appliqué');
+      return updated;
+    });
+    
     try {
       const updatedProduct = await productService.updateProduct(product.id, {
-        is_available: !product.is_available
+        is_available: newAvailability
       });
       
-      // Mettre à jour la liste des produits
-      setProducts(products.map(p => p.id === product.id ? updatedProduct : p));
+      console.log('✅ [toggleProductAvailability] Backend mis à jour - Nouveau statut:', updatedProduct.is_available);
+      
+      // Mettre à jour avec les données du backend (au cas où il y aurait d'autres changements)
+      setProducts(prevProducts => {
+        const updated = prevProducts.map(p => p.id === product.id ? updatedProduct : p);
+        console.log('🔄 [toggleProductAvailability] State synchronisé avec backend');
+        return updated;
+      });
       
       toast.success(`Produit ${updatedProduct.name} ${updatedProduct.is_available ? 'disponible' : 'indisponible'}`);
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de la disponibilité:', error);
+      console.error('❌ [toggleProductAvailability] Erreur backend:', error);
+      
+      // Rollback de l'optimistic update en cas d'erreur
+      setProducts(prevProducts => {
+        const rollback = prevProducts.map(p => p.id === product.id ? product : p);
+        console.log('🔄 [toggleProductAvailability] Rollback de l\'optimistic update');
+        return rollback;
+      });
+      
       toast.error('Une erreur est survenue lors de la mise à jour de la disponibilité');
     }
   };
