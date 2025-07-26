@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -9,6 +9,8 @@ import {
   changePassword as changePasswordService,
   getCurrentUserWithProfile
 } from '../services/settingsService';
+import { DebtSummaryPanel } from '../components/DebtSummaryPanel';
+import { useDataRefresh } from '../hooks/useDataRefresh';
 import '../styles/cards.css';
 
 interface OrderStats {
@@ -59,32 +61,40 @@ const Settings = () => {
     confirmPassword: ''
   });
   const [saveStatus, setSaveStatus] = useState<{type: 'success' | 'error' | 'loading' | null, message: string}>({type: null, message: ''});
+  
+  // Référence pour éviter les rechargements multiples
+  const refreshedRef = useRef(false);
 
-  // Chargement des données utilisateur
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const { user, profile, error } = await getCurrentUserWithProfile();
-        if (error) throw error;
-        
-        setUser(user);
-        if (profile) {
-          setProfile(profile);
-          setFormData({
-            firstName: profile.first_name || '',
-            lastName: profile.last_name || '',
-            email: user?.email || '',
-            phone: profile.phone || ''
-          });
-        }
-      } catch (err) {
-        setError('Erreur lors du chargement du profil');
-        console.error('Erreur:', err);
-      } finally {
-        setLoading(false);
+  // Fonction pour charger les données utilisateur
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const { user, profile, error } = await getCurrentUserWithProfile();
+      if (error) throw error;
+      
+      setUser(user);
+      if (profile) {
+        setProfile(profile);
+        setFormData({
+          firstName: profile.first_name || '',
+          lastName: profile.last_name || '',
+          email: user?.email || '',
+          phone: profile.phone || ''
+        });
       }
-    };
+    } catch (err) {
+      setError('Erreur lors du chargement du profil');
+      console.error('Erreur:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Utiliser le hook de rafraîchissement des données
+  useDataRefresh(loadUserData);
+  
+  // Chargement initial des données
+  useEffect(() => {
     loadUserData();
   }, []);
 
@@ -327,6 +337,9 @@ const Settings = () => {
                 </>
               )}
 
+              {/* Panneau de résumé des dettes - visible pour tous les utilisateurs */}
+              <DebtSummaryPanel className="mb-4" />
+              
               {/* Bouton Mon profil - visible pour tous les utilisateurs */}
               <Link 
                 to="/admin/profile"
