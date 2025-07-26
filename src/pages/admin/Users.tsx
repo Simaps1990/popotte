@@ -707,8 +707,8 @@ const Users: React.FC = () => {
                         <div>
                           <h3 className="font-medium">{user.username}</h3>
                           <div className="flex items-center space-x-2">
-                            {user.debtHistory && user.debtHistory.filter((debt: UserDebt) => debt.status === 'unpaid').reduce((sum: number, debt: UserDebt) => sum + (debt.amount || 0), 0) > 0 ? (
-                              <span className="text-sm font-medium text-red-600">Dette: {user.debtHistory.filter((debt: UserDebt) => debt.status === 'unpaid').reduce((sum: number, debt: UserDebt) => sum + (debt.amount || 0), 0).toFixed(2)} €</span>
+                            {user.debt && user.debt > 0 ? (
+                              <span className="text-sm font-medium text-red-600">Dette: {user.debt.toFixed(2)} €</span>
                             ) : (
                               <span className="text-sm text-green-600">Compte à jour</span>
                             )}
