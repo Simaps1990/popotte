@@ -104,11 +104,7 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
               {totalUnpaid.toFixed(2)} €
             </div>
           )}
-          {totalPending > 0 && !loading && !error && (
-            <div className="text-xs text-orange-600 mt-1">
-              {totalPending.toFixed(2)} € en attente
-            </div>
-          )}
+
         </div>
       </div>
     </div>
