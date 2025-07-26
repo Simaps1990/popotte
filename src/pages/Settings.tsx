@@ -244,11 +244,16 @@ const Settings = () => {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800">Fonctionnalités</h2>
             
+            {/* Statistiques financières - visible pour tous les utilisateurs */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistiques financières</h2>
+              <DebtSummaryPanel className="mb-4" />
+            </div>
+
             <div className="grid grid-cols-1 gap-4">
               {/* Boutons d'administration - visibles uniquement pour les administrateurs */}
               {isAdmin && (
                 <>
-                  {/* Bouton Gestion des utilisateurs */}
                   <button 
                     onClick={() => navigateTo('/admin/users')}
                     className="card hover:bg-blue-50 transition-colors cursor-pointer border-l-4 border-blue-500 text-left w-full"
@@ -264,7 +269,7 @@ const Settings = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-blue-900">Gestion des utilisateurs</h3>
-                        <p className="text-sm text-blue-600">Gérer les comptes et les dettes</p>
+                        <p className="text-sm text-blue-600">Gérer les comptes et permissions</p>
                       </div>
                       <span className="text-blue-400">→</span>
                     </div>
