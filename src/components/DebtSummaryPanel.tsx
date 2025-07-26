@@ -12,62 +12,71 @@ interface DebtSummaryPanelProps {
 export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
   const { user } = useAuth();
   const [totalUnpaid, setTotalUnpaid] = useState<number>(0);
+  const [totalPending, setTotalPending] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fonction pour récupérer le résumé des dettes
-  const fetchDebtSummary = async () => {
-    if (!user) return;
-    
+  // Fonction pour récupérer le résumé global des dettes de tous les utilisateurs
+  const fetchGlobalDebtSummary = async () => {
     try {
       setLoading(true);
-      console.log('🔄 DebtSummaryPanel - Chargement du résumé des dettes');
+      console.log('🔄 DebtSummaryPanel - Chargement du résumé global des dettes');
       
-      const summary = await debtService.getDebtSummary(user.id);
+      const summary = await debtService.getGlobalDebtSummary();
       setTotalUnpaid(summary.totalUnpaid);
+      setTotalPending(summary.totalPending);
       
-      console.log('✅ DebtSummaryPanel - Résumé des dettes chargé:', summary);
+      console.log('✅ DebtSummaryPanel - Résumé global des dettes chargé:', summary);
     } catch (err) {
-      console.error('❌ DebtSummaryPanel - Erreur lors du chargement des dettes:', err);
+      console.error('❌ DebtSummaryPanel - Erreur lors du chargement des dettes globales:', err);
       setError('Erreur lors du chargement des dettes');
     } finally {
       setLoading(false);
     }
   };
 
-  // Utiliser le hook centralisé pour les abonnements aux dettes
-  useDebtSubscription(user?.id, () => {
-    console.log('🔄 [DebtSummaryPanel] Mise à jour des dettes via hook centralisé');
-    fetchDebtSummary();
+  // Utiliser le hook centralisé pour les abonnements aux dettes (sans user ID pour écouter toutes les dettes)
+  useDebtSubscription(undefined, () => {
+    console.log('🔄 [DebtSummaryPanel] Mise à jour des dettes globales via hook centralisé');
+    fetchGlobalDebtSummary();
   });
   
   // Chargement initial des données
   useEffect(() => {
-    if (user) {
-      fetchDebtSummary();
-    }
-  }, [user]);
+    fetchGlobalDebtSummary();
+  }, []);
 
   if (!user) {
     return null; // Ne rien afficher si l'utilisateur n'est pas connecté
   }
 
   return (
-    <div className={`card border-l-4 ${totalUnpaid > 0 ? 'border-red-500' : 'border-green-500'} ${className}`}>
+    <div className={`card border-l-4 ${totalUnpaid > 0 ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'} ${className}`}>
       <div className="flex items-center space-x-4 p-4">
         <div className={`w-12 h-12 ${totalUnpaid > 0 ? 'bg-red-100' : 'bg-green-100'} rounded-full flex items-center justify-center`}>
-          <CreditCard className={`${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`} />
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <line x1="2" x2="22" y1="10" y2="10"></line>
+          </svg>
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">Total des dettes en cours</h3>
+          <h3 className={`font-semibold ${totalUnpaid > 0 ? 'text-red-900' : 'text-green-900'}`}>Dettes en cours</h3>
+          <p className={`text-sm ${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>Total à régler par les membres</p>
+        </div>
+        <div className="text-right">
           {loading ? (
-            <p className="text-sm text-gray-500">Chargement...</p>
+            <div className="text-sm text-gray-500">Chargement...</div>
           ) : error ? (
-            <p className="text-sm text-red-500">{error}</p>
+            <div className="text-sm text-red-500">{error}</div>
           ) : (
-            <p className={`text-lg font-bold ${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            <div className={`text-2xl font-bold ${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
               {totalUnpaid.toFixed(2)} €
-            </p>
+            </div>
+          )}
+          {totalPending > 0 && !loading && !error && (
+            <div className="text-xs text-orange-600 mt-1">
+              {totalPending.toFixed(2)} € en attente
+            </div>
           )}
         </div>
       </div>

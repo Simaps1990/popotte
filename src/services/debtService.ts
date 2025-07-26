@@ -45,6 +45,44 @@ export const debtService = {
     return summary;
   },
 
+  // Récupérer le total global de toutes les dettes en cours de tous les utilisateurs
+  async getGlobalDebtSummary(): Promise<{ totalUnpaid: number; totalPending: number; totalPaid: number }> {
+    try {
+      // Récupérer toutes les dettes de tous les utilisateurs
+      const { data: allDebts, error } = await supabase
+        .from('debts')
+        .select('amount, status');
+
+      if (error) throw error;
+
+      const summary = {
+        totalUnpaid: 0,
+        totalPending: 0,
+        totalPaid: 0
+      };
+
+      // Calculer les totaux par statut
+      allDebts?.forEach((debt: { amount: number; status: string }) => {
+        if (debt.status === DebtStatus.UNPAID) {
+          summary.totalUnpaid += debt.amount;
+        } else if (debt.status === DebtStatus.PENDING) {
+          summary.totalPending += debt.amount;
+        } else if (debt.status === DebtStatus.PAID) {
+          summary.totalPaid += debt.amount;
+        }
+      });
+
+      return summary;
+    } catch (error) {
+      console.error('Error fetching global debt summary:', error);
+      return {
+        totalUnpaid: 0,
+        totalPending: 0,
+        totalPaid: 0
+      };
+    }
+  },
+
   // Marquer une dette comme payée
   async markAsPaid(debtId: string, userId: string): Promise<boolean> {
     try {
