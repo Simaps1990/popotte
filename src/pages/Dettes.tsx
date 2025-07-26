@@ -88,6 +88,8 @@ export function Dettes() {
   const [showPayPalButton, setShowPayPalButton] = useState(false);
   const [processingBulkPayment, setProcessingBulkPayment] = useState(false);
   const [processingPayments, setProcessingPayments] = useState<Record<string, boolean>>({});
+  // Nouvel état pour suivre si la notification est en cours
+  const [notifying, setNotifying] = useState(false);
   const [pendingNotifications, setPendingNotifications] = useState<PaymentNotification[]>([]);
   
   // Note: unpaidDebts et unpaidTotal sont définis plus bas dans le code
@@ -277,14 +279,23 @@ export function Dettes() {
 
 // Fonction pour notifier le paiement groupé après PayPal
   const handleNotifyBulkPayment = async () => {
+  // Éviter les clics multiples
+  if (notifying) {
+    return;
+  }
+  
   if (!user) {
     toast.error("Vous devez être connecté.");
     return;
   }
     try {
+      // Activer l'état de notification en cours
+      setNotifying(true);
+      
       const unpaidDebts = debts.filter(d => d.status === 'unpaid');
       if (unpaidDebts.length === 0) {
         toast.error('Aucune dette impayée à notifier.');
+        setNotifying(false);
         return;
       }
       
@@ -319,7 +330,10 @@ export function Dettes() {
       
       // 3. Notification de succès immédiate
       toast.success('Notification envoyée aux popotiers !');
+      
+      // Désactiver les boutons de notification
       setShowNotifyButton(false);
+      setPaymentInitiated(false); // S'assurer que l'autre bouton est également masqué
       
       // Appels aux services en arrière-plan
       // 1. Insérer dans la table payment_notifications
@@ -356,6 +370,9 @@ export function Dettes() {
       setPendingNotifications(prev => prev.filter(n => !n.id.startsWith('temp-')));
       
       toast.error('Erreur lors de la notification du paiement');
+    } finally {
+      // Désactiver l'état de notification en cours
+      setNotifying(false);
     }
   };
 
@@ -749,10 +766,11 @@ const DebtSection: React.FC<DebtSectionProps> = ({
       </button>
       <button
   onClick={handleNotifyBulkPayment}
+  disabled={notifying}
   className="w-full btn-primary flex items-center justify-center space-x-2 mt-2"
 >
   <Bell className="h-4 w-4 mr-1" />
-  <span>Notifier mon paiement aux popotiers</span>
+  <span>{notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}</span>
 </button>
     </div>
   </div>
@@ -784,8 +802,9 @@ return (
           <button
             className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded font-semibold shadow"
             onClick={handleNotifyBulkPayment}
+            disabled={notifying}
           >
-            Notifier mon paiement aux popotiers
+            {notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}
           </button>
           <div className="text-xs text-gray-600 mt-2">
             Un récapitulatif de vos dettes sera envoyé à l’équipe pour validation.

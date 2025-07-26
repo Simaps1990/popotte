@@ -368,10 +368,36 @@ const Users: React.FC = () => {
     try {
       setAddingDebt(true);
       
+      // Optimistic update - Créer une dette temporaire pour l'affichage immédiat
+      const tempDebt: UserDebt = {
+        id: `temp-${Date.now()}`,
+        user_id: selectedUser.id,
+        amount: amount,
+        description: newDebt.description,
+        status: DebtStatus.UNPAID,
+        created_at: new Date().toISOString(),
+        created_by: selectedUser.id, // Ajout du champ requis
+        order_id: undefined
+      };
+      
+      // Ajouter immédiatement la dette à l'interface
+      setDebtHistory(prev => [tempDebt, ...prev]);
+      
+      // Mettre à jour le résumé des dettes
+      if (debtSummary) {
+        setDebtSummary({
+          ...debtSummary,
+          totalUnpaid: debtSummary.totalUnpaid + amount
+        });
+      }
+      
+      // Réinitialiser le formulaire immédiatement
+      setNewDebt({ amount: '', description: '' });
+      
       // Ajout de la dette via le service de dette
       const result = await debtService.createDebt({
         userId: selectedUser.id,
-        amount: parseFloat(newDebt.amount),
+        amount: amount,
         description: newDebt.description,
         status: DebtStatus.UNPAID
       });
@@ -379,19 +405,39 @@ const Users: React.FC = () => {
       if (result) {
         console.log('Dette ajoutée avec succès:', result);
         
-        // Réinitialiser le formulaire
-        setNewDebt({ amount: '', description: '' });
-        
-        // Rafraîchir les détails de l'utilisateur
-        await fetchUserDetails(selectedUser.id);
+        // Remplacer la dette temporaire par la vraie dette avec l'ID correct
+        setDebtHistory(prev => 
+          prev.map(debt => 
+            debt.id === tempDebt.id 
+              ? { ...tempDebt, ...result, id: result.id || tempDebt.id }
+              : debt
+          )
+        );
         
         // Notification de succès
-        alert(`Dette de ${parseFloat(newDebt.amount).toFixed(2)} € ajoutée avec succès à ${selectedUser.username}`);
+        alert(`Dette de ${amount.toFixed(2)} € ajoutée avec succès à ${selectedUser.username}`);
       } else {
+        // En cas d'échec, supprimer la dette temporaire
+        setDebtHistory(prev => prev.filter(debt => debt.id !== tempDebt.id));
+        
+        // Restaurer le résumé des dettes
+        if (debtSummary) {
+          setDebtSummary({
+            ...debtSummary,
+            totalUnpaid: debtSummary.totalUnpaid - amount
+          });
+        }
+        
         alert('Erreur lors de l\'ajout de la dette. Veuillez réessayer.');
       }
     } catch (err) {
       console.error('Erreur lors de l\'ajout de la dette:', err);
+      
+      // En cas d'erreur, rafraîchir les détails pour s'assurer de la cohérence
+      if (selectedUser) {
+        await fetchUserDetails(selectedUser.id);
+      }
+      
       alert('Une erreur est survenue lors de l\'ajout de la dette.');
     } finally {
       setAddingDebt(false);
