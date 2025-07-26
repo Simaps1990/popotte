@@ -9,6 +9,9 @@ export function BottomNavigation() {
   const { user } = useAuth()
   // Suppression de l'invalidation du cache qui cause les rechargements
   // const { invalidateCache } = useCacheInvalidation()
+  
+  // Détecter si nous sommes sur la page de login
+  const isLoginPage = location.pathname === '/auth'
 
   // Fonction pour gérer les clics de navigation sans invalidation du cache
   const handleNavigationClick = (path: string) => {
@@ -55,65 +58,104 @@ export function BottomNavigation() {
     border: 'none' // Suppression de tous les bordures
   }
 
+  // Rendu conditionnel en fonction de la page
+  if (isLoginPage) {
+    // Footer spécial pour la page de login (mode "hors connexion" avec seulement deux icônes)
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 border-t-0" style={woodBackgroundStyle}>
+        <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
+          <div className="flex justify-around items-center w-full">
+            {/* Icône Accueil */}
+            <Link
+              to="/"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+              onClick={() => handleNavigationClick('/')}
+            >
+              <Home size={24} style={woodIconStyle(isActive('/'))} />
+              <span className="text-xs mt-1" style={woodTextStyle(isActive('/'))}>Accueil</span>
+            </Link>
+            
+            {/* Icône Connexion */}
+            <Link
+              to="/auth"
+              className="flex flex-col items-center p-2 rounded-lg transition-colors"
+              onClick={() => { 
+                console.log('Footer Connexion cliqué');
+                handleNavigationClick('/auth');
+              }}
+            >
+              <Lock size={20} style={woodIconStyle(isActive('/auth'))} className="mb-1" />
+              <span className="text-xs" style={woodTextStyle(isActive('/auth'))}>Connexion</span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+  
+  // Footer normal pour les autres pages
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t-0" style={woodBackgroundStyle}>
       <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
         <div className="flex justify-around items-center w-full">
-        <Link
-          to="/"
-          className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-          onClick={() => handleNavigationClick('/')}
-        >
-          <Home size={24} style={woodIconStyle(isActive('/'))} />
-          <span className="text-xs mt-1" style={woodTextStyle(isActive('/'))}>Accueil</span>
-        </Link>
-        
-        {user && (
+          {/* Icône Accueil (toujours visible) */}
           <Link
-            to="/commande"
+            to="/"
             className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-            onClick={() => handleNavigationClick('/commande')}
+            onClick={() => handleNavigationClick('/')}
           >
-            <ClipboardList size={24} style={woodIconStyle(isActive('/commande'))} />
-            <span className="text-xs mt-1" style={woodTextStyle(isActive('/commande'))}>Commander</span>
+            <Home size={24} style={woodIconStyle(isActive('/'))} />
+            <span className="text-xs mt-1" style={woodTextStyle(isActive('/'))}>Accueil</span>
           </Link>
-        )}
-        
-        {user && (
-          <>
+          
+          {/* Icônes visibles uniquement pour les utilisateurs connectés */}
+          {user && (
             <Link
-              to="/dettes"
+              to="/commande"
               className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-              onClick={() => handleNavigationClick('/dettes')}
+              onClick={() => handleNavigationClick('/commande')}
             >
-              <CreditCard size={24} style={woodIconStyle(isActive('/dettes'))} />
-              <span className="text-xs mt-1" style={woodTextStyle(isActive('/dettes'))}>Dettes</span>
+              <ClipboardList size={24} style={woodIconStyle(isActive('/commande'))} />
+              <span className="text-xs mt-1" style={woodTextStyle(isActive('/commande'))}>Commander</span>
             </Link>
-            
-            <Link
-              to="/parametres"
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-              onClick={() => handleNavigationClick('/parametres')}
-            >
-              <Settings size={24} style={woodIconStyle(isActive('/parametres'))} />
-              <span className="text-xs mt-1" style={woodTextStyle(isActive('/parametres'))}>Paramètres</span>
-            </Link>
-          </>
-        )}
+          )}
+          
+          {user && (
+            <>
+              <Link
+                to="/dettes"
+                className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+                onClick={() => handleNavigationClick('/dettes')}
+              >
+                <CreditCard size={24} style={woodIconStyle(isActive('/dettes'))} />
+                <span className="text-xs mt-1" style={woodTextStyle(isActive('/dettes'))}>Dettes</span>
+              </Link>
+              
+              <Link
+                to="/parametres"
+                className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+                onClick={() => handleNavigationClick('/parametres')}
+              >
+                <Settings size={24} style={woodIconStyle(isActive('/parametres'))} />
+                <span className="text-xs mt-1" style={woodTextStyle(isActive('/parametres'))}>Paramètres</span>
+              </Link>
+            </>
+          )}
 
-        {!user && (
-          <Link
-            to="/auth"
-            className="flex flex-col items-center p-2 rounded-lg transition-colors"
-            onClick={() => { 
-              console.log('Footer Connexion cliqué');
-              handleNavigationClick('/auth');
-            }}
-          >
-            <Lock size={20} style={woodIconStyle(isActive('/auth'))} className="mb-1" />
-            <span className="text-xs" style={woodTextStyle(isActive('/auth'))}>Connexion</span>
-          </Link>
-        )}
+          {/* Icône de connexion pour les utilisateurs non connectés (sauf sur la page de login) */}
+          {!user && !isLoginPage && (
+            <Link
+              to="/auth"
+              className="flex flex-col items-center p-2 rounded-lg transition-colors"
+              onClick={() => { 
+                console.log('Footer Connexion cliqué');
+                handleNavigationClick('/auth');
+              }}
+            >
+              <Lock size={20} style={woodIconStyle(isActive('/auth'))} className="mb-1" />
+              <span className="text-xs" style={woodTextStyle(isActive('/auth'))}>Connexion</span>
+            </Link>
+          )}
       </div>
     </div>
     </nav>

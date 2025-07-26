@@ -22,7 +22,13 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
   // Si l'utilisateur n'est pas connecté, rediriger vers la page d'authentification
   // sauf si on est sur la page d'accueil ou une page d'auth
   const isAuthPage = window.location.pathname.startsWith('/auth');
-  if (!user && !isAuthPage && window.location.pathname !== '/') {
+  
+  // Vérifier si une session est stockée localement pour éviter les redirections pendant la navigation
+  const hasLocalSession = localStorage.getItem('supabase.auth.token') !== null;
+  
+  // Ne rediriger que si l'utilisateur n'est pas connecté ET qu'il n'y a pas de session locale
+  if (!user && !hasLocalSession && !isAuthPage && window.location.pathname !== '/') {
+    console.log('🚨 Redirection vers /auth car utilisateur non connecté et pas de session locale');
     return <Navigate to="/auth" replace />;
   }
 
