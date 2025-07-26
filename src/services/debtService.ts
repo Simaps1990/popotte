@@ -48,12 +48,20 @@ export const debtService = {
   // Récupérer le total global de toutes les dettes en cours de tous les utilisateurs
   async getGlobalDebtSummary(): Promise<{ totalUnpaid: number; totalPending: number; totalPaid: number }> {
     try {
+      console.log('🔍 [getGlobalDebtSummary] Début de la récupération des dettes globales');
+      
       // Récupérer toutes les dettes de tous les utilisateurs
       const { data: allDebts, error } = await supabase
         .from('debts')
         .select('amount, status');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [getGlobalDebtSummary] Erreur Supabase:', error);
+        throw error;
+      }
+
+      console.log('📊 [getGlobalDebtSummary] Dettes récupérées:', allDebts?.length || 0, 'dettes');
+      console.log('📋 [getGlobalDebtSummary] Détail des dettes:', allDebts);
 
       const summary = {
         totalUnpaid: 0,
@@ -63,18 +71,21 @@ export const debtService = {
 
       // Calculer les totaux par statut
       allDebts?.forEach((debt: { amount: number; status: string }) => {
-        if (debt.status === DebtStatus.UNPAID) {
+        console.log(`💰 [getGlobalDebtSummary] Dette: ${debt.amount}€, statut: '${debt.status}'`);
+        
+        if (debt.status === 'unpaid') {
           summary.totalUnpaid += debt.amount;
-        } else if (debt.status === DebtStatus.PENDING) {
+        } else if (debt.status === 'payment_pending') {
           summary.totalPending += debt.amount;
-        } else if (debt.status === DebtStatus.PAID) {
+        } else if (debt.status === 'paid') {
           summary.totalPaid += debt.amount;
         }
       });
 
+      console.log('✅ [getGlobalDebtSummary] Résumé calculé:', summary);
       return summary;
     } catch (error) {
-      console.error('Error fetching global debt summary:', error);
+      console.error('❌ [getGlobalDebtSummary] Erreur lors de la récupération:', error);
       return {
         totalUnpaid: 0,
         totalPending: 0,

@@ -3,7 +3,7 @@ import { CreditCard } from 'lucide-react';
 import { debtService } from '../services/debtService';
 import { useAuth } from '../contexts/AuthContext';
 import { DebtStatus } from '../types/debt';
-import { useDebtSubscription } from '../hooks/useDebtSubscription';
+import { supabase } from '../lib/supabaseClient';
 
 interface DebtSummaryPanelProps {
   className?: string;
@@ -35,11 +35,27 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
     }
   };
 
-  // Utiliser le hook centralisé pour les abonnements aux dettes (sans user ID pour écouter toutes les dettes)
-  useDebtSubscription(undefined, () => {
-    console.log('🔄 [DebtSummaryPanel] Mise à jour des dettes globales via hook centralisé');
-    fetchGlobalDebtSummary();
-  });
+  // Abonnement direct aux changements de la table debts pour toutes les dettes
+  useEffect(() => {
+    console.log('🔄 [DebtSummaryPanel] Configuration de l\'abonnement aux dettes globales');
+    
+    const subscription = supabase
+      .channel('global-debts')
+      .on('postgres_changes', {
+        event: '*', // Tous les événements (INSERT, UPDATE, DELETE)
+        schema: 'public',
+        table: 'debts'
+      }, (payload: any) => {
+        console.log('🔄 [DebtSummaryPanel] Changement détecté dans les dettes:', payload);
+        fetchGlobalDebtSummary();
+      })
+      .subscribe();
+
+    return () => {
+      console.log('🚫 [DebtSummaryPanel] Désabonnement des dettes globales');
+      subscription.unsubscribe();
+    };
+  }, []);
   
   // Chargement initial des données
   useEffect(() => {
