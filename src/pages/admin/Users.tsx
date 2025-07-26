@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import { Search, ArrowLeft, Loader2, Trash2, Edit } from 'lucide-react';
 import { userService, UserProfile, UserDebt, UserOrder } from '../../services/userService';
 import { debtService } from '../../services/debtService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,6 +25,7 @@ const Users: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'hasDebt' | 'noDebt'>('all');
   const [newDebt, setNewDebt] = useState<{ amount: string; description: string }>({ amount: '', description: '' });
   const [addingDebt, setAddingDebt] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<{ id: string; amount: string; description: string } | null>(null);
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
@@ -361,35 +362,146 @@ const Users: React.FC = () => {
     }
   };
 
+  const handleStartEditDebt = (debt: UserDebt) => {
+    setEditingDebt({
+      id: debt.id!,
+      amount: debt.amount?.toString() || '',
+      description: debt.description || ''
+    });
+  };
+
+  const handleCancelEditDebt = () => {
+    setEditingDebt(null);
+  };
+
+  const handleUpdateDebt = async () => {
+    if (!editingDebt || !editingDebt.id) return;
+    
+    // Validation des données
+    const amount = parseFloat(editingDebt.amount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Veuillez entrer un montant valide supérieur à 0');
+      return;
+    }
+    
+    if (!editingDebt.description.trim()) {
+      alert('Veuillez entrer une description pour la dette');
+      return;
+    }
+    
+    try {
+      // Optimistic update - Mettre à jour l'UI immédiatement
+      const previousDebtHistory = [...debtHistory];
+      const previousDebtSummary = debtSummary ? {...debtSummary} : null;
+      
+      // Trouver la dette à mettre à jour
+      const debtToUpdate = debtHistory.find(debt => debt.id === editingDebt.id);
+      if (!debtToUpdate) return;
+      
+      // Calculer la différence de montant pour mettre à jour le résumé
+      const amountDifference = amount - (debtToUpdate.amount || 0);
+      
+      // Mettre à jour la dette dans l'état local
+      const updatedDebtHistory = debtHistory.map(debt => {
+        if (debt.id === editingDebt.id) {
+          return {
+            ...debt,
+            amount: amount,
+            description: editingDebt.description
+          };
+        }
+        return debt;
+      });
+      
+      setDebtHistory(updatedDebtHistory);
+      
+      // Mettre à jour le résumé des dettes si nécessaire
+      if (debtSummary && debtToUpdate.status === 'unpaid') {
+        setDebtSummary({
+          ...debtSummary,
+          totalUnpaid: debtSummary.totalUnpaid + amountDifference
+        });
+      }
+      
+      // Appeler le service pour mettre à jour la dette
+      const result = await debtService.updateDebt(editingDebt.id, {
+        amount: amount,
+        description: editingDebt.description
+      });
+      
+      if (result) {
+        // Réinitialiser le mode édition
+        setEditingDebt(null);
+      } else {
+        // La mise à jour a échoué, restaurer l'état précédent
+        setDebtHistory(previousDebtHistory);
+        if (previousDebtSummary) {
+          setDebtSummary(previousDebtSummary);
+        }
+        
+        alert('Impossible de mettre à jour cette dette.');
+      }
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour de la dette:', err);
+      alert('Une erreur est survenue lors de la mise à jour de la dette.');
+      
+      // En cas d'erreur, rafraîchir les détails pour s'assurer que les données sont cohérentes
+      if (selectedUser) {
+        await fetchUserDetails(selectedUser.id);
+      }
+      
+      // Réinitialiser le mode édition
+      setEditingDebt(null);
+    }
+  };
+
   const handleDeleteDebt = async (debtId: string) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette dette ?')) {
       return;
     }
     
     try {
-      setLoading(prev => ({ ...prev, debt: true }));
+      // Optimistic update - Mettre à jour l'UI immédiatement
+      // Sauvegarder l'état actuel des dettes pour pouvoir revenir en arrière en cas d'erreur
+      const previousDebtHistory = [...debtHistory];
+      
+      // Filtrer la dette à supprimer de l'état local
+      setDebtHistory(debtHistory.filter(debt => debt.id !== debtId));
+      
+      // Mettre à jour également le résumé des dettes si nécessaire
+      if (debtSummary) {
+        const debtToRemove = debtHistory.find(debt => debt.id === debtId);
+        if (debtToRemove && debtToRemove.status === 'unpaid') {
+          setDebtSummary({
+            ...debtSummary,
+            totalUnpaid: Math.max(0, debtSummary.totalUnpaid - (debtToRemove.amount || 0))
+          });
+        }
+      }
       
       // Appeler le service pour supprimer la dette
       const result = await debtService.deleteDebt(debtId);
       
-      if (result === true) {
-        // Rafraîchir les détails de l'utilisateur
+      if (result !== true) {
+        // La suppression a échoué, restaurer l'état précédent
+        setDebtHistory(previousDebtHistory);
+        
+        // Restaurer également le résumé des dettes
         if (selectedUser) {
-          await fetchUserDetails(selectedUser.id);
+          const summary = await debtService.getDebtSummary(selectedUser.id);
+          setDebtSummary(summary);
         }
-      } else if (result === false) {
-        // La dette n'a pas pu être supprimée, mais nous ne savons pas pourquoi
-        // Rafraîchir les détails pour vérifier si la dette existe toujours
-        if (selectedUser) {
-          await fetchUserDetails(selectedUser.id);
-        }
+        
         alert('Impossible de supprimer cette dette. Elle est peut-être liée à une commande ou a déjà été supprimée.');
       }
     } catch (err) {
       console.error('Erreur lors de la suppression de la dette:', err);
       alert('Une erreur est survenue lors de la suppression de la dette.');
-    } finally {
-      setLoading(prev => ({ ...prev, debt: false }));
+      
+      // En cas d'erreur, rafraîchir les détails pour s'assurer que les données sont cohérentes
+      if (selectedUser) {
+        await fetchUserDetails(selectedUser.id);
+      }
     }
   };
 
@@ -646,24 +758,58 @@ const Users: React.FC = () => {
                         <Loader2 className="animate-spin h-6 w-6 text-primary-500" />
                       </div>
                     ) : debtHistory.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {debtHistory.map((debt) => (
-                              <tr key={debt.id}>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDate(debt.created_at || '')}</td>
-                                <td className="px-4 py-3 text-sm text-gray-900">{debt.description}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-red-600">{(debt.amount || 0).toFixed(2)} €</td>
-                                <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="grid gap-3 p-4">
+                        {debtHistory.map((debt) => (
+                          <div key={debt.id} className="bg-white border rounded-lg p-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between">
+                            {editingDebt && editingDebt.id === debt.id ? (
+                              // Mode édition
+                              <div className="w-full">
+                                <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                                  <div className="flex-1">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                    <input
+                                      type="text"
+                                      value={editingDebt.description}
+                                      onChange={(e) => setEditingDebt({ ...editingDebt, description: e.target.value })}
+                                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    />
+                                  </div>
+                                  <div className="sm:w-1/4">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Montant (€)</label>
+                                    <input
+                                      type="number"
+                                      min="0.01"
+                                      step="0.01"
+                                      value={editingDebt.amount}
+                                      onChange={(e) => setEditingDebt({ ...editingDebt, amount: e.target.value })}
+                                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={handleCancelEditDebt}
+                                    className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+                                  >
+                                    Annuler
+                                  </button>
+                                  <button
+                                    onClick={handleUpdateDebt}
+                                    className="px-3 py-1 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors"
+                                  >
+                                    Enregistrer
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              // Mode affichage
+                              <>
+                                <div className="flex-1 mb-2 sm:mb-0">
+                                  <div className="text-sm font-medium">{debt.description}</div>
+                                  <div className="text-xs text-gray-500 mt-1">{formatDate(debt.created_at || '')}</div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
                                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                     debt.status === 'unpaid' ? 'bg-red-100 text-red-800' : 
                                     debt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
@@ -673,22 +819,33 @@ const Users: React.FC = () => {
                                      debt.status === 'pending' ? 'En attente' : 
                                      'Payée'}
                                   </span>
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                  
+                                  <span className="font-medium text-red-600">{(debt.amount || 0).toFixed(2)} €</span>
+                                  
+                                  {/* Boutons d'action conditionnels - uniquement pour les dettes non réglées/validées */}
                                   {debt.status === 'unpaid' && debt.id && (
-                                    <button
-                                      onClick={() => handleDeleteDebt(debt.id!)}
-                                      className="text-red-600 hover:text-red-800 transition-colors"
-                                      title="Supprimer la dette"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => handleStartEditDebt(debt)}
+                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                        title="Modifier la dette"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteDebt(debt.id!)}
+                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                        title="Supprimer la dette"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </div>
                                   )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-500">

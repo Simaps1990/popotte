@@ -260,5 +260,29 @@ export const debtService = {
       console.error('Erreur inattendue lors de la suppression de la dette:', error);
       return false;
     }
+  },
+  
+  // Mettre à jour une dette
+  async updateDebt(debtId: string, updateData: { amount?: number; description?: string }): Promise<boolean> {
+    try {
+      const payload = {
+        ...updateData,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('debts')
+        .update(payload)
+        .eq('id', debtId);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour de la dette:', error);
+        throw error;
+      }
+      return true;
+    } catch (error) {
+      console.error('Erreur inattendue lors de la mise à jour de la dette:', error);
+      return false;
+    }
   }
 };
