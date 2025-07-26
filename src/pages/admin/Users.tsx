@@ -28,8 +28,10 @@ const Users: React.FC = () => {
   const [newDebt, setNewDebt] = useState<{ amount: string; description: string }>({ amount: '', description: '' });
   const [addingDebt, setAddingDebt] = useState(false);
   const [editingDebt, setEditingDebt] = useState<{ id: string; amount: string; description: string } | null>(null);
+  const [blockAutoReload, setBlockAutoReload] = useState(false);
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
+    if (blockAutoReload) return;
     try {
       setLoading(prev => ({ ...prev, users: true }));
       setError(null);
@@ -92,6 +94,10 @@ const Users: React.FC = () => {
   }, []);
 
   const fetchUserDetails = useCallback(async (userId: string) => {
+    if (blockAutoReload) {
+      console.log('🚫 [fetchUserDetails] Rechargement bloqué pendant l\'ajout de dette');
+      return;
+    }
     try {
       setLoading(prev => ({ ...prev, userDetails: true }));
       setError(null);
@@ -224,6 +230,12 @@ const Users: React.FC = () => {
     // S'abonner aux mises à jour des dettes
     unsubscribeDebtRef.current = userService.subscribeToUserDebts(userId, (payload) => {
       console.log('📡 Mise à jour de dette reçue dans Users.tsx:', payload);
+      
+      // Vérifier si les rechargements sont bloqués
+      if (blockAutoReload) {
+        console.log('🚫 [subscribeToUserDebtUpdates] Rechargement bloqué pendant l\'ajout de dette');
+        return;
+      }
       
       // Rafraîchir les détails de l'utilisateur pour mettre à jour les dettes
       fetchUserDetails(userId);
@@ -366,8 +378,9 @@ const Users: React.FC = () => {
     
     try {
       setAddingDebt(true);
+      setBlockAutoReload(true); // BLOQUER tous les rechargements automatiques
       
-      console.log('🚀 [handleAddDebt] Début ajout de dette - Désactivation temporaire des abonnements');
+      console.log('🚀 [handleAddDebt] Début ajout de dette - BLOCAGE COMPLET des rechargements automatiques');
       
       // ÉTAPE 1: Désactiver temporairement les abonnements pour éviter l'écrasement
       if (unsubscribeDebtRef.current) {
@@ -452,7 +465,10 @@ const Users: React.FC = () => {
           if (selectedUser) {
             subscribeToUserDebtUpdates(selectedUser.id);
           }
-        }, 2000); // Délai de 2 secondes pour laisser le temps à l'optimistic update de se stabiliser
+          // Débloquer les rechargements automatiques après stabilisation
+          setBlockAutoReload(false);
+          console.log('✅ [handleAddDebt] Rechargements automatiques réactivés');
+        }, 3000); // Délai de 3 secondes pour laisser le temps à l'optimistic update de se stabiliser
         
         alert(`Dette ajoutée avec succès à ${selectedUser.username}`);
       } else {
@@ -471,19 +487,34 @@ const Users: React.FC = () => {
           subscribeToUserDebtUpdates(selectedUser.id);
         }
         
+        // Débloquer les rechargements en cas d'échec
+        setBlockAutoReload(false);
+        console.log('🔓 [handleAddDebt] Rechargements automatiques réactivés après échec');
+        
         alert('Erreur lors de l\'ajout de la dette.');
       }
     } catch (err) {
       console.error('💥 [handleAddDebt] Erreur lors de l\'ajout de la dette:', err);
       
-      // En cas d'erreur, réactiver les abonnements et recharger les données
+      // En cas d'erreur, réactiver les abonnements et débloquer les rechargements
+      setBlockAutoReload(false);
+      console.log('🔓 [handleAddDebt] Rechargements automatiques réactivés après erreur');
+      
       if (selectedUser) {
         subscribeToUserDebtUpdates(selectedUser.id);
-        await fetchUserDetails(selectedUser.id);
+        // Attendre un peu avant de recharger pour éviter les conflits
+        setTimeout(() => {
+          fetchUserDetails(selectedUser.id);
+        }, 1000);
       }
       alert('Erreur lors de l\'ajout de la dette.');
     } finally {
       setAddingDebt(false);
+      // Sécurité finale : s'assurer que le flag est toujours désactivé
+      setTimeout(() => {
+        setBlockAutoReload(false);
+        console.log('🔒 [handleAddDebt] Sécurité finale - Flag de blocage désactivé');
+      }, 5000);
     }
   };
 
