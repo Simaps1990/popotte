@@ -10,6 +10,7 @@ import {
   getCurrentUserWithProfile
 } from '../services/settingsService';
 import { DebtSummaryPanel } from '../components/DebtSummaryPanel';
+import { PendingDebtSummaryPanel } from '../components/PendingDebtSummaryPanel';
 import { useDataRefresh } from '../hooks/useDataRefresh';
 import '../styles/cards.css';
 
@@ -218,6 +219,7 @@ const Settings = () => {
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistiques financières</h2>
               <DebtSummaryPanel className="mb-4" />
+              <PendingDebtSummaryPanel className="mb-4" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestion du site</h2>
 
