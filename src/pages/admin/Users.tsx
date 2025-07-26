@@ -468,12 +468,6 @@ const Users: React.FC = () => {
                 >
                   Avec dette
                 </button>
-                <button
-                  onClick={() => setActiveFilter('noDebt')}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeFilter === 'noDebt' ? 'bg-green-100 text-green-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                >
-                  Sans dette
-                </button>
               </div>
               <div className="space-y-3">
                 {loading.users ? (
@@ -599,7 +593,7 @@ const Users: React.FC = () => {
                           min="0.01"
                           step="0.01"
                           value={newDebt.amount}
-                          onChange={(e) => setNewDebt({ ...newDebt, amount: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                           placeholder="0.00"
                           disabled={addingDebt}

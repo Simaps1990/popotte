@@ -337,8 +337,6 @@ const Settings = () => {
                 </>
               )}
 
-              {/* Panneau de résumé des dettes - visible pour tous les utilisateurs */}
-              <DebtSummaryPanel className="mb-4" />
               
               {/* Bouton Mon profil - visible pour tous les utilisateurs */}
               <Link 

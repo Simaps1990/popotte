@@ -232,9 +232,9 @@ export const userService = {
           status: 'unpaid',
           created_by: debtData.created_by,
           created_at: now,
-          updated_at: now,
+          updated_at: now
           // Pas de order_id pour une dette manuelle
-          items: [] // Tableau vide pour les dettes manuelles
+          // Suppression du champ items qui pourrait causer des problèmes
         }])
         .select('*')
         .single();
