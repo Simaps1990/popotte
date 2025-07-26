@@ -30,9 +30,9 @@ const Users: React.FC = () => {
   const [addingDebt, setAddingDebt] = useState(false);
   const [editingDebt, setEditingDebt] = useState<{ id: string; amount: string; description: string } | null>(null);
   const [blockAutoReload, setBlockAutoReload] = useState(false);
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, UserDebt>>(new Map());
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
-    if (blockAutoReload) return;
     try {
       setLoading(prev => ({ ...prev, users: true }));
       setError(null);
@@ -94,11 +94,30 @@ const Users: React.FC = () => {
     }
   }, []);
 
+  // Fonction de merge intelligent entre optimistic updates et données backend
+  const mergeDebtData = useCallback((backendDebts: UserDebt[]): UserDebt[] => {
+    const merged = [...backendDebts];
+    
+    // Ajouter les optimistic updates qui ne sont pas encore dans le backend
+    optimisticUpdates.forEach((optimisticDebt) => {
+      const existsInBackend = merged.some(debt => 
+        debt.id === optimisticDebt.id || 
+        (debt.amount === optimisticDebt.amount && 
+         debt.description === optimisticDebt.description &&
+         Math.abs(new Date(debt.created_at || '').getTime() - new Date(optimisticDebt.created_at || '').getTime()) < 5000)
+      );
+      
+      if (!existsInBackend) {
+        merged.unshift(optimisticDebt); // Ajouter en premier
+      }
+    });
+    
+    return merged.sort((a, b) => 
+      new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+    );
+  }, [optimisticUpdates]);
+
   const fetchUserDetails = useCallback(async (userId: string) => {
-    if (blockAutoReload) {
-      console.log('🚫 [fetchUserDetails] Rechargement bloqué pendant l\'ajout de dette');
-      return;
-    }
     try {
       setLoading(prev => ({ ...prev, userDetails: true }));
       setError(null);
@@ -111,9 +130,10 @@ const Users: React.FC = () => {
         const summary = await debtService.getDebtSummary(userId);
         setDebtSummary(summary);
         
-        // Récupérer uniquement les dettes ajoutées manuellement (sans order_id)
+        // Récupérer les dettes et les merger avec les optimistic updates
         const debts = await userService.getUserDebtHistory(userId, true);
-        setDebtHistory(debts);
+        const mergedDebts = mergeDebtData(debts);
+        setDebtHistory(mergedDebts);
         
         const orders = await userService.getUserOrders(userId);
         setUserOrders(orders);
@@ -376,22 +396,14 @@ const Users: React.FC = () => {
       toast.error('Veuillez entrer une description');
       return;
     }
-    
+
     try {
       setAddingDebt(true);
-      setBlockAutoReload(true); // BLOQUER tous les rechargements automatiques
       
-      console.log('🚀 [handleAddDebt] Début ajout de dette - BLOCAGE COMPLET des rechargements automatiques');
+      console.log('🚀 [handleAddDebt] Ajout avec synchronisation intelligente instantanée');
       
-      // ÉTAPE 1: Désactiver temporairement les abonnements pour éviter l'écrasement
-      if (unsubscribeDebtRef.current) {
-        console.log('⏸️ Désactivation temporaire de l\'abonnement aux dettes');
-        unsubscribeDebtRef.current();
-        unsubscribeDebtRef.current = null;
-      }
-      
-      // ÉTAPE 2: Optimistic update - ajouter temporairement la dette à l'UI
-      const tempDebt = {
+      // ÉTAPE 1: Optimistic update instantané - aucun blocage, aucun délai
+      const tempDebt: UserDebt = {
         id: `temp-${Date.now()}`,
         user_id: selectedUser.id,
         amount,
@@ -402,24 +414,43 @@ const Users: React.FC = () => {
         order_id: undefined
       };
       
-      console.log('✨ [handleAddDebt] Optimistic update - Ajout temporaire à l\'UI');
+      // Ajouter à la map des optimistic updates pour le merge intelligent
+      if (tempDebt.id) {
+        setOptimisticUpdates(prev => new Map(prev).set(tempDebt.id!, tempDebt));
+      }
       
-      // Mettre à jour l'historique des dettes immédiatement
+      // Mise à jour instantanée de l'UI
       setDebtHistory(prev => [tempDebt, ...prev]);
       
-      // Mettre à jour le résumé des dettes
+      // Mise à jour des totaux
       if (debtSummary) {
-        setDebtSummary({
-          ...debtSummary,
-          totalUnpaid: debtSummary.totalUnpaid + amount
-        });
+        setDebtSummary(prev => prev ? {
+          ...prev,
+          totalUnpaid: prev.totalUnpaid + amount
+        } : prev);
       }
+      
+      // Mise à jour de l'utilisateur sélectionné
+      setSelectedUser(prev => prev ? {
+        ...prev,
+        debt: (prev.debt || 0) + amount
+      } : prev);
+      
+      // Mise à jour de la liste des utilisateurs
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === selectedUser.id 
+            ? { ...user, debt: (user.debt || 0) + amount }
+            : user
+        )
+      );
+      
+      console.log('✨ [handleAddDebt] Optimistic update appliqué instantanément');
       
       // Vider le formulaire
       setNewDebt({ amount: '', description: '' });
       
-      // ÉTAPE 3: Appeler le service pour créer la dette en base
-      console.log('💾 [handleAddDebt] Création en base de données');
+      // ÉTAPE 2: Création en arrière-plan (l'abonnement temps réel se chargera de la synchronisation)
       const result = await debtService.createDebt({
         userId: selectedUser.id,
         amount,
@@ -428,94 +459,53 @@ const Users: React.FC = () => {
       });
       
       if (result) {
-        console.log('✅ [handleAddDebt] Dette créée avec succès en base:', result);
+        console.log('✅ [handleAddDebt] Dette créée en base avec succès');
+        toast.success(`Dette ajoutée avec succès à ${selectedUser.username}`);
         
-        // Remplacer la dette temporaire par la vraie dette
-        setDebtHistory(prev => 
-          prev.map(debt => 
-            debt.id === tempDebt.id
-              ? { ...tempDebt, ...result, id: result.id || tempDebt.id }
-              : debt
-          )
-        );
+        // L'abonnement temps réel se chargera automatiquement de remplacer
+        // l'optimistic update par la vraie dette via le merge intelligent
+      } else {
+        console.log('❌ [handleAddDebt] Échec création en base - Annulation optimistic update');
         
-        // Mettre à jour immédiatement l'utilisateur sélectionné avec le nouveau total
-        setSelectedUser(prev => {
-          if (prev) {
-            const newDebt = (prev.debt || 0) + amount;
-            console.log(`📊 Mise à jour du total de l'utilisateur ${prev.username}: ${prev.debt || 0}€ -> ${newDebt}€`);
-            return { ...prev, debt: newDebt };
-          }
-          return prev;
-        });
+        // En cas d'échec, annuler l'optimistic update
+        if (tempDebt.id) {
+          setOptimisticUpdates(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(tempDebt.id!);
+            return newMap;
+          });
+        }
         
-        // Forcer aussi la mise à jour dans la liste des utilisateurs
+        setDebtHistory(prev => prev.filter(debt => debt.id !== tempDebt.id));
+        
+        if (debtSummary) {
+          setDebtSummary(prev => prev ? {
+            ...prev,
+            totalUnpaid: prev.totalUnpaid - amount
+          } : prev);
+        }
+        
+        setSelectedUser(prev => prev ? {
+          ...prev,
+          debt: Math.max(0, (prev.debt || 0) - amount)
+        } : prev);
+        
         setUsers(prevUsers => 
           prevUsers.map(user => 
-            user.id === selectedUser.id
-              ? { ...user, debt: (user.debt || 0) + amount }
+            user.id === selectedUser.id 
+              ? { ...user, debt: Math.max(0, (user.debt || 0) - amount) }
               : user
           )
         );
         
-        console.log('🎉 [handleAddDebt] Optimistic update terminé avec succès');
-        
-        // ÉTAPE 4: Réactiver les abonnements après un délai pour éviter l'écrasement
-        setTimeout(() => {
-          console.log('🔄 [handleAddDebt] Réactivation des abonnements après délai');
-          if (selectedUser) {
-            subscribeToUserDebtUpdates(selectedUser.id);
-          }
-          // Débloquer les rechargements automatiques après stabilisation
-          setBlockAutoReload(false);
-          console.log('✅ [handleAddDebt] Rechargements automatiques réactivés');
-        }, 3000); // Délai de 3 secondes pour laisser le temps à l'optimistic update de se stabiliser
-        
-        toast.success(`Dette ajoutée avec succès à ${selectedUser.username}`);
-      } else {
-        console.log('❌ [handleAddDebt] Échec création en base - Annulation optimistic update');
-        // En cas d'échec, annuler l'optimistic update
-        setDebtHistory(prev => prev.filter(debt => debt.id !== tempDebt.id));
-        if (debtSummary) {
-          setDebtSummary({
-            ...debtSummary,
-            totalUnpaid: debtSummary.totalUnpaid - amount
-          });
-        }
-        
-        // Réactiver les abonnements même en cas d'échec
-        if (selectedUser) {
-          subscribeToUserDebtUpdates(selectedUser.id);
-        }
-        
-        // Débloquer les rechargements en cas d'échec
-        setBlockAutoReload(false);
-        console.log('🔓 [handleAddDebt] Rechargements automatiques réactivés après échec');
-        
         toast.error('Erreur lors de l\'ajout de la dette');
       }
+      
     } catch (err) {
-      console.error('💥 [handleAddDebt] Erreur lors de l\'ajout de la dette:', err);
-      
-      // En cas d'erreur, réactiver les abonnements et débloquer les rechargements
-      setBlockAutoReload(false);
-      console.log('🔓 [handleAddDebt] Rechargements automatiques réactivés après erreur');
-      
-      if (selectedUser) {
-        subscribeToUserDebtUpdates(selectedUser.id);
-        // Attendre un peu avant de recharger pour éviter les conflits
-        setTimeout(() => {
-          fetchUserDetails(selectedUser.id);
-        }, 1000);
-      }
+      console.error('💥 [handleAddDebt] Erreur:', err);
       toast.error('Erreur lors de l\'ajout de la dette');
     } finally {
       setAddingDebt(false);
-      // Sécurité finale : s'assurer que le flag est toujours désactivé
-      setTimeout(() => {
-        setBlockAutoReload(false);
-        console.log('🔒 [handleAddDebt] Sécurité finale - Flag de blocage désactivé');
-      }, 5000);
     }
   };
 
