@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Search, ArrowLeft, Loader2, Trash2, Edit } from 'lucide-react';
 import { userService, UserProfile, UserDebt, UserOrder } from '../../services/userService';
 import { debtService } from '../../services/debtService';
@@ -9,6 +9,8 @@ import { DebtStatus } from '../../types/debt';
 
 const Users: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user: currentUser, refreshUserRole } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -128,13 +130,16 @@ const Users: React.FC = () => {
     console.log('Abonnement aux mises à jour des utilisateurs...');
     const unsubscribe = userService.subscribeToUsers((payload) => {
       console.log('Mise à jour des utilisateurs:', payload);
-      fetchUsers();
+      // Utiliser un flag pour éviter les appels redondants
+      if (!loading.users) {
+        fetchUsers();
+      }
     });
     
     // Stocker la fonction de désabonnement dans la référence
     unsubscribeRef.current = unsubscribe;
     return unsubscribe;
-  }, [fetchUsers]);
+  }, [fetchUsers, loading.users]);
   
   // Fonction pour se désabonner temporairement
   const unsubscribeFromUserUpdates = useCallback(() => {
@@ -146,51 +151,51 @@ const Users: React.FC = () => {
     }
   }, []);
   
+  // Effet pour le chargement initial des utilisateurs et l'abonnement
   useEffect(() => {
+    // Chargement initial des utilisateurs
     fetchUsers();
     
     // S'abonner aux mises à jour des utilisateurs
     subscribeToUserUpdates();
     
-    // Restaurer l'utilisateur sélectionné depuis localStorage
-    const savedUserId = localStorage.getItem('selectedUserId');
+    // Se désabonner lors du démontage du composant
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+      if (unsubscribeDebtRef.current) {
+        unsubscribeDebtRef.current();
+      }
+    };
+  }, []); // Aucune dépendance pour éviter les rechargements multiples
+  
+  // Effet séparé pour restaurer l'utilisateur sélectionné
+  useEffect(() => {
+    // Ne rien faire si les utilisateurs ne sont pas encore chargés
+    if (users.length === 0 || loading.users) return;
+    
+    // Vérifier d'abord l'URL pour l'ID utilisateur
+    const urlUserId = searchParams.get('userId');
+    
+    // Ensuite vérifier localStorage si rien dans l'URL
+    const savedUserId = urlUserId || localStorage.getItem('selectedUserId');
+    
     if (savedUserId) {
       console.log('Restauration de l\'utilisateur sélectionné:', savedUserId);
-      // Attendre que les utilisateurs soient chargés avant de restaurer la sélection
-      const checkUsersLoaded = setInterval(() => {
-        if (users.length > 0) {
-          clearInterval(checkUsersLoaded);
-          const savedUser = users.find(u => u.id === savedUserId);
-          if (savedUser) {
-            console.log('Utilisateur trouvé, restauration de la sélection');
-            setSelectedUser(savedUser);
-            fetchUserDetails(savedUserId);
-          }
+      const savedUser = users.find(u => u.id === savedUserId);
+      if (savedUser) {
+        console.log('Utilisateur trouvé, restauration de la sélection');
+        setSelectedUser(savedUser);
+        fetchUserDetails(savedUserId);
+        
+        // Mettre à jour l'URL si nécessaire
+        if (!urlUserId) {
+          setSearchParams({ userId: savedUserId });
         }
-      }, 500);
-      
-      // Nettoyer l'intervalle si le composant est démonté
-      return () => {
-        clearInterval(checkUsersLoaded);
-        if (unsubscribeRef.current) {
-          unsubscribeRef.current();
-        }
-        if (unsubscribeDebtRef.current) {
-          unsubscribeDebtRef.current();
-        }
-      };
-    } else {
-      // Se désabonner lors du démontage du composant si pas d'utilisateur à restaurer
-      return () => {
-        if (unsubscribeRef.current) {
-          unsubscribeRef.current();
-        }
-        if (unsubscribeDebtRef.current) {
-          unsubscribeDebtRef.current();
-        }
-      };
+      }
     }
-  }, [fetchUsers, subscribeToUserUpdates, users]);
+  }, [users, loading.users, fetchUserDetails, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!selectedUser) return;

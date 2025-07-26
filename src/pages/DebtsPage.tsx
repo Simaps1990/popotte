@@ -5,6 +5,7 @@ import { DebtStatus, DebtSummary } from '../types/debt';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { useDebtSubscription } from '../hooks/useDebtSubscription';
 
 export default function DebtsPage() {
   const { user } = useAuth();
@@ -27,17 +28,15 @@ export default function DebtsPage() {
     }
   };
 
+  // Utiliser le hook centralisé pour les abonnements aux dettes
+  useDebtSubscription(user?.id, () => {
+    console.log('🔄 [DebtsPage] Mise à jour des dettes via hook centralisé');
+    loadDebts();
+  });
+  
+  // Chargement initial des dettes
   useEffect(() => {
     loadDebts();
-
-    // S'abonner aux mises à jour
-    if (user) {
-      const unsubscribe = debtService.subscribeToDebtUpdates(user.id, () => {
-        loadDebts();
-      });
-
-      return () => unsubscribe();
-    }
   }, [user]);
 
   const formatDate = (dateString: string) => {

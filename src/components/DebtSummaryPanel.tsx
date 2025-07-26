@@ -3,6 +3,7 @@ import { CreditCard } from 'lucide-react';
 import { debtService } from '../services/debtService';
 import { useAuth } from '../contexts/AuthContext';
 import { DebtStatus } from '../types/debt';
+import { useDebtSubscription } from '../hooks/useDebtSubscription';
 
 interface DebtSummaryPanelProps {
   className?: string;
@@ -34,26 +35,17 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
     }
   };
 
-  // S'abonner aux mises à jour des dettes
-  useEffect(() => {
-    if (!user) return;
-
-    console.log('🔔 DebtSummaryPanel - Initialisation de l\'abonnement aux dettes');
-    
-    // Charger les données initiales
+  // Utiliser le hook centralisé pour les abonnements aux dettes
+  useDebtSubscription(user?.id, () => {
+    console.log('🔄 [DebtSummaryPanel] Mise à jour des dettes via hook centralisé');
     fetchDebtSummary();
-    
-    // S'abonner aux mises à jour en temps réel
-    const unsubscribe = debtService.subscribeToDebtUpdates(user.id, (payload) => {
-      console.log('🔔 DebtSummaryPanel - Mise à jour de dette reçue:', payload);
-      fetchDebtSummary(); // Recharger les données à chaque mise à jour
-    });
-    
-    // Nettoyer l'abonnement lors du démontage
-    return () => {
-      console.log('🧹 DebtSummaryPanel - Nettoyage de l\'abonnement aux dettes');
-      unsubscribe();
-    };
+  });
+  
+  // Chargement initial des données
+  useEffect(() => {
+    if (user) {
+      fetchDebtSummary();
+    }
   }, [user]);
 
   if (!user) {

@@ -14,6 +14,7 @@ import { checkDatabaseStructure } from '../lib/supabase';
 import { supabase } from '../lib/supabaseClient';
 import { useRealTimeSubscriptions, useCacheInvalidation } from '../hooks/useRealTimeSubscriptions';
 import { useDataRefresh } from '../hooks/useDataRefresh';
+import { useDebtSubscription } from '../hooks/useDebtSubscription';
 
 // Fonction utilitaire pour formater les dates
 const formatDate = (dateString: string) => {
@@ -118,13 +119,15 @@ export function Dettes() {
     fetchAllDebtsAndOrders();
   }, []);
 
-  // Abonnements temps réel
+  // Abonnements temps réel - Sans l'abonnement aux dettes qui est maintenant géré par useDebtSubscription
   useRealTimeSubscriptions({
     onPaymentNotificationChange: handlePaymentNotificationChange,
-    onDebtChange: handleDebtChange,
     onOrderChange: handleOrderChange,
     userId: user?.id
   });
+  
+  // Utilisation du hook centralisé pour l'abonnement aux dettes
+  useDebtSubscription(user?.id, handleDebtChange);
 
   // Fonction utilitaire pour formater les dates
   const formatDate = (dateString: string) => {
@@ -179,18 +182,8 @@ export function Dettes() {
       loadData();
       checkStructure();
       
-      // Abonnement aux mises à jour en temps réel des dettes
-      const unsubscribeDebts = debtService.subscribeToDebtUpdates(user.id, (payload: any) => {
-        console.log('💬 Mise à jour de dette détectée:', payload);
-        
-        // Rafraîchir les données après une mise à jour seulement si le composant est monté
-        if (isMounted) {
-          fetchAllDebtsAndOrders();
-          fetchNotifications();
-        }
-      });
-      
-      // Abonnement aux mises à jour en temps réel des commandes
+      // Abonnement aux mises à jour en temps réel des commandes uniquement
+      // L'abonnement aux dettes est maintenant géré par useDebtSubscription
       const unsubscribeOrders = orderService.subscribeToOrderUpdates(user.id, (payload: any) => {
         console.log('💬 Mise à jour de commande détectée:', payload);
         
@@ -202,9 +195,8 @@ export function Dettes() {
       
       // Nettoyage des abonnements lors du démontage du composant
       return () => {
-        console.log('🔕 Désabonnement des mises à jour des dettes et commandes');
+        console.log('🔕 Désabonnement des mises à jour des commandes');
         isMounted = false;
-        unsubscribeDebts();
         unsubscribeOrders();
       };
     }
