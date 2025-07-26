@@ -353,34 +353,33 @@ const Users: React.FC = () => {
   const handleAddDebt = async () => {
     if (!selectedUser) return;
     
-    // Validation des données
     const amount = parseFloat(newDebt.amount);
     if (isNaN(amount) || amount <= 0) {
-      alert('Veuillez entrer un montant valide supérieur à 0');
+      alert('Veuillez entrer un montant valide');
       return;
     }
     
     if (!newDebt.description.trim()) {
-      alert('Veuillez entrer une description pour la dette');
+      alert('Veuillez entrer une description');
       return;
     }
     
     try {
       setAddingDebt(true);
       
-      // Optimistic update - Créer une dette temporaire pour l'affichage immédiat
-      const tempDebt: UserDebt = {
+      // Optimistic update : ajouter temporairement la dette à l'UI
+      const tempDebt = {
         id: `temp-${Date.now()}`,
         user_id: selectedUser.id,
-        amount: amount,
+        amount,
         description: newDebt.description,
         status: DebtStatus.UNPAID,
         created_at: new Date().toISOString(),
-        created_by: selectedUser.id, // Ajout du champ requis
+        created_by: selectedUser.id,
         order_id: undefined
       };
       
-      // Ajouter immédiatement la dette à l'interface
+      // Mettre à jour l'historique des dettes immédiatement
       setDebtHistory(prev => [tempDebt, ...prev]);
       
       // Mettre à jour le résumé des dettes
@@ -391,13 +390,13 @@ const Users: React.FC = () => {
         });
       }
       
-      // Réinitialiser le formulaire immédiatement
+      // Vider le formulaire
       setNewDebt({ amount: '', description: '' });
       
-      // Ajout de la dette via le service de dette
+      // Appeler le service pour créer la dette
       const result = await debtService.createDebt({
         userId: selectedUser.id,
-        amount: amount,
+        amount,
         description: newDebt.description,
         status: DebtStatus.UNPAID
       });
@@ -405,7 +404,7 @@ const Users: React.FC = () => {
       if (result) {
         console.log('Dette ajoutée avec succès:', result);
         
-        // Remplacer la dette temporaire par la vraie dette avec l'ID correct
+        // Remplacer la dette temporaire par la vraie dette
         setDebtHistory(prev => 
           prev.map(debt => 
             debt.id === tempDebt.id 
@@ -414,31 +413,44 @@ const Users: React.FC = () => {
           )
         );
         
-        // Notification de succès
-        alert(`Dette de ${amount.toFixed(2)} € ajoutée avec succès à ${selectedUser.username}`);
-      } else {
-        // En cas d'échec, supprimer la dette temporaire
-        setDebtHistory(prev => prev.filter(debt => debt.id !== tempDebt.id));
+        // Mettre à jour immédiatement l'utilisateur sélectionné avec le nouveau total
+        setSelectedUser(prev => {
+          if (prev) {
+            const newDebt = (prev.debt || 0) + amount;
+            console.log(`Mise à jour du total de l'utilisateur ${prev.username}: ${prev.debt || 0}€ -> ${newDebt}€`);
+            return { ...prev, debt: newDebt };
+          }
+          return prev;
+        });
         
-        // Restaurer le résumé des dettes
+        // Forcer aussi la mise à jour dans la liste des utilisateurs
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === selectedUser.id 
+              ? { ...user, debt: (user.debt || 0) + amount }
+              : user
+          )
+        );
+        
+        alert(`Dette ajoutée avec succès à ${selectedUser.username}`);
+      } else {
+        // En cas d'échec, annuler l'optimistic update
+        setDebtHistory(prev => prev.filter(debt => debt.id !== tempDebt.id));
         if (debtSummary) {
           setDebtSummary({
             ...debtSummary,
             totalUnpaid: debtSummary.totalUnpaid - amount
           });
         }
-        
-        alert('Erreur lors de l\'ajout de la dette. Veuillez réessayer.');
+        alert('Erreur lors de l\'ajout de la dette.');
       }
     } catch (err) {
       console.error('Erreur lors de l\'ajout de la dette:', err);
-      
-      // En cas d'erreur, rafraîchir les détails pour s'assurer de la cohérence
+      // En cas d'erreur, recharger les données pour être sûr
       if (selectedUser) {
         await fetchUserDetails(selectedUser.id);
       }
-      
-      alert('Une erreur est survenue lors de l\'ajout de la dette.');
+      alert('Erreur lors de l\'ajout de la dette.');
     } finally {
       setAddingDebt(false);
     }
@@ -465,9 +477,28 @@ const Users: React.FC = () => {
       // Supprimer les paramètres d'URL
       setSearchParams({});
       
+      // Attendre un délai suffisant pour s'assurer que les changements sont propagés dans Supabase
+      console.log('Attente de la propagation des changements...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       // Recharger la liste des utilisateurs pour avoir les totaux à jour
       console.log('Rechargement de la liste des utilisateurs avant retour...');
       await fetchUsers();
+      
+      // Vérification : si l'utilisateur modifié n'a pas le bon total, réessayer
+      if (selectedUser) {
+        const updatedUser = users.find(u => u.id === selectedUser.id);
+        if (updatedUser) {
+          console.log(`Vérification du total pour ${updatedUser.username}: ${updatedUser.debt}€`);
+          
+          // Si le total semble incorrect, forcer un second rechargement
+          if (updatedUser.debt === 0 || !updatedUser.debt) {
+            console.log('Total semble incorrect, second rechargement...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchUsers();
+          }
+        }
+      }
       
       // Revenir à la liste des utilisateurs
       setSelectedUser(null);
