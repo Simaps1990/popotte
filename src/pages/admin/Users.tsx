@@ -544,7 +544,7 @@ const Users: React.FC = () => {
                 <div className="bg-red-50 p-3 rounded-lg">
                   <p className="text-sm text-gray-600">Total des dettes à régler :</p>
                   <p className="text-xl font-bold text-red-600">
-                    {debtHistory && debtHistory.filter((debt: UserDebt) => debt.status === 'unpaid').reduce((sum: number, debt: UserDebt) => sum + (debt.amount || 0), 0).toFixed(2)} €
+                    {debtSummary ? debtSummary.totalUnpaid.toFixed(2) : '0.00'} €
                   </p>
                 </div>
                 
