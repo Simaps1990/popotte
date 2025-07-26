@@ -152,16 +152,45 @@ const Users: React.FC = () => {
     // S'abonner aux mises à jour des utilisateurs
     subscribeToUserUpdates();
     
-    // Se désabonner lors du démontage du composant
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
-      if (unsubscribeDebtRef.current) {
-        unsubscribeDebtRef.current();
-      }
-    };
-  }, [fetchUsers, subscribeToUserUpdates]);
+    // Restaurer l'utilisateur sélectionné depuis localStorage
+    const savedUserId = localStorage.getItem('selectedUserId');
+    if (savedUserId) {
+      console.log('Restauration de l\'utilisateur sélectionné:', savedUserId);
+      // Attendre que les utilisateurs soient chargés avant de restaurer la sélection
+      const checkUsersLoaded = setInterval(() => {
+        if (users.length > 0) {
+          clearInterval(checkUsersLoaded);
+          const savedUser = users.find(u => u.id === savedUserId);
+          if (savedUser) {
+            console.log('Utilisateur trouvé, restauration de la sélection');
+            setSelectedUser(savedUser);
+            fetchUserDetails(savedUserId);
+          }
+        }
+      }, 500);
+      
+      // Nettoyer l'intervalle si le composant est démonté
+      return () => {
+        clearInterval(checkUsersLoaded);
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+        }
+        if (unsubscribeDebtRef.current) {
+          unsubscribeDebtRef.current();
+        }
+      };
+    } else {
+      // Se désabonner lors du démontage du composant si pas d'utilisateur à restaurer
+      return () => {
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+        }
+        if (unsubscribeDebtRef.current) {
+          unsubscribeDebtRef.current();
+        }
+      };
+    }
+  }, [fetchUsers, subscribeToUserUpdates, users]);
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -207,6 +236,8 @@ const Users: React.FC = () => {
 
   const handleSelectUser = (user: UserProfile) => {
     setSelectedUser(user);
+    // Sauvegarder l'ID de l'utilisateur sélectionné dans localStorage
+    localStorage.setItem('selectedUserId', user.id);
     fetchUserDetails(user.id);
   };
 

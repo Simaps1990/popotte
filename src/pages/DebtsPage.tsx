@@ -49,7 +49,9 @@ export default function DebtsPage() {
     
     // Optimistic UI update - immediately update the local state
     if (debtSummary) {
-      const updatedDebts = debtSummary.debts.map(debt => {
+      // Créer une copie du debtSummary actuel pour les mises à jour
+      const currentSummary = { ...debtSummary };
+      const updatedDebts = currentSummary.debts.map(debt => {
         if (debt.id === debtId) {
           // Create a copy of the debt with updated status
           return {
@@ -76,24 +78,18 @@ export default function DebtsPage() {
         }
       });
       
-      // Update the state immediately
-      setDebtSummary({
-        ...debtSummary,
+      // Update the state immediately with all changes at once
+      const updatedSummary = {
+        ...currentSummary,
         debts: updatedDebts,
         totalUnpaid: newTotalUnpaid,
         totalPending: newTotalPending,
-        totalPaid: newTotalPaid
-      });
-
-      // Force re-render of both sections
-      setTimeout(() => {
-        if (debtSummary) {
-          setDebtSummary({
-            ...debtSummary,
-            forceUpdate: Date.now() // Add a timestamp to force re-render
-          });
-        }
-      }, 50);
+        totalPaid: newTotalPaid,
+        forceUpdate: Date.now() // Force immediate re-render
+      };
+      
+      // Mettre à jour l'état en une seule fois avec toutes les modifications
+      setDebtSummary(updatedSummary);
     }
     
     // Then make the actual API call
@@ -204,11 +200,56 @@ export default function DebtsPage() {
                       const unpaidDebts = debtSummary?.debts
                         .filter(debt => debt.status === DebtStatus.UNPAID);
                       
-                      // Process each debt sequentially to ensure state updates properly
-                      if (unpaidDebts && unpaidDebts.length > 0) {
-                        for (const debt of unpaidDebts) {
-                          await handleMarkAsPaid(debt.id);
-                        }
+                      // Vérifier s'il y a des dettes à notifier
+                      if (!unpaidDebts || unpaidDebts.length === 0) {
+                        return;
+                      }
+                      
+                      // Traiter toutes les dettes en une seule fois pour éviter les problèmes de rendu
+                      const debtIds = unpaidDebts.map(debt => debt.id);
+                      
+                      // Optimistic UI update pour toutes les dettes en une seule fois
+                      if (debtSummary) {
+                        const updatedDebts = debtSummary.debts.map(debt => {
+                          if (debtIds.includes(debt.id)) {
+                            return {
+                              ...debt,
+                              status: DebtStatus.PENDING,
+                              updatedAt: new Date().toISOString()
+                            };
+                          }
+                          return debt;
+                        });
+                        
+                        // Recalculate totals
+                        let newTotalUnpaid = 0;
+                        let newTotalPending = 0;
+                        let newTotalPaid = 0;
+                        
+                        updatedDebts.forEach(debt => {
+                          if (debt.status === DebtStatus.UNPAID) {
+                            newTotalUnpaid += debt.amount;
+                          } else if (debt.status === DebtStatus.PENDING) {
+                            newTotalPending += debt.amount;
+                          } else if (debt.status === DebtStatus.PAID) {
+                            newTotalPaid += debt.amount;
+                          }
+                        });
+                        
+                        // Update the state immediately with all changes
+                        setDebtSummary({
+                          ...debtSummary,
+                          debts: updatedDebts,
+                          totalUnpaid: newTotalUnpaid,
+                          totalPending: newTotalPending,
+                          totalPaid: newTotalPaid,
+                          forceUpdate: Date.now() // Force immediate re-render
+                        });
+                      }
+                      
+                      // Appel API pour chaque dette
+                      for (const debt of unpaidDebts) {
+                        await debtService.markAsPaid(debt.id, user.id);
                       }
                     }}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
