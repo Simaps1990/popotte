@@ -248,8 +248,10 @@ export default function DebtsPage() {
                       }
                       
                       // Appel API pour chaque dette
-                      for (const debt of unpaidDebts) {
-                        await debtService.markAsPaid(debt.id, user.id);
+                      if (user) { // Vérification que user n'est pas null
+                        for (const debt of unpaidDebts) {
+                          await debtService.markAsPaid(debt.id, user.id);
+                        }
                       }
                     }}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
