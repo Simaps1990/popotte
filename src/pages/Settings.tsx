@@ -219,6 +219,7 @@ const Settings = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistiques financières</h2>
               <DebtSummaryPanel className="mb-4" />
             </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestion du site</h2>
 
             <div className="grid grid-cols-1 gap-4">
               {/* Boutons d'administration - visibles uniquement pour les administrateurs */}
