@@ -367,7 +367,16 @@ const Users: React.FC = () => {
     try {
       setAddingDebt(true);
       
-      // Optimistic update : ajouter temporairement la dette à l'UI
+      console.log('🚀 [handleAddDebt] Début ajout de dette - Désactivation temporaire des abonnements');
+      
+      // ÉTAPE 1: Désactiver temporairement les abonnements pour éviter l'écrasement
+      if (unsubscribeDebtRef.current) {
+        console.log('⏸️ Désactivation temporaire de l\'abonnement aux dettes');
+        unsubscribeDebtRef.current();
+        unsubscribeDebtRef.current = null;
+      }
+      
+      // ÉTAPE 2: Optimistic update - ajouter temporairement la dette à l'UI
       const tempDebt = {
         id: `temp-${Date.now()}`,
         user_id: selectedUser.id,
@@ -378,6 +387,8 @@ const Users: React.FC = () => {
         created_by: selectedUser.id,
         order_id: undefined
       };
+      
+      console.log('✨ [handleAddDebt] Optimistic update - Ajout temporaire à l\'UI');
       
       // Mettre à jour l'historique des dettes immédiatement
       setDebtHistory(prev => [tempDebt, ...prev]);
@@ -393,7 +404,8 @@ const Users: React.FC = () => {
       // Vider le formulaire
       setNewDebt({ amount: '', description: '' });
       
-      // Appeler le service pour créer la dette
+      // ÉTAPE 3: Appeler le service pour créer la dette en base
+      console.log('💾 [handleAddDebt] Création en base de données');
       const result = await debtService.createDebt({
         userId: selectedUser.id,
         amount,
@@ -402,12 +414,12 @@ const Users: React.FC = () => {
       });
       
       if (result) {
-        console.log('Dette ajoutée avec succès:', result);
+        console.log('✅ [handleAddDebt] Dette créée avec succès en base:', result);
         
         // Remplacer la dette temporaire par la vraie dette
         setDebtHistory(prev => 
           prev.map(debt => 
-            debt.id === tempDebt.id 
+            debt.id === tempDebt.id
               ? { ...tempDebt, ...result, id: result.id || tempDebt.id }
               : debt
           )
@@ -417,7 +429,7 @@ const Users: React.FC = () => {
         setSelectedUser(prev => {
           if (prev) {
             const newDebt = (prev.debt || 0) + amount;
-            console.log(`Mise à jour du total de l'utilisateur ${prev.username}: ${prev.debt || 0}€ -> ${newDebt}€`);
+            console.log(`📊 Mise à jour du total de l'utilisateur ${prev.username}: ${prev.debt || 0}€ -> ${newDebt}€`);
             return { ...prev, debt: newDebt };
           }
           return prev;
@@ -426,14 +438,25 @@ const Users: React.FC = () => {
         // Forcer aussi la mise à jour dans la liste des utilisateurs
         setUsers(prevUsers => 
           prevUsers.map(user => 
-            user.id === selectedUser.id 
+            user.id === selectedUser.id
               ? { ...user, debt: (user.debt || 0) + amount }
               : user
           )
         );
         
+        console.log('🎉 [handleAddDebt] Optimistic update terminé avec succès');
+        
+        // ÉTAPE 4: Réactiver les abonnements après un délai pour éviter l'écrasement
+        setTimeout(() => {
+          console.log('🔄 [handleAddDebt] Réactivation des abonnements après délai');
+          if (selectedUser) {
+            subscribeToUserDebtUpdates(selectedUser.id);
+          }
+        }, 2000); // Délai de 2 secondes pour laisser le temps à l'optimistic update de se stabiliser
+        
         alert(`Dette ajoutée avec succès à ${selectedUser.username}`);
       } else {
+        console.log('❌ [handleAddDebt] Échec création en base - Annulation optimistic update');
         // En cas d'échec, annuler l'optimistic update
         setDebtHistory(prev => prev.filter(debt => debt.id !== tempDebt.id));
         if (debtSummary) {
@@ -442,12 +465,20 @@ const Users: React.FC = () => {
             totalUnpaid: debtSummary.totalUnpaid - amount
           });
         }
+        
+        // Réactiver les abonnements même en cas d'échec
+        if (selectedUser) {
+          subscribeToUserDebtUpdates(selectedUser.id);
+        }
+        
         alert('Erreur lors de l\'ajout de la dette.');
       }
     } catch (err) {
-      console.error('Erreur lors de l\'ajout de la dette:', err);
-      // En cas d'erreur, recharger les données pour être sûr
+      console.error('💥 [handleAddDebt] Erreur lors de l\'ajout de la dette:', err);
+      
+      // En cas d'erreur, réactiver les abonnements et recharger les données
       if (selectedUser) {
+        subscribeToUserDebtUpdates(selectedUser.id);
         await fetchUserDetails(selectedUser.id);
       }
       alert('Erreur lors de l\'ajout de la dette.');
