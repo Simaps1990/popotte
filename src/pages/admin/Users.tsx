@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Search, ArrowLeft, Loader2, Trash2, Edit } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { userService, UserProfile, UserDebt, UserOrder } from '../../services/userService';
 import { debtService } from '../../services/debtService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -367,12 +368,12 @@ const Users: React.FC = () => {
     
     const amount = parseFloat(newDebt.amount);
     if (isNaN(amount) || amount <= 0) {
-      alert('Veuillez entrer un montant valide');
+      toast.error('Veuillez entrer un montant valide');
       return;
     }
     
     if (!newDebt.description.trim()) {
-      alert('Veuillez entrer une description');
+      toast.error('Veuillez entrer une description');
       return;
     }
     
@@ -470,7 +471,7 @@ const Users: React.FC = () => {
           console.log('✅ [handleAddDebt] Rechargements automatiques réactivés');
         }, 3000); // Délai de 3 secondes pour laisser le temps à l'optimistic update de se stabiliser
         
-        alert(`Dette ajoutée avec succès à ${selectedUser.username}`);
+        toast.success(`Dette ajoutée avec succès à ${selectedUser.username}`);
       } else {
         console.log('❌ [handleAddDebt] Échec création en base - Annulation optimistic update');
         // En cas d'échec, annuler l'optimistic update
@@ -491,7 +492,7 @@ const Users: React.FC = () => {
         setBlockAutoReload(false);
         console.log('🔓 [handleAddDebt] Rechargements automatiques réactivés après échec');
         
-        alert('Erreur lors de l\'ajout de la dette.');
+        toast.error('Erreur lors de l\'ajout de la dette');
       }
     } catch (err) {
       console.error('💥 [handleAddDebt] Erreur lors de l\'ajout de la dette:', err);
@@ -507,7 +508,7 @@ const Users: React.FC = () => {
           fetchUserDetails(selectedUser.id);
         }, 1000);
       }
-      alert('Erreur lors de l\'ajout de la dette.');
+      toast.error('Erreur lors de l\'ajout de la dette');
     } finally {
       setAddingDebt(false);
       // Sécurité finale : s'assurer que le flag est toujours désactivé
