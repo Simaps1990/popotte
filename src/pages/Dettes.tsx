@@ -356,15 +356,25 @@ export function Dettes() {
         .in('id', debtIds);
       if (updateError) throw updateError;
 
-      // Rafraîchir les données silencieusement pour s'assurer de la cohérence
-      await fetchAllDebtsAndOrders();
-      await fetchNotifications(); // Ajout pour rafraîchir la section orange
+      // Remplacer la notification temporaire par la vraie notification
+      if (notifData && notifData.length > 0) {
+        setPendingNotifications(prev => 
+          prev.map(notif => 
+            notif.id === tempNotification.id 
+              ? { ...notifData[0], id: notifData[0].id }
+              : notif
+          )
+        );
+      }
+      
+      // NE PAS rafraîchir les données pour éviter d'écraser l'optimistic update
+      // L'abonnement temps réel se chargera de synchroniser les données plus tard
     } catch (err) {
       console.error('Erreur lors de la notification du paiement:', err);
       
       // Restaurer l'état précédent en cas d'erreur
-      // Récupérer les dettes non modifiées
-      fetchDebts();
+      // Recharger les dettes depuis la base pour s'assurer de la cohérence
+      await fetchAllDebtsAndOrders();
       
       // Supprimer la notification temporaire
       setPendingNotifications(prev => prev.filter(n => !n.id.startsWith('temp-')));
