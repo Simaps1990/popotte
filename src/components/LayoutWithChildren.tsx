@@ -38,8 +38,9 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-white">
       {isHeaderVisible && (
-        <header className="site-header">
-          <img src="public\logo.png" alt="Logo Popotte" />
+        {/* Header bleu foncé avec logo centré */}
+        <header className="site-header w-full flex justify-center items-center py-4" style={{ background: '#10182a' }}>
+          <img src="/logo.png" alt="Logo Popotte" className="h-12" style={{ maxHeight: 56 }} />
         </header>
       )}
       <main className="w-full max-w-md mx-auto px-4 py-6 flex-grow pb-20">

@@ -317,24 +317,24 @@ const Settings = () => {
 
               
               {/* Bouton Mon profil - visible pour tous les utilisateurs */}
-              <Link 
-                to="/admin/profile"
-                className="card hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-gray-500 text-left w-full block"
-              >
-                <div className="flex items-center space-x-4 p-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">Mon profil</h3>
-                    <p className="text-sm text-gray-600">Modifier mes informations personnelles</p>
-                  </div>
-                  <span className="text-gray-400">→</span>
-                </div>
-              </Link>
+<Link 
+  to="/admin/profile"
+  className="card hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-gray-500 text-left w-full block"
+>
+  <div className="flex items-center space-x-4 p-4">
+    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+    <div className="flex-1">
+      <h3 className="font-semibold text-gray-900">Mon profil</h3>
+      <p className="text-sm text-gray-600">Modifier mes informations personnelles</p>
+    </div>
+    <span className="text-gray-400">→</span>
+  </div>
+</Link>
 
               
               {/* Bouton Se déconnecter - visible pour tous les utilisateurs */}
