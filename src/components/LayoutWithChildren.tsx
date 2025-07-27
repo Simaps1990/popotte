@@ -37,14 +37,15 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-white" style={{ background: '#fff' }}>
-      {isHeaderVisible && (
-        <header className="site-header w-full flex justify-center items-center pt-8 pb-2 md:pt-10 md:pb-3" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 32, position: 'relative' }}>
+      {window.location.pathname === '/' && (
+        <header className="site-header w-full flex justify-center items-center pt-10 pb-8 md:pt-14 md:pb-10" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 40, paddingBottom: 40, position: 'relative', boxShadow: 'none' }}>
           {/* Header bleu foncé avec logo centré */}
           <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
           {/* Arrondi inversé en bas du header */}
-          <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 32, pointerEvents: 'none', zIndex: 2}}>
-            <svg width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 32}}>
-              <path d="M0,32 Q5,0 50,0 Q95,0 100,32 Z" fill="#fff" />
+          {/* Arrondis inversés très petits sur les extrémités */}
+          <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 12, pointerEvents: 'none', zIndex: 2}}>
+            <svg width="100%" height="12" viewBox="0 0 100 12" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 12}}>
+              <path d="M0,12 Q6,0 18,0 L82,0 Q94,0 100,12 Z" fill="#fff" />
             </svg>
           </div>
         </header>
@@ -54,7 +55,7 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
           {children}
         </div>
       </main>
-      <div className="w-full max-w-md mx-auto border-0 border-none" style={{ border: 'none' }}>
+      <div className="w-full max-w-md mx-auto border-0 border-none pt-3" style={{ border: 'none' }}>
         <BottomNavigation />
       </div>
     </div>

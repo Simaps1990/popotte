@@ -120,7 +120,7 @@ export function Home() {
       
       <div className="w-full py-4 pb-4 mt-4">
         <div className="flex flex-col space-y-4">
-          <h2 className="text-xl font-bold">Les nouveautés de la popotte</h2>
+          <h1 className="text-2xl font-bold text-[#10182a] mt-2 mb-6 text-left md:text-2xl md:text-left">Les nouveautés de la popotte</h1>
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
