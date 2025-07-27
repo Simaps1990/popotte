@@ -171,112 +171,59 @@ export function NewsList() {
         )}
 
         {/* Liste des articles et états de chargement/erreur */}
-        <div className="space-y-4">
-          {/* États de chargement et d'erreur */}
-          {isLoading && (
-            <div className="text-center p-8 bg-white rounded-lg">
-              <p className="text-gray-500">Chargement des articles...</p>
-            </div>
-          )}
-          {error && (
-            <div className="text-center p-8 bg-red-50 rounded-lg">
-              <p className="text-red-500">{error}</p>
-            </div>
-          )}
-          {/* Message lorsqu'il n'y a pas d'articles */}
-          {!isLoading && !error && posts.length === 0 && (
-            <div className="text-center p-8 bg-white rounded-lg">
-              <p className="text-gray-500">Aucun article disponible. Cliquez sur "Nouvel article" pour en créer un.</p>
-            </div>
-          )}
-          {/* Liste des articles */}
-          {!isLoading && !error && posts.map((post) => (
-            <div key={post.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
-              {post.image_url && (
-                <img 
-                  src={post.image_url} 
-                  alt={post.title} 
-                  className="w-full h-32 object-cover rounded-lg mb-4"
-                />
-              )}
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1 text-[#10182a]">{post.title}</h3>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {formatDate(post.created_at)}
-                  </p>
-                  {post.excerpt && (
-                    <p className="text-gray-600 mb-2 italic">{post.excerpt}</p>
-                  )}
-                  <p className="text-gray-600 whitespace-pre-wrap">{post.content}</p>
-                </div>
-                <div className="flex space-x-2 ml-4">
-                  <button 
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    onClick={() => handleEditPost(post)}
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button 
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    onClick={() => handleDeletePost(post.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-              {!isLoading && !error && posts.length === 0 && (
-                <div className="text-center p-8 bg-white rounded-lg">
-                  <p className="text-gray-500">Aucun article disponible. Cliquez sur "Nouvel article" pour en créer un.</p>
-                </div>
-              )}
-              
-              {!isLoading && !error && posts.map((post) => (
-                <div key={post.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
-                  {post.image_url && (
-                    <img 
-                      src={post.image_url} 
-                      alt={post.title} 
-                      className="w-full h-32 object-cover rounded-lg mb-4"
-                    />
-                  )}
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-1 text-[#10182a]">{post.title}</h3>
-                      <p className="text-sm text-gray-500 mb-2">
-                        {formatDate(post.created_at)}
-                      </p>
-                      {post.excerpt && (
-                        <p className="text-gray-600 mb-2 italic">{post.excerpt}</p>
-                      )}
-                      <p className="text-gray-600 whitespace-pre-wrap">{post.content}</p>
-                    </div>
-                    <div className="flex space-x-2 ml-4">
-                      <button 
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        onClick={() => handleEditPost(post)}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        onClick={() => handleDeletePost(post.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* États de chargement et d'erreur */}
+        {isLoading && (
+          <div className="text-center p-8 bg-white rounded-lg">
+            <p className="text-gray-500">Chargement des articles...</p>
+          </div>
+        )}
+        {error && (
+          <div className="text-center p-8 bg-red-50 rounded-lg">
+            <p className="text-red-500">{error}</p>
+          </div>
+        )}
+        {/* Message lorsqu'il n'y a pas d'articles */}
+        {!isLoading && !error && posts.length === 0 && (
+          <div className="text-center p-8 bg-white rounded-lg">
+            <p className="text-gray-500">Aucun article disponible. Cliquez sur "Nouvel article" pour en créer un.</p>
+          </div>
+        )}
+        {/* Liste des articles */}
+        {!isLoading && !error && posts.length > 0 && posts.map((post) => (
+          <div key={post.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
+            {post.image_url && (
+              <img 
+                src={post.image_url} 
+                alt={post.title} 
+                className="w-full h-32 object-cover rounded-lg mb-4"
+              />
+            )}
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1 text-[#10182a]">{post.title}</h3>
+                <p className="text-sm text-gray-500 mb-2">
+                  {formatDate(post.created_at)}
+                </p>
+          </div>
+          <div className="flex space-x-2 ml-4">
+            <button 
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              onClick={() => handleEditPost(post)}
+            >
+              <Edit size={16} />
+            </button>
+            <button 
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              onClick={() => handleDeletePost(post.id)}
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         </div>
-      </main>
-    </div>
-  );
-}
+      </div>
+    ))}
+  </main>
+</div>
+);
 
 export default NewsList;
