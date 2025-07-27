@@ -15,7 +15,6 @@ interface PaymentNotification {
 }
 
 const PaymentsToVerify: React.FC = () => {
-  console.log("[ADMIN DEBUG] PaymentsToVerify MOUNTED");
   const [notifications, setNotifications] = useState<PaymentNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +25,6 @@ const PaymentsToVerify: React.FC = () => {
 
   // Callback pour les changements de notifications de paiement
   const handlePaymentNotificationChange = React.useCallback(() => {
-    console.log('🔔 Notification de paiement modifiée - Rechargement automatique');
     fetchNotifications();
   }, []);
 
@@ -40,23 +38,19 @@ const PaymentsToVerify: React.FC = () => {
     setError(null);
     
     // Invalider le cache avant de récupérer les données
-    console.log('🗑️ Invalidation du cache avant récupération des notifications');
     invalidateCache();
     
     const { data, error } = await supabase.rpc("rpc_payments_to_verify");
-    console.log("[ADMIN DEBUG] Résultat RPC:", data, "Erreur:", error);
     if (error) {
       setError(error.message);
       toast.error('Erreur lors du chargement des notifications');
     } else {
       setNotifications(data || []);
-      console.log(`✅ ${data?.length || 0} notifications chargées`);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    console.log('🚀 Initialisation PaymentsToVerify - Chargement des notifications');
     fetchNotifications();
     // eslint-disable-next-line
   }, []);
@@ -65,8 +59,6 @@ const PaymentsToVerify: React.FC = () => {
     setProcessing(notification_id);
     
     try {
-      console.log('✅ Validation de la notification:', notification_id);
-      
       // Mise à jour optimiste - retirer immédiatement la notification de la liste
       const previousNotifications = [...notifications];
       setNotifications(current => current.filter(n => n.notification_id !== notification_id));
@@ -84,7 +76,6 @@ const PaymentsToVerify: React.FC = () => {
         setNotifications(previousNotifications);
         toast.error('Erreur lors de la validation : ' + error.message);
       } else {
-        console.log('✅ Notification validée avec succès');
         // Forcer une actualisation pour s'assurer de la cohérence
         await fetchNotifications();
       }
@@ -101,8 +92,6 @@ const PaymentsToVerify: React.FC = () => {
     setProcessing(notification_id);
     
     try {
-      console.log('❌ Annulation de la notification:', notification_id);
-      
       // Mise à jour optimiste - retirer immédiatement la notification de la liste
       const previousNotifications = [...notifications];
       setNotifications(current => current.filter(n => n.notification_id !== notification_id));
@@ -120,7 +109,6 @@ const PaymentsToVerify: React.FC = () => {
         setNotifications(previousNotifications);
         toast.error('Erreur lors de l\'annulation : ' + error.message);
       } else {
-        console.log('✅ Notification annulée avec succès');
         // Forcer une actualisation pour s'assurer de la cohérence
         await fetchNotifications();
       }
@@ -133,7 +121,6 @@ const PaymentsToVerify: React.FC = () => {
     }
   };
 
-  console.log("[ADMIN DEBUG] PaymentsToVerify RENDER");
   return (
     <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-md bg-white">

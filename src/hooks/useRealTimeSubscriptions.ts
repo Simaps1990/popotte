@@ -24,8 +24,6 @@ export const useRealTimeSubscriptions = ({
   const subscriptionsRef = useRef<RealtimeChannel[]>([]);
 
   useEffect(() => {
-    console.log('🔔 Initialisation des abonnements temps réel');
-    
     // Nettoyer les abonnements existants
     subscriptionsRef.current.forEach(subscription => {
       supabase.removeChannel(subscription);
@@ -34,7 +32,6 @@ export const useRealTimeSubscriptions = ({
 
     // Abonnement aux notifications de paiement (global pour les admins)
     if (onPaymentNotificationChange) {
-      console.log('📡 Abonnement aux notifications de paiement');
       const paymentNotificationChannel = supabase
         .channel('payment_notifications_changes')
         .on(
@@ -44,8 +41,7 @@ export const useRealTimeSubscriptions = ({
             schema: 'public',
             table: 'payment_notifications'
           },
-          (payload: any) => {
-            console.log('🔔 Changement détecté sur payment_notifications:', payload);
+          () => {
             onPaymentNotificationChange();
           }
         )
@@ -56,7 +52,6 @@ export const useRealTimeSubscriptions = ({
 
     // Abonnement aux changements de dettes (spécifique à l'utilisateur)
     if (onDebtChange && userId) {
-      console.log('📡 Abonnement aux dettes pour l\'utilisateur:', userId);
       const debtChannel = supabase
         .channel(`debts_changes_${userId}`)
         .on(
@@ -67,8 +62,7 @@ export const useRealTimeSubscriptions = ({
             table: 'debts',
             filter: `user_id=eq.${userId}`
           },
-          (payload: any) => {
-            console.log('🔔 Changement détecté sur les dettes:', payload);
+          () => {
             onDebtChange();
           }
         )
@@ -79,7 +73,6 @@ export const useRealTimeSubscriptions = ({
 
     // Abonnement aux changements de commandes (spécifique à l'utilisateur)
     if (onOrderChange && userId) {
-      console.log('📡 Abonnement aux commandes pour l\'utilisateur:', userId);
       const orderChannel = supabase
         .channel(`orders_changes_${userId}`)
         .on(
@@ -90,8 +83,7 @@ export const useRealTimeSubscriptions = ({
             table: 'orders',
             filter: `user_id=eq.${userId}`
           },
-          (payload: any) => {
-            console.log('🔔 Changement détecté sur les commandes:', payload);
+          () => {
             onOrderChange();
           }
         )
@@ -102,7 +94,6 @@ export const useRealTimeSubscriptions = ({
 
     // Abonnement aux changements de news (global)
     if (onNewsChange) {
-      console.log('📡 Abonnement aux actualités');
       const newsChannel = supabase
         .channel('news_changes')
         .on(
@@ -112,8 +103,7 @@ export const useRealTimeSubscriptions = ({
             schema: 'public',
             table: 'news'
           },
-          (payload: any) => {
-            console.log('🔔 Changement détecté sur les actualités:', payload);
+          () => {
             onNewsChange();
           }
         )
@@ -124,7 +114,6 @@ export const useRealTimeSubscriptions = ({
 
     // Nettoyage lors du démontage
     return () => {
-      console.log('🧹 Nettoyage des abonnements temps réel');
       subscriptionsRef.current.forEach(subscription => {
         supabase.removeChannel(subscription);
       });
@@ -135,7 +124,6 @@ export const useRealTimeSubscriptions = ({
   return {
     // Fonction pour forcer la reconnexion des abonnements
     reconnect: () => {
-      console.log('🔄 Reconnexion forcée des abonnements temps réel');
       subscriptionsRef.current.forEach(subscription => {
         supabase.removeChannel(subscription);
       });
@@ -164,15 +152,12 @@ export const useCacheInvalidation = () => {
     
     // Si une invalidation est déjà en cours ou si la dernière invalidation est trop récente, on ignore
     if (isInvalidatingRef.current || (now - lastInvalidationRef.current < DEBOUNCE_DELAY)) {
-      console.log('🔄 Invalidation du cache ignorée (déjà en cours ou trop récente)');
       return;
     }
     
     // Marquer le début de l'invalidation
     isInvalidatingRef.current = true;
     lastInvalidationRef.current = now;
-    
-    console.log('🗑️ Invalidation du cache local');
     
     // Vider le cache du navigateur pour les données de l'application
     if ('caches' in window) {
@@ -192,8 +177,6 @@ export const useCacheInvalidation = () => {
       }
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    
-    console.log('✅ Cache invalidé');
     
     // Réinitialiser le flag après un court délai
     setTimeout(() => {

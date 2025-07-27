@@ -23,7 +23,6 @@ export function News() {
 
   // Fonction pour créer un nouvel article (bouton "Nouvel article")
   const handleNewArticleClick = () => {
-    console.log('Bouton Nouvel article cliqué')
     // Réinitialiser le formulaire
     setFormData({
       title: '',
@@ -37,7 +36,6 @@ export function News() {
   }
 
   useEffect(() => {
-    console.log('Composant News monté')
     // Supprimer tous les articles existants au chargement initial
     deleteAllArticles()
     // Puis charger les articles (s'il en reste)
@@ -47,9 +45,7 @@ export function News() {
   const fetchPosts = async () => {
     try {
       setLoading(true)
-      console.log('Récupération des articles...')
       const data = await newsService.getAllNews()
-      console.log('Articles récupérés:', data)
       setPosts(data)
     } catch (error) {
       console.error('Erreur lors de la récupération des articles:', error)
@@ -62,14 +58,11 @@ export function News() {
   // Fonction pour supprimer TOUS les articles
   const deleteAllArticles = async () => {
     try {
-      console.log('Suppression de tous les articles...')
       const data = await newsService.getAllNews()
-      console.log(`${data.length} articles à supprimer`)
       
       // Supprimer chaque article
       for (const article of data) {
         await newsService.deleteNews(article.id)
-        console.log(`Article supprimé: ${article.title}`)
       }
       
       toast.success('Tous les articles ont été supprimés')
@@ -83,7 +76,6 @@ export function News() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Soumission du formulaire')
     
     // Validation des champs obligatoires
     if (!formData.title.trim() || !formData.content.trim()) {
@@ -96,7 +88,6 @@ export function News() {
       toast.loading(editingPost ? 'Modification en cours...' : 'Création en cours...')
       
       if (editingPost) {
-        console.log('Modification d\'un article existant:', editingPost.id)
         await newsService.updateNews(editingPost.id, {
           title: formData.title,
           content: formData.content,
@@ -105,7 +96,6 @@ export function News() {
           published: formData.published
         })
       } else {
-        console.log('Création d\'un nouvel article')
         await newsService.createNews({
           title: formData.title,
           content: formData.content,

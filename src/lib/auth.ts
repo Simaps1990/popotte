@@ -9,8 +9,6 @@ export interface SignUpParams {
 }
 
 export const signUp = async ({ email, password, username, firstName = '', lastName = '' }: SignUpParams) => {
-  console.log('🚀 Début de la fonction signUp avec:', { email, username, firstName, lastName })
-  
   try {
     // Vérifier que l'email est valide
     if (!email || !email.includes('@') || email.endsWith('@example.com')) {
@@ -28,8 +26,6 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
     }
     
     // Créer le compte utilisateur avec Supabase Auth
-    console.log('🔑 Tentative de création du compte avec Supabase...')
-    
     // Vérifier si un utilisateur avec ce nom d'utilisateur existe déjà
     const { data: existingUsers, error: checkError } = await supabase
       .from('profiles')
@@ -43,8 +39,6 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
       throw new Error('Ce nom d\'utilisateur est déjà utilisé. Veuillez en choisir un autre.');
     }
     
-    console.log('✅ Vérification du nom d\'utilisateur réussie, création du compte...');
-    
     // Créer l'utilisateur avec des métadonnées bien formatées
     const cleanUsername = username.trim();
     const cleanFirstName = firstName.trim() || cleanUsername;
@@ -53,12 +47,7 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
     // Créer un full_name combiné pour le trigger SQL qui l'attend
     const fullName = cleanFirstName + (cleanLastName ? ' ' + cleanLastName : '');
     
-    console.log('🔧 Préparation des métadonnées utilisateur:', { 
-      username: cleanUsername,
-      first_name: cleanFirstName,
-      last_name: cleanLastName,
-      full_name: fullName
-    });
+
     
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
@@ -74,7 +63,7 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
       }
     })
 
-    console.log('📝 Réponse de supabase.auth.signUp:', { signUpData, signUpError })
+
     
     if (signUpError) {
       console.error('❌ Erreur lors de la création du compte:', signUpError)
@@ -89,7 +78,7 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
       throw new Error('Aucun utilisateur retourné après l\'inscription')
     }
     
-    console.log('✅ Compte créé avec succès, tentative de connexion automatique...')
+
     
     // Attendre un court instant avant de tenter de se connecter
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -220,7 +209,7 @@ export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  console.log('Récupération des données du profil pour l\'utilisateur:', user.id)
+
   
   // Récupérer les informations du profil depuis les deux tables
   const [secureResult, profilesResult] = await Promise.all([
@@ -252,20 +241,14 @@ export const getCurrentUser = async () => {
   // Utiliser les données de secure_profiles en priorité, puis profiles
   const profileData = secureResult.data || profilesResult.data
   
-  if (profileData) {
-    console.log('Données du profil récupérées depuis:', 
-      secureResult.data ? 'secure_profiles' : 
-      profilesResult.data ? 'profiles' : 'aucune source')
-  } else {
-    console.warn('Aucune donnée de profil trouvée dans les tables')
-  }
+
 
   return { ...user, profile: profileData }
 }
 
-export const isAdmin = async (userId: string) => {
+export const isAdmin = async () => {
   try {
-    console.log('🔍 Vérification du statut admin pour l\'utilisateur:', userId)
+
     
     // Vérifier d'abord si on est connecté
     const { data: { user }, error } = await supabase.auth.getUser()
@@ -275,13 +258,7 @@ export const isAdmin = async (userId: string) => {
       return false
     }
     
-    // Afficher les métadonnées complètes pour le débogage
-    console.log('📋 Métadonnées utilisateur:', {
-      email: user.email,
-      user_metadata: user.user_metadata,
-      app_metadata: user.app_metadata,
-      raw_user_meta_data: user.app_metadata?.raw_app_meta_data
-    })
+
     
     // Vérifier le rôle dans les métadonnées de l'application (app_metadata)
     const roles = user.app_metadata?.roles || [];
@@ -323,14 +300,7 @@ export const isAdmin = async (userId: string) => {
       console.warn('Erreur lors de la récupération du rôle depuis le profil:', err);
     }
 
-    console.log('✅ Statut admin vérifié:', {
-      userId,
-      isAdmin,
-      roles,
-      rawRoles,
-      profileRole,
-      hasAdminRole: isAdmin,
-    });
+
 
     return isAdmin;
   } catch (error) {
