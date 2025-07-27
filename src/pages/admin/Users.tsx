@@ -704,230 +704,351 @@ const Users: React.FC = () => {
     return matchesSearch;
   });
 
-  // --- RENDU PRINCIPAL DE LA PAGE ADMIN USERS ---
-  return (
-    <div className="min-h-screen bg-white pb-16">
-      <main className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Titre principal */}
-        <h1 className="text-2xl font-bold text-[#10182a] mb-6 text-center">Gestion des utilisateurs</h1>
-
-        {/* Affichage erreur global */}
-        {error && (
-          <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">
-            {error}
-          </div>
-        )}
-
-        {/* Barre de recherche et filtres */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="flex-1 flex items-center space-x-2">
-            <input
-              type="text"
-              className="w-full md:w-72 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
-              placeholder="Rechercher par nom ou email..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-            <Search className="text-[#10182a]" size={20} />
-          </div>
-          <div className="flex space-x-2">
-            <button
-              className={`px-4 py-2 rounded-lg border ${activeFilter === 'all' ? 'bg-[#10182a] text-white' : 'bg-white text-[#10182a] border-[#10182a]'} font-medium`}
-              onClick={() => setActiveFilter('all')}
-            >Tous</button>
-            <button
-              className={`px-4 py-2 rounded-lg border ${activeFilter === 'hasDebt' ? 'bg-[#10182a] text-white' : 'bg-white text-[#10182a] border-[#10182a]'} font-medium`}
-              onClick={() => setActiveFilter('hasDebt')}
-            >Avec dettes</button>
-            <button
-              className={`px-4 py-2 rounded-lg border ${activeFilter === 'noDebt' ? 'bg-[#10182a] text-white' : 'bg-white text-[#10182a] border-[#10182a]'} font-medium`}
-              onClick={() => setActiveFilter('noDebt')}
-            >Sans dette</button>
-          </div>
-        </div>
-
-        {/* Loader principal */}
-        {loading.users && users.length === 0 ? (
+  if (loading.users && users.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-16">
+        <main className="container mx-auto px-4 py-6 max-w-md">
           <div className="flex justify-center items-center h-64">
             <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
           </div>
-        ) : null}
+        </main>
+      </div>
+    );
+  }
 
-        {/* Liste des utilisateurs ou fiche utilisateur */}
-        {!selectedUser ? (
-          <div className="space-y-4">
-            {filteredUsers.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">Aucun utilisateur trouvé.</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredUsers.map(user => (
-                  <div
-                    key={user.id}
-                    className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer"
-                    onClick={() => handleSelectUser(user)}
-                  >
-                    <div>
-                      <div className="font-semibold text-[#10182a]">{user.username || user.email}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                      <div className="text-xs text-gray-400">{user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <div className="text-lg font-bold text-[#10182a]">{user.debt ? `${user.debt.toFixed(2)} €` : '0 €'}</div>
-                      {user.debt && user.debt > 0 ? (
-                        <span className="text-xs text-blue-600 bg-blue-50 rounded-full px-2 py-0.5 mt-1">Dette en cours</span>
-                      ) : (
-                        <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mt-1">Aucune dette</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-16">
+        <main className="container mx-auto px-4 py-6 max-w-md">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
           </div>
-        ) : (
-          // --- FICHE UTILISATEUR ---
-          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-6">
-            <button
-              className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors rounded px-3 py-1 mb-4 bg-white border border-[#10182a]"
-              onClick={handleBackToUserList}
-            >
-              <ArrowLeft size={20} />
-              <span>Retour à la liste</span>
-            </button>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-              <div>
-                <div className="text-xl font-bold text-[#10182a]">{selectedUser?.username || selectedUser?.email}</div>
-                <div className="text-sm text-gray-500">{selectedUser?.email}</div>
-                <div className="text-xs text-gray-400">{selectedUser?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-[#10182a]">{debtSummary?.totalUnpaid?.toFixed(2) || '0.00'} €</div>
-                <div className="text-xs text-gray-500">Total dettes en cours</div>
-              </div>
-            </div>
+        </main>
+      </div>
+    );
+  }
 
-            {/* Section dettes et formulaire d'ajout */}
-            <div className="space-y-6">
-              {/* Formulaire d'ajout de dette */}
-              <form
-                className="flex flex-col md:flex-row md:items-end gap-4 bg-white p-4 rounded-lg border border-gray-100"
-                onSubmit={e => { e.preventDefault(); handleAddDebt(); }}
+  return (
+    <div className="min-h-screen bg-gray-50 pb-16">
+      <main className="container mx-auto px-4 py-6 max-w-md">
+        {/* Liste des utilisateurs (si aucun utilisateur sélectionné) */}
+        {!selectedUser && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+              <button
+                className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+                onClick={() => navigate('/parametres')}
               >
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-[#10182a] mb-1">Montant</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
-                    placeholder="Montant (€)"
-                    value={newDebt.amount}
-                    onChange={e => setNewDebt(d => ({ ...d, amount: e.target.value }))}
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-[#10182a] mb-1">Description</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
-                    placeholder="Description de la dette"
-                    value={newDebt.description}
-                    onChange={e => setNewDebt(d => ({ ...d, description: e.target.value }))}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#10182a] text-white font-medium hover:bg-blue-900 transition-colors disabled:opacity-50"
-                  disabled={addingDebt}
-                >
-                  {addingDebt ? <Loader2 className="animate-spin h-5 w-5" /> : 'Ajouter'}
-                </button>
-              </form>
+                <ArrowLeft className="h-5 w-5" />
+                <span>Retour</span>
+              </button>
+            </div>
+            <div className="space-y-4">
 
-              {/* Historique des dettes (cartes) */}
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-[#10182a] mb-2">Historique des dettes</h2>
-                {debtHistory.length === 0 ? (
-                  <div className="text-center text-gray-400">Aucune dette trouvée.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {debtHistory.map(debt => (
-                      <div key={debt.id} className={`bg-white border rounded-lg p-4 shadow-sm flex flex-col gap-2 ${debt.status === 'paid' ? 'opacity-60' : ''}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="text-lg font-bold text-[#10182a]">{debt.amount.toFixed(2)} €</div>
-                          <span className={`text-xs rounded-full px-2 py-0.5 ${debt.status === 'paid' ? 'bg-green-100 text-green-700' : debt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {debt.status === 'paid' ? 'Réglée' : debt.status === 'pending' ? 'En attente' : 'Non réglée'}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-600">{debt.description}</div>
-                        <div className="text-xs text-gray-400">{formatDate(debt.created_at)}</div>
-                        {/* Boutons édition/suppression si non réglée/non notifiée */}
-                        {debt.status === 'unpaid' && (
-                          <div className="flex space-x-2 mt-2">
-                            <button
-                              className="flex items-center px-3 py-1 rounded bg-[#10182a] text-white text-xs font-medium hover:bg-blue-900 transition-colors"
-                              onClick={() => handleStartEditDebt(debt)}
-                            >
-                              <Edit size={16} className="mr-1" /> Éditer
-                            </button>
-                            <button
-                              className="flex items-center px-3 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors"
-                              onClick={() => handleDeleteDebt(debt.id!)}
-                            >
-                              <Trash2 size={16} className="mr-1" /> Supprimer
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+              <div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  style={{ backgroundColor: 'white' }}
+                  placeholder="Rechercher un utilisateur..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex space-x-2 overflow-x-auto pb-2">
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeFilter === 'all' ? 'bg-primary-100 text-primary-700' : 'bg-white text-gray-700 hover:bg-white'}`}
+                >
+                  Tous les utilisateurs
+                </button>
+                <button
+                  onClick={() => setActiveFilter('hasDebt')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${activeFilter === 'hasDebt' ? 'bg-red-100 text-red-700' : 'bg-white text-gray-700 hover:bg-white'}`}
+                >
+                  Avec dette
+                </button>
+              </div>
+              <div className="space-y-3">
+                {loading.users ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
                   </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">Aucun utilisateur trouvé</div>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="card hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between"
+                      onClick={() => handleSelectUser(user)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                          <span className="text-primary-600 font-semibold">{user.username.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{user.username}</h3>
+                          <div className="flex items-center space-x-2">
+                            {user.debt && user.debt > 0 ? (
+                              <span className="text-sm font-medium text-red-600">Dette: {user.debt.toFixed(2)} €</span>
+                            ) : (
+                              <span className="text-sm text-green-600">Compte à jour</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {user.role === 'admin' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        )}
+                        <span className="text-gray-400">→</span>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
-
-            {/* Édition de dette (modal simple) */}
-            {editingDebt && (
-              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                  <h3 className="text-lg font-semibold text-[#10182a] mb-4">Éditer la dette</h3>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-[#10182a] mb-1">Montant</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
-                      value={editingDebt.amount}
-                      onChange={e => setEditingDebt(d => d ? { ...d, amount: e.target.value } : d)}
-                    />
+          </div>
+        )}
+        {/* Détail utilisateur (si un utilisateur est sélectionné) */}
+        {selectedUser && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Gestion de {selectedUser.username}</h1>
+              <button
+                onClick={handleBackToUserList}
+                className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span>Retour</span>
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div className="card">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                    <span className="text-primary-600 font-semibold">{selectedUser.username.charAt(0).toUpperCase()}</span>
                   </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-[#10182a] mb-1">Description</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
-                      value={editingDebt.description}
-                      onChange={e => setEditingDebt(d => d ? { ...d, description: e.target.value } : d)}
-                    />
+                  <div>
+                    <h3 className="font-semibold">{selectedUser.username}</h3>
+                    <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                    <div className="mt-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${selectedUser.role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                        {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      className="px-4 py-2 rounded-lg bg-gray-200 text-[#10182a] font-medium hover:bg-gray-300 transition-colors"
-                      onClick={handleCancelEditDebt}
-                    >Annuler</button>
-                    <button
-                      className="px-4 py-2 rounded-lg bg-[#10182a] text-white font-medium hover:bg-blue-900 transition-colors"
-                      onClick={handleUpdateDebt}
-                    >Enregistrer</button>
+                </div>
+                <div className="bg-red-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600">Total des dettes à régler :</p>
+                  <p className="text-xl font-bold text-red-600">
+                    {debtSummary ? debtSummary.totalUnpaid.toFixed(2) : '0.00'} €
+                  </p>
+                </div>
+                
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="font-medium mb-3">Gestion des droits</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUser.role === 'user' ? (
+                      <button 
+                        onClick={() => updateUserRole(selectedUser.id, 'admin')}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors flex items-center gap-1 text-sm"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        Promouvoir administrateur
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => updateUserRole(selectedUser.id, 'user')}
+                        className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors flex items-center gap-1 text-sm"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                        Révoquer droits admin
+                      </button>
+                    )}
+                    
+                    <button 
+                      onClick={() => handleDeleteUser(selectedUser.id)}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors flex items-center gap-1 text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                      Supprimer le compte
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Formulaire d'ajout de dette manuelle */}
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="font-medium mb-3">Ajouter une dette manuelle</h4>
+                  <div className="bg-white shadow rounded-lg p-4">
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="debtAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                          Montant (€)
+                        </label>
+                        <input
+                          type="number"
+                          id="debtAmount"
+                          min="0.01"
+                          step="0.01"
+                          value={newDebt.amount}
+                          onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
+                          onFocus={(e) => {
+                            if (e.target.value === '0' || e.target.value === '0.00') {
+                              setNewDebt({ ...newDebt, amount: '' });
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="0.00"
+                          disabled={addingDebt}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="debtDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <input
+                          type="text"
+                          id="debtDescription"
+                          value={newDebt.description}
+                          onChange={(e) => setNewDebt({ ...newDebt, description: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="Description de la dette"
+                          disabled={addingDebt}
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddDebt}
+                        disabled={addingDebt || !newDebt.amount || parseFloat(newDebt.amount) <= 0 || !newDebt.description.trim()}
+                        className={`w-full py-2 px-4 rounded-md text-white font-medium ${addingDebt || !newDebt.amount || parseFloat(newDebt.amount) <= 0 || !newDebt.description.trim() ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} transition-colors`}
+                      >
+                        {addingDebt ? (
+                          <span className="flex items-center justify-center">
+                            <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                            Ajout en cours...
+                          </span>
+                        ) : (
+                          'Ajouter la dette'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Section d'historique des dettes manuelles */}
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="font-medium mb-3">Historique des dettes manuelles</h4>
+                  <div className="bg-white shadow rounded-lg overflow-hidden">
+                    {loading.userDetails ? (
+                      <div className="p-4 flex justify-center">
+                        <Loader2 className="animate-spin h-6 w-6 text-primary-500" />
+                      </div>
+                    ) : debtHistory.length > 0 ? (
+                      <div className="grid gap-3 p-4">
+                        {debtHistory.map((debt) => (
+                          <div key={debt.id} className="bg-white border rounded-lg p-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between">
+                            {editingDebt && editingDebt.id === debt.id ? (
+                              // Mode édition
+                              <div className="w-full">
+                                <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                                  <div className="flex-1">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                    <input
+                                      type="text"
+                                      value={editingDebt.description}
+                                      onChange={(e) => setEditingDebt({ ...editingDebt, description: e.target.value })}
+                                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    />
+                                  </div>
+                                  <div className="sm:w-1/4">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Montant (€)</label>
+                                    <input
+                                      type="number"
+                                      min="0.01"
+                                      step="0.01"
+                                      value={editingDebt.amount}
+                                      onChange={(e) => setEditingDebt({ ...editingDebt, amount: e.target.value })}
+                                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={handleCancelEditDebt}
+                                    className="px-3 py-1 text-xs bg-white hover:bg-white rounded-md transition-colors"
+                                  >
+                                    Annuler
+                                  </button>
+                                  <button
+                                    onClick={handleUpdateDebt}
+                                    className="px-3 py-1 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors"
+                                  >
+                                    Enregistrer
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              // Mode affichage
+                              <>
+                                <div className="flex-1 mb-2 sm:mb-0">
+                                  <div className="text-sm font-medium">{debt.description}</div>
+                                  <div className="text-xs text-gray-500 mt-1">{formatDate(debt.created_at || '')}</div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    debt.status === 'unpaid' ? 'bg-red-100 text-red-800' : 
+                                    debt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                    'bg-green-100 text-green-800'
+                                  }`}>
+                                    {debt.status === 'unpaid' ? 'Non payée' : 
+                                     debt.status === 'pending' ? 'En attente' : 
+                                     'Payée'}
+                                  </span>
+                                  
+                                  <span className="font-medium text-red-600">{(debt.amount || 0).toFixed(2)} €</span>
+                                  
+                                  {/* Boutons d'action conditionnels - uniquement pour les dettes non réglées/validées */}
+                                  {debt.status === 'unpaid' && debt.id && (
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => handleStartEditDebt(debt)}
+                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                        title="Modifier la dette"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteDebt(debt.id!)}
+                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                        title="Supprimer la dette"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-gray-500">
+                        Aucune dette manuelle pour cet utilisateur
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         )}
       </main>
     </div>
   );
-};
+}
 
 export default Users;
