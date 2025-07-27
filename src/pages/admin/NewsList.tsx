@@ -228,13 +228,6 @@ export function NewsList() {
             </div>
           ))}
         </div>
-              {error && (
-                <div className="text-center p-8 bg-red-50 rounded-lg">
-                  <p className="text-red-500">{error}</p>
-                </div>
-              )}
-              
-              {/* Message lorsqu'il n'y a pas d'articles */}
               {!isLoading && !error && posts.length === 0 && (
                 <div className="text-center p-8 bg-white rounded-lg">
                   <p className="text-gray-500">Aucun article disponible. Cliquez sur "Nouvel article" pour en créer un.</p>
