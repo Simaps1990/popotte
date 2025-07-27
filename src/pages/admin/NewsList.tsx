@@ -134,63 +134,100 @@ export function NewsList() {
   return (
     <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#10182a] text-center">Gestion des actualités</h1>
-        </div>
+        {/* Header strictement identique à Products.tsx */}
         <div className="flex items-center justify-between mb-6">
-          <button 
+          <h1 className="text-2xl font-bold text-[#10182a] text-left">Gestion des actualités</h1>
+          <button
             onClick={() => navigate(-1)}
-            className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100"
+            title="Retour"
           >
-            <ArrowLeft size={20} />
-            <span>Retour</span>
+            <ArrowLeft size={24} />
           </button>
         </div>
-            
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-              onClick={handleAddPost}
-            >
-              <Plus size={20} />
-              <span>Nouvel article</span>
-              <span>Retour</span>
-            </button>
-          </div>
-            
-          <div className="space-y-6">
-            <div className="flex justify-end">
-              <button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-                onClick={handleAddPost}
-              >
-                <Plus size={20} />
-                <span>Nouvel article</span>
-              </button>
+        {/* Bouton "Nouvel article" ferré à gauche, rouge */}
+        <div className="mb-6">
+          <button
+            onClick={handleAddPost}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          >
+            <Plus size={20} />
+            <span>Nouvel article</span>
+          </button>
+        </div>
+
+        {/* Affichage du formulaire de création/édition si actif */}
+        {showForm && (
+          <div className="mb-6">
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+              <p className="text-sm text-blue-700">💡 Les articles sont maintenant sauvegardés dans Supabase.</p>
             </div>
-            
-            {showForm && (
-              <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm text-blue-700">💡 Les articles sont maintenant sauvegardés dans Supabase.</p>
-                </div>
-                <NewsForm 
-                  post={currentPost} 
-                  onSave={handleSavePost} 
-                  onCancel={handleCancelForm} 
+            <NewsForm 
+              post={currentPost} 
+              onSave={handleSavePost} 
+              onCancel={handleCancelForm} 
+            />
+          </div>
+        )}
+
+        {/* Liste des articles et états de chargement/erreur */}
+        <div className="space-y-4">
+          {/* États de chargement et d'erreur */}
+          {isLoading && (
+            <div className="text-center p-8 bg-white rounded-lg">
+              <p className="text-gray-500">Chargement des articles...</p>
+            </div>
+          )}
+          {error && (
+            <div className="text-center p-8 bg-red-50 rounded-lg">
+              <p className="text-red-500">{error}</p>
+            </div>
+          )}
+          {/* Message lorsqu'il n'y a pas d'articles */}
+          {!isLoading && !error && posts.length === 0 && (
+            <div className="text-center p-8 bg-white rounded-lg">
+              <p className="text-gray-500">Aucun article disponible. Cliquez sur "Nouvel article" pour en créer un.</p>
+            </div>
+          )}
+          {/* Liste des articles */}
+          {!isLoading && !error && posts.map((post) => (
+            <div key={post.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
+              {post.image_url && (
+                <img 
+                  src={post.image_url} 
+                  alt={post.title} 
+                  className="w-full h-32 object-cover rounded-lg mb-4"
                 />
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              {/* États de chargement et d'erreur */}
-              {isLoading && (
-                <div className="text-center p-8 bg-white rounded-lg">
-                  <p className="text-gray-500">Chargement des articles...</p>
-                </div>
               )}
-              
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1 text-[#10182a]">{post.title}</h3>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {formatDate(post.created_at)}
+                  </p>
+                  {post.excerpt && (
+                    <p className="text-gray-600 mb-2 italic">{post.excerpt}</p>
+                  )}
+                  <p className="text-gray-600 whitespace-pre-wrap">{post.content}</p>
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  <button 
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => handleEditPost(post)}
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button 
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDeletePost(post.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
               {error && (
                 <div className="text-center p-8 bg-red-50 rounded-lg">
                   <p className="text-red-500">{error}</p>
