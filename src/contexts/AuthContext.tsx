@@ -118,14 +118,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Timeout de sécurité pour éviter le loading infini
     const timeoutId = setTimeout(() => {
       if (isMounted && loading) {
-        console.log('⏱️ Délai de chargement dépassé - Intervention forcée')
-        console.log('🔄 Passage en mode non-connecté par défaut')
+        console.log('⏱️ Délai de chargement dépassé - Intervention forcée (nouvelle logique)')
+        if (!loading) {
+          console.log('⏭️ Timeout ignoré car loading=false')
+          return
+        }
+        // Ne pas forcer la déconnexion si loading déjà passé à false
         setUser(null)
         setProfile(null)
         setIsUserAdmin(false)
         setLoading(false)
+      } else {
+        console.log('⏭️ Timeout ignoré car isMounted=false ou loading=false')
       }
-    }, 2000) // 2 secondes maximum
+    }, 4000) // 4 secondes maximum (plus tolérant)
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

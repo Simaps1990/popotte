@@ -23,30 +23,6 @@ export function AuthPage() {
       navigate('/', { replace: true })
       return
     }
-    
-    // Vérification différée pour gérer le décalage de timing
-    const checkUserWithDelay = setTimeout(() => {
-      console.log('⏰ AuthPage - Vérification différée après 1s:', {
-        user: user ? 'connecté' : 'non connecté',
-        loading,
-        pathname: window.location.pathname
-      })
-      
-      if (user && window.location.pathname === '/auth') {
-        console.log('🔄 AuthPage - Redirection différée détectée, redirection forcée')
-        navigate('/', { replace: true })
-        
-        // Double sécurité avec window.location si navigate échoue
-        setTimeout(() => {
-          if (window.location.pathname === '/auth') {
-            console.log('🆘 AuthPage - Navigate a échoué, redirection window.location')
-            window.location.href = '/'
-          }
-        }, 500)
-      }
-    }, 1000)
-    
-    return () => clearTimeout(checkUserWithDelay)
   }, [user, loading, navigate])
 
   // Header/logo centré
