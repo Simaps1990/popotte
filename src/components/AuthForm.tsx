@@ -314,121 +314,119 @@ export function AuthForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {mode === 'signup' && (
-          <>
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Nom d'utilisateur
-              </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
+          {/* Champs spécifiques à l'inscription */}
+          {mode === 'signup' && (
+            <>
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  Prénom
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Nom d'utilisateur
                 </label>
                 <input
-                  id="firstName"
+                  id="username"
                   type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
                   required
                 />
               </div>
-              
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Nom
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                    Prénom
+                  </label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                    Nom
+                  </label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                    required
+                  />
+                </div>
+              </div>
+              {/* Champ CAPTCHA */}
+              <div className="mt-4">
+                <label htmlFor="captcha" className="block text-sm font-medium text-gray-700">
+                  Combien font {captchaNum1} + {captchaNum2} ?
                 </label>
                 <input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  id="captcha"
+                  type="number"
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
                   required
+                  disabled={loading}
                 />
+                {captchaError && (
+                  <p className="mt-1 text-sm text-red-600">{captchaError}</p>
+                )}
               </div>
-            </div>
-            
-            {/* Champ CAPTCHA */}
-            <div className="mt-4">
-              <label htmlFor="captcha" className="block text-sm font-medium text-gray-700">
-                Combien font {captchaNum1} + {captchaNum2} ?
-              </label>
-              <input
-                id="captcha"
-                type="number"
-                value={captchaAnswer}
-                onChange={(e) => setCaptchaAnswer(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-                disabled={loading}
-              />
-              {captchaError && (
-                <p className="mt-1 text-sm text-red-600">{captchaError}</p>
-              )}
-            </div>
-          </>
-        )}
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Mot de passe
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-            minLength={6}
-          />
-        </div>
-
-        <div>
+            </>
+          )}
+          {/* Champ email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+              required
+            />
+          </div>
+          {/* Champ mot de passe */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Mot de passe
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+              required
+              minLength={6}
+            />
+          </div>
           {/* Bouton principal bleu foncé */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow text-sm font-medium text-white bg-[#10182a] hover:bg-[#22315c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10182a] disabled:opacity-50 transition-colors"
-          >
-            {loading
-              ? 'Chargement...'
-              : mode === 'login'
-              ? 'Se connecter'
-              : 'Créer un compte'}
-          </button>
-        </div>
-      </form>
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition mb-3"
+            >
+              {loading
+                ? 'Chargement...'
+                : mode === 'login'
+                ? 'Se connecter'
+                : 'Créer un compte'}
+            </button>
+          </div>
+        </form>
 
       <div className="mt-4 text-center">
         {/* Lien secondaire bleu foncé */}
         <button
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition mb-3"
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
           className="text-sm text-[#10182a] hover:text-[#22315c] font-medium transition-colors"
         >
