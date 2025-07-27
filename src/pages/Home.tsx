@@ -115,10 +115,10 @@ export function Home() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen pb-10">
+    <div className="w-full min-h-screen">
       {/* En-tête avec l'image - Positionné en haut de la page sans marge */}
       
-      <div className="w-full py-4 pb-4 mt-4">
+      <div className="w-full py-4 pb-0">
         <div className="flex flex-col space-y-4">
           <h1 className="text-2xl font-bold text-[#10182a] mt-2 mb-6 text-left md:text-2xl md:text-left">Les nouveautés de la popotte</h1>
           
