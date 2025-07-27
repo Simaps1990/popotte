@@ -70,7 +70,7 @@ export function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-[#10182a]">
             {isLogin ? 'Connexion' : 'Créer un compte'}
           </h2>
           <p className="mt-2 text-gray-600">
@@ -107,7 +107,7 @@ export function Auth() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-white bg-gray-100 mt-1">
                     Uniquement lettres, chiffres et underscores. Pas d'espaces.
                   </p>
                 </div>
@@ -185,7 +185,7 @@ export function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#10182a] hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Chargement...' : isLogin ? 'Se connecter' : 'Créer le compte'}
             </button>
@@ -194,7 +194,7 @@ export function Auth() {
           <div className="text-center">
             <button
               type="button"
-              className="text-primary-500 hover:text-primary-600 text-sm"
+              className="btn-primary bg-[#10182a] hover:bg-blue-700 text-white"
               onClick={() => setIsLogin(!isLogin)}
             >
               {isLogin ? 'Pas encore de compte ? Créer un compte' : 'Déjà un compte ? Se connecter'}

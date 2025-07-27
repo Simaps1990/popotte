@@ -181,6 +181,7 @@ function App() {
         <Toaster position="top-center" reverseOrder={false} />
         <VisibilityHandler />
         <BrowserRouter>
+          {/* ScrollToTop garantit le scroll en haut à chaque navigation, même dans les sous-pages (charte UX) */}
           <ScrollToTop />
           <Routes>
             {/* Routes publiques */}

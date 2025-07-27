@@ -118,12 +118,13 @@ export function Orders() {
   }
 
   const getStatusColor = (status: string) => {
+    // Charte graphique : remplace tous les fonds gris par bg-white
     switch (status) {
       case 'pending': return 'border-red-500 bg-red-50'
       case 'payment_notified': return 'border-orange-500 bg-orange-50'
       case 'confirmed': return 'border-green-500 bg-green-50'
-      case 'cancelled': return 'border-gray-500 bg-white '
-      default: return 'border-gray-500 bg-white '
+      case 'cancelled': return 'border-blue-500 bg-white'
+      default: return 'border-blue-500 bg-white'
     }
   }
 
@@ -153,8 +154,8 @@ export function Orders() {
   return (
     <AdminPageLayout>
       <div className="space-y-6">
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-orange-600">{notifiedOrders.length}</div>
+        <div className="card text-center bg-white border border-gray-200">
+          <div className="text-2xl font-bold text-[#10182a]">{notifiedOrders.length}</div>
           <div className="text-sm text-gray-500">commandes à traiter</div>
         </div>
 
@@ -165,10 +166,10 @@ export function Orders() {
             </div>
           ) : (
             notifiedOrders.map((order) => (
-              <div key={order.id} className="card p-6 space-y-4">
+              <div key={order.id} className="card p-6 space-y-4 bg-white border border-gray-200">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium">Commande #{order.id.slice(0, 6)}</h3>
+                    <h3 className="font-medium text-[#10182a]">Commande #{order.id.slice(0, 6)}</h3>
                     <p className="text-sm text-gray-500">
                       Client: {order.profiles?.full_name || 'Anonyme'}
                     </p>

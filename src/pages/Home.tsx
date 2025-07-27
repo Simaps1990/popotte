@@ -115,17 +115,17 @@ export function Home() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen">
+    <div className="w-full min-h-screen bg-white">
       {/* En-tête avec l'image - Positionné en haut de la page sans marge */}
       
       <div className="w-full py-4 pb-0">
         <div className="flex flex-col space-y-4">
-          <h1 className="text-2xl font-bold text-[#10182a] mt-2 mb-6 text-left md:text-2xl md:text-left">Les nouveautés de la popotte</h1>
+          <h1 className="text-2xl font-bold text-[#10182a] text-center mb-4">Les nouveautés de la popotte</h1>
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent"></div>
-              <p className="text-gray-600">Chargement des actualités...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#10182a] border-t-transparent"></div>
+              <p className="text-[#10182a]">Chargement des actualités...</p>
             </div>
           ) : error ? (
             <div className="bg-red-50 border-l-4 border-red-500 p-4">
@@ -139,7 +139,7 @@ export function Home() {
                   <p className="text-sm text-red-700">{error}</p>
                   <button
                     onClick={handleRetry}
-                    className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600"
+                    className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-[#10182a] hover:bg-blue-700"
                   >
                     Réessayer
                   </button>
@@ -148,16 +148,16 @@ export function Home() {
             </div>
           ) : newsPosts.length === 0 ? (
             <div className="text-center py-8">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="mx-auto h-12 w-12 text-[#10182a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune actualité</h3>
-              <p className="mt-1 text-sm text-gray-500">Aucune actualité n'a été publiée pour le moment.</p>
+              <h3 className="mt-2 text-sm font-medium text-[#10182a]">Aucune actualité</h3>
+              <p className="mt-1 text-sm text-[#10182a]">Aucune actualité n'a été publiée pour le moment.</p>
             </div>
           ) : (
             <div className="space-y-6">
               {newsPosts.map((post) => (
-                <article key={post.id} className="card mb-4 overflow-hidden">
+                <article key={post.id} className="card mb-4 overflow-hidden bg-white border border-[#ddd] rounded-lg">
                   {post.image_url && (
                     <img
                       src={post.image_url}
@@ -167,12 +167,12 @@ export function Home() {
                   )}
                   <div className="p-4 space-y-3">
                     <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <div className="flex items-center text-sm text-gray-500">
+                    <div className="flex items-center text-sm text-[#10182a]">
                       <Calendar size={16} className="mr-1" />
                       <span>Publié le {formatDate(post.created_at)}</span>
                     </div>
                     {post.excerpt && (
-                      <p className="text-gray-600 italic">
+                      <p className="text-[#10182a] italic">
                         {post.excerpt}
                       </p>
                     )}

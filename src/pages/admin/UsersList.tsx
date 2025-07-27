@@ -118,7 +118,7 @@ export default function UsersList() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Utilisateurs</h2>
+        <h2 className="text-2xl font-bold text-[#10182a]">Utilisateurs</h2>
       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -140,7 +140,7 @@ export default function UsersList() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center text-sm text-gray-500">
+                        <div className="mt-1 flex items-center text-sm text-white">
                           <p>{user.email}</p>
                         </div>
                       </div>
@@ -171,7 +171,7 @@ export default function UsersList() {
                     ) : (
                       <button
                         onClick={() => handleRoleChange(user.id, 'admin')}
-                        className="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-[#10182a] hover:bg-[#1a2a3a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a2a3a]"
                       >
                         Promouvoir Admin
                       </button>
@@ -180,7 +180,7 @@ export default function UsersList() {
                 </div>
                 
                 <div className="mt-2 flex justify-between">
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-white">
                     <p>Inscrit le {new Date(user.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>

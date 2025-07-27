@@ -180,7 +180,7 @@ export function OrderDetail() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+          className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-1" /> Retour aux commandes
         </button>
@@ -188,13 +188,13 @@ export function OrderDetail() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handlePrint}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-1.5 border border-blue-500 shadow-sm text-sm font-medium rounded-md text-white bg-[#10182a] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Printer className="w-4 h-4 mr-2" /> Imprimer
           </button>
           <button
             onClick={handleSendEmail}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-1.5 border border-blue-500 shadow-sm text-sm font-medium rounded-md text-[#10182a] bg-white hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Mail className="w-4 h-4 mr-2" /> Envoyer par email
           </button>
@@ -242,7 +242,7 @@ export function OrderDetail() {
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
+              <h3 className="text-lg leading-6 font-medium text-[#10182a]">
                 Commande #{order.orderNumber}
               </h3>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
@@ -266,7 +266,7 @@ export function OrderDetail() {
             {/* Informations client */}
             <div className=" bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Client</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              <dd className="mt-1 text-sm text-[#10182a] sm:mt-0 sm:col-span-2">
                 <div className="flex items-center">
                   <User className="w-5 h-5 text-gray-400 mr-2" />
                   <div>
@@ -280,7 +280,7 @@ export function OrderDetail() {
             {/* Adresse de livraison */}
             <div className="bg-white bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Adresse de livraison</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              <dd className="mt-1 text-sm text-[#10182a] sm:mt-0 sm:col-span-2">
                 <div className="flex items-start">
                   <MapPin className="w-5 h-5 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
                   <div>
@@ -295,7 +295,7 @@ export function OrderDetail() {
             {/* Méthode de paiement */}
             <div className=" bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Paiement</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+              <dd className="mt-1 text-sm text-[#10182a] sm:mt-0 sm:col-span-2">
                 <div className="flex items-center">
                   <CreditCard className="w-5 h-5 text-gray-400 mr-2" />
                   <span>{order.paymentMethod}</span>
@@ -307,7 +307,7 @@ export function OrderDetail() {
             {order.notes && (
               <div className="bg-white bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dd className="mt-1 text-sm text-[#10182a] sm:mt-0 sm:col-span-2">
                   <p className="italic">{order.notes}</p>
                 </dd>
               </div>
@@ -318,7 +318,7 @@ export function OrderDetail() {
               <h4 className="text-sm font-medium text-gray-500 mb-4">ARTICLES COMMANDÉS</h4>
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
+                  <thead className="bg-white">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Article
@@ -349,7 +349,7 @@ export function OrderDetail() {
                               </div>
                             )}
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                              <div className="text-sm font-medium text-[#10182a]">{item.name}</div>
                               <div className="text-sm text-gray-500">#{index + 1}</div>
                             </div>
                           </div>
@@ -360,7 +360,7 @@ export function OrderDetail() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                           {item.quantity}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#10182a] text-right">
                           {(item.quantity * item.price).toFixed(2)} €
                         </td>
                       </tr>
@@ -371,7 +371,7 @@ export function OrderDetail() {
                       <th colSpan={3} className="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
                         Sous-total
                       </th>
-                      <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                      <td className="px-6 py-3 text-right text-sm font-medium text-[#10182a]">
                         {order.amount.toFixed(2)} €
                       </td>
                     </tr>
@@ -379,15 +379,15 @@ export function OrderDetail() {
                       <th colSpan={3} className="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
                         Livraison
                       </th>
-                      <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                      <td className="px-6 py-3 text-right text-sm font-medium text-[#10182a]">
                         {order.amount > 50 ? 'Gratuite' : '5.00 €'}
                       </td>
                     </tr>
                     <tr>
-                      <th colSpan={3} className="px-6 py-3 text-right text-sm font-medium text-gray-900 uppercase tracking-wider border-t border-gray-200">
+                      <th colSpan={3} className="px-6 py-3 text-right text-sm font-medium text-[#10182a] uppercase tracking-wider border-t border-gray-200">
                         Total
                       </th>
-                      <td className="px-6 py-3 text-right text-base font-bold text-gray-900 border-t border-gray-200">
+                      <td className="px-6 py-3 text-right text-base font-bold text-[#10182a] border-t border-gray-200">
                         {(order.amount > 50 ? order.amount : order.amount + 5).toFixed(2)} €
                       </td>
                     </tr>

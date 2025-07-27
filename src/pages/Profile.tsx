@@ -129,8 +129,8 @@ export function Profile() {
       {/* Informations personnelles */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2 mb-4">
-          <User size={20} className="text-primary-600" />
-          <h2 className="text-lg font-semibold text-gray-800">Informations personnelles</h2>
+          <User size={20} className="btn-primary bg-[#10182a] hover:bg-blue-700 text-white" />
+          <h2 className="text-lg font-semibold text-[#10182a]">Informations personnelles</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="space-y-4">
@@ -144,10 +144,10 @@ export function Profile() {
             </div>
           )}
 
-          <div className="card">
+          <div className="card bg-white border-white">
             <div className="space-y-4">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="username" className="block text-sm font-medium text-[#10182a]">
                   Nom d'utilisateur
                 </label>
                 <input
@@ -161,7 +161,7 @@ export function Profile() {
               </div>
 
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="username" className="block text-sm font-medium text-[#10182a]">
                   Pseudo
                 </label>
                 <input
@@ -176,7 +176,7 @@ export function Profile() {
               </div>
 
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="block text-sm font-medium text-[#10182a]">
                   Prénom
                 </label>
                 <input
@@ -190,7 +190,7 @@ export function Profile() {
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="block text-sm font-medium text-[#10182a]">
                   Nom
                 </label>
                 <input
@@ -209,7 +209,7 @@ export function Profile() {
           <button
             type="submit"
             disabled={profileLoading}
-            className="w-full btn-primary disabled:opacity-50 flex items-center justify-center space-x-2"
+            className="w-full btn-primary bg-[#10182a] hover:bg-blue-700 text-white disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             <Save size={18} />
             <span>{profileLoading ? 'Mise à jour...' : 'Mettre à jour les informations'}</span>
@@ -220,8 +220,8 @@ export function Profile() {
       {/* Changement de mot de passe */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2 mb-4">
-          <Lock size={20} className="text-primary-600" />
-          <h2 className="text-lg font-semibold text-gray-800">Changer le mot de passe</h2>
+          <Lock size={20} className="btn-primary bg-[#10182a] hover:bg-blue-700 text-white" />
+          <h2 className="text-lg font-semibold text-[#10182a]">Changer le mot de passe</h2>
         </div>
 
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -311,7 +311,7 @@ export function Profile() {
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-white p-3 rounded-lg">
                 <p className="text-sm text-gray-600">
                   <strong>Conseils pour votre mot de passe :</strong>
                 </p>

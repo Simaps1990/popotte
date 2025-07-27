@@ -282,7 +282,7 @@ export function News() {
                     onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
                     className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="published" className="ml-2 block text-sm text-gray-900">
+                  <label htmlFor="published" className="ml-2 block text-sm text-[#10182a]">
                     Publier l'article
                   </label>
                 </div>
@@ -295,7 +295,7 @@ export function News() {
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+                    className="bg-white border-[#10182a] hover:bg-gray-300 text-[#10182a] px-4 py-2 rounded-lg"
                   >
                     Annuler
                   </button>
@@ -339,7 +339,7 @@ export function News() {
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-semibold">{post.title}</h3>
+                        <h3 className="text-lg font-semibold text-[#10182a]">{post.title}</h3>
                         {!post.published && (
                           <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
                             Brouillon
@@ -364,7 +364,7 @@ export function News() {
                       </button>
                       <button
                         onClick={() => handleDelete(post.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>

@@ -108,7 +108,7 @@ const Products = () => {
     >
       <div className="flex-1">
         <div className="flex items-center space-x-2">
-          <h3 className={`font-medium ${product.is_available ? 'text-gray-900' : 'text-gray-500'}`}>
+          <h3 className={`font-medium ${product.is_available ? 'text-[#10182a]' : 'text-gray-500'}`}>
             {product.name}
           </h3>
         </div>
@@ -480,14 +480,14 @@ const Products = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-white pb-16">
       <div className="container mx-auto px-4 py-6 max-w-md">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Gestion des produits</h1>
+            <h1 className="text-2xl font-bold text-[#10182a]">Gestion des produits</h1>
             <button 
               onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+              className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
             >
               <ArrowLeft size={20} />
               <span>Retour</span>
@@ -608,7 +608,7 @@ const Products = () => {
             ) : (
                 productsByCategory.map((category) => (
                   <div key={category.id} className="space-y-4">
-                    <div className="flex items-center space-x-2 group bg-gray-50 p-3 rounded-lg">
+                    <div className="flex items-center space-x-2 group bg-white p-3 rounded-lg">
                       {editingCategory?.id === category.id ? (
                         <div className="flex items-center space-x-2 flex-1">
                           <input
@@ -629,7 +629,7 @@ const Products = () => {
                           </button>
                           <button 
                             onClick={() => setEditingCategory(null)}
-                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors"
                             title="Annuler"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">

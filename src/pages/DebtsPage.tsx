@@ -116,11 +116,11 @@ export default function DebtsPage() {
       <div className="min-h-screen bg-white p-4 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-800">Une erreur est survenue</h2>
+          <h2 className="text-xl font-semibold text-[#10182a]">Une erreur est survenue</h2>
           <p className="text-gray-600 mt-2">{error}</p>
           <button 
             onClick={loadDebts}
-            className="mt-4 px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
+            className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
           >
             Réessayer
           </button>
@@ -131,10 +131,10 @@ export default function DebtsPage() {
 
   return (
     <div className="min-h-screen bg-white pb-16">
-      <main className="container mx-auto px-4 py-6 max-w-md">
+      <main className="container mx-auto px-4 py-6 max-w-md bg-white border border-gray-200 rounded">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Mes Dettes</h1>
+            <h1 className="text-2xl font-bold text-[#10182a]">Mes Dettes</h1>
           </div>
 
           {/* Dettes non réglées */}
@@ -147,7 +147,7 @@ export default function DebtsPage() {
                 .map(debt => (
                   <div key={debt.id} className="card border-l-4 border-red-500 bg-red-50">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-white">
                         {debt.createdAt ? formatDate(debt.createdAt) : 'Date inconnue'}
                       </span>
                       <span className="font-semibold text-red-600">
@@ -166,7 +166,7 @@ export default function DebtsPage() {
                     <div className="space-y-3">
                       <button
                         onClick={() => handleMarkAsPaid(debt.id)}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
+                        className="w-full bg-[#10182a] hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
                       >
                         <span>Marquer comme payé</span>
                       </button>
@@ -188,7 +188,7 @@ export default function DebtsPage() {
                     href="https://paypal.me/popotte"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full btn-primary flex items-center justify-center space-x-2"
+                    className="w-full bg-[#10182a] hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
                   >
                     <span>Régler mes dettes</span>
                   </a>
@@ -253,7 +253,7 @@ export default function DebtsPage() {
                         }
                       }
                     }}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
+                    className="w-full bg-[#10182a] hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
                   >
                     <span>Notifier mon paiement aux popottiers</span>
                   </button>
@@ -272,7 +272,7 @@ export default function DebtsPage() {
                 .map(debt => (
                   <div key={debt.id} className="card border-l-4 border-orange-500 bg-orange-50">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-white">
                         Commande: {debt.createdAt ? formatDate(debt.createdAt) : 'Date inconnue'}
                       </span>
                       <span className="font-semibold text-orange-600">
@@ -300,11 +300,11 @@ export default function DebtsPage() {
           {!debtSummary?.debts.length && (
             <div className="text-center py-8">
               <div className="text-gray-400 text-5xl mb-4">💸</div>
-              <h3 className="text-lg font-medium text-gray-700">Aucune dette pour le moment</h3>
-              <p className="text-gray-500 mt-1">Vos commandes apparaîtront ici</p>
+              <h3 className="text-lg font-medium text-[#10182a]">Aucune dette pour le moment</h3>
+              <p className="text-gray-600 mt-1">Vos commandes apparaîtront ici</p>
               <Link 
                 to="/commande" 
-                className="mt-4 inline-block px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
+                className="mt-4 inline-block px-4 py-2 bg-[#10182a] hover:bg-blue-700 text-white rounded-md transition-colors"
               >
                 Passer une commande
               </Link>

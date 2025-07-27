@@ -10,10 +10,11 @@ export const NewsPageLayout: React.FC<NewsPageLayoutProps> = ({
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#ffffff', // Charte graphique : fond blanc
       backgroundImage: 'none',
       position: 'relative',
-      zIndex: 1
+      zIndex: 1,
+      border: '1px solid #eee' // Charte graphique : bordure claire
     }}>
       <main style={{
         maxWidth: '56rem',
