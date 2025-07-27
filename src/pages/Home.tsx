@@ -28,7 +28,6 @@ export function Home() {
 
   // Callback pour les changements de news
   const handleNewsChange = React.useCallback(() => {
-    console.log('🔔 Actualités modifiées - Rechargement des données');
     fetchNewsPosts();
   }, []);
 
@@ -40,7 +39,6 @@ export function Home() {
   useEffect(() => {
     // Ne s'exécute qu'une seule fois en mode développement avec React.StrictMode
     if (effectRan.current === false) {
-      console.log('🏁 Premier rendu - Appel API sans invalidation du cache');
       // Suppression de l'invalidation du cache
       fetchNewsPosts();
       effectRan.current = true;
@@ -48,37 +46,23 @@ export function Home() {
     
     // Nettoyage
     return () => {
-      console.log('🧹 Nettoyage de l\'effet');
+      // Nettoyage de l'effet
     };
   }, [])
 
   const fetchNewsPosts = async () => {
-    console.group('🔄 fetchNewsPosts');
     setLoading(true);
     setError(null);
     
     try {
-      // Ne plus invalider le cache avant de récupérer les données
-      console.log('🔄 Récupération des news sans invalidation du cache');
-      
-      console.log('1. Appel de getNews()...');
       const data = await getNews();
-      
-      console.log('2. Données reçues dans fetchNewsPosts:', {
-        type: Array.isArray(data) ? 'array' : typeof data,
-        length: Array.isArray(data) ? data.length : 'N/A',
-        data: data
-      });
       
       if (!Array.isArray(data)) {
         console.error('❌ Les données reçues ne sont pas un tableau:', data);
         throw new Error('Format de données invalide');
       }
       
-      console.log('3. Mise à jour du state newsPosts');
       setNewsPosts(data);
-      
-      console.log('4. State mis à jour avec succès');
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
@@ -90,8 +74,6 @@ export function Home() {
       setError(`Impossible de charger les actualités: ${errorMessage}`);
     } finally {
       setLoading(false);
-      console.log('5. Chargement terminé');
-      console.groupEnd();
     }
   }
   

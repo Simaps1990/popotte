@@ -1,12 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { Category } from './types';
 
-console.log('✅ categoryService chargé avec succès');
-
 export const getCategories = async (): Promise<Category[]> => {
   try {
-    console.log('🔄 Récupération des catégories depuis Supabase...');
-    
     const { data, error } = await supabase
       .from('categories')
       .select('*')
@@ -14,7 +10,6 @@ export const getCategories = async (): Promise<Category[]> => {
     
     if (error) throw error;
     
-    console.log(`✅ ${data?.length || 0} catégories récupérées`);
     return data || [];
   } catch (error) {
     console.error('❌ Erreur lors de la récupération des catégories:', error);
@@ -24,8 +19,6 @@ export const getCategories = async (): Promise<Category[]> => {
 
 export const createCategory = async (categoryData: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category> => {
   try {
-    console.log('🔄 Création d\'une nouvelle catégorie...', categoryData);
-    
     const { data, error } = await supabase
       .from('categories')
       .insert([{
@@ -39,7 +32,6 @@ export const createCategory = async (categoryData: Omit<Category, 'id' | 'create
     
     if (error) throw error;
     
-    console.log('✅ Catégorie créée avec succès:', data);
     return data;
   } catch (error) {
     console.error('❌ Erreur lors de la création de la catégorie:', error);
@@ -49,8 +41,6 @@ export const createCategory = async (categoryData: Omit<Category, 'id' | 'create
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category> => {
   try {
-    console.log(`🔄 Mise à jour de la catégorie ${id}...`, updates);
-    
     const { data, error } = await supabase
       .from('categories')
       .update({
@@ -63,7 +53,6 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     
     if (error) throw error;
     
-    console.log('✅ Catégorie mise à jour avec succès:', data);
     return data;
   } catch (error) {
     console.error(`❌ Erreur lors de la mise à jour de la catégorie ${id}:`, error);
@@ -73,8 +62,6 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 
 export const deleteCategory = async (id: string): Promise<{ error?: any }> => {
   try {
-    console.log(`🗑️ Suppression de la catégorie ${id}...`);
-    
     const { error } = await supabase
       .from('categories')
       .delete()
@@ -82,7 +69,6 @@ export const deleteCategory = async (id: string): Promise<{ error?: any }> => {
     
     if (error) throw error;
     
-    console.log('✅ Catégorie supprimée avec succès');
     return {};
   } catch (error) {
     console.error(`❌ Erreur lors de la suppression de la catégorie ${id}:`, error);

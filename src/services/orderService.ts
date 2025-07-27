@@ -43,8 +43,6 @@ export const orderService = {
    * @returns Fonction pour se désabonner
    */
   subscribeToOrderUpdates(userId: string, callback: (payload: any) => void) {
-    console.log(`🔔 Abonnement aux mises à jour des commandes pour l'utilisateur ${userId}`);
-    
     const subscription = supabase
       .channel('orders_changes')
       .on('postgres_changes', 
@@ -55,16 +53,12 @@ export const orderService = {
           filter: `user_id=eq.${userId}`
         }, 
         (payload: any) => {
-          console.log('📡 Mise à jour de commande reçue:', payload);
           callback(payload);
         }
       )
-      .subscribe((status: string) => {
-        console.log(`Statut de l'abonnement aux commandes: ${status}`);
-      });
+      .subscribe();
 
     return () => {
-      console.log('🔕 Désabonnement des mises à jour des commandes');
       subscription.unsubscribe();
     };
   },
@@ -88,15 +82,11 @@ export const orderService = {
       // 2. Émettre un broadcast pour forcer la mise à jour en temps réel
       if (updatedOrder) {
         try {
-          console.log('📢 Envoi du broadcast pour la notification de paiement de la commande:', orderId);
-          
           // Forcer une mise à jour pour déclencher les abonnements temps réel
-          const broadcastResult = await supabase
+          await supabase
             .from('orders')
             .update({ updated_at: new Date().toISOString() })
             .eq('id', orderId);
-            
-          console.log('📡 Résultat du broadcast:', broadcastResult);
         } catch (broadcastError) {
           console.warn('⚠️ Erreur non bloquante lors du broadcast:', broadcastError);
           // Ne pas bloquer le processus en cas d'erreur de broadcast
@@ -115,8 +105,6 @@ export const orderService = {
 
   async getUserOrders(userId: string): Promise<Order[]> {
     try {
-      console.log('Récupération des commandes pour l\'utilisateur:', userId);
-      
       // D'abord, récupérer les commandes
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
@@ -126,10 +114,7 @@ export const orderService = {
 
       if (ordersError) throw ordersError;
       
-      console.log('Commandes brutes reçues:', orders);
-      
       if (!orders || orders.length === 0) {
-        console.log('Aucune commande trouvée pour cet utilisateur');
         return [];
       }
 
@@ -143,8 +128,6 @@ export const orderService = {
         
       if (itemsError) throw itemsError;
       
-      console.log('Articles de commande récupérés:', orderItems);
-      
       // Combiner les données
       const ordersWithItems = orders.map((order: any) => {
         const items = (orderItems || []).filter((item: any) => item.order_id === order.id);
@@ -157,7 +140,6 @@ export const orderService = {
         };
       });
       
-      console.log('Commandes formatées:', ordersWithItems);
       return ordersWithItems;
     } catch (error) {
       console.error('Error fetching user orders:', error);
