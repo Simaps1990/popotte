@@ -43,9 +43,9 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
           <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
           {/* Arrondi inversé en bas du header */}
           {/* Arrondis inversés très petits sur les extrémités */}
-          <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 12, pointerEvents: 'none', zIndex: 2}}>
-            <svg width="100%" height="12" viewBox="0 0 100 12" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 12}}>
-              <path d="M0,12 Q6,0 18,0 L82,0 Q94,0 100,12 Z" fill="#fff" />
+          <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 32, pointerEvents: 'none', zIndex: 2}}>
+            <svg width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 32}}>
+              <path d="M0,32 Q6,0 18,0 L82,0 Q94,0 100,32 Z" fill="#fff" />
             </svg>
           </div>
         </header>
