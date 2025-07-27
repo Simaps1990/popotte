@@ -95,23 +95,20 @@ const Settings = () => {
   // Utiliser le hook de rafraîchissement des données
   // Appel supprimé : la logique de rafraîchissement manuel est désormais obsolète.
   
-  // Synchronisation du statut admin avec le contexte Auth
+  // Synchroniser l'état local avec le contexte Auth
   useEffect(() => {
     setCurrentAdminStatus(isAdmin);
-    console.log('🔄 [Settings] Synchronisation statut admin:', isAdmin);
   }, [isAdmin]);
 
   // Listener pour les changements de rôle admin en temps réel
   useEffect(() => {
     const handleAdminRoleChange = (event: CustomEvent) => {
       const { userId, newRole, isCurrentUser } = event.detail;
-      console.log('📢 [Settings] Événement adminRoleChanged reçu:', { userId, newRole, isCurrentUser });
       
       if (isCurrentUser) {
         // Si c'est l'utilisateur courant, mettre à jour le statut immédiatement
         const newAdminStatus = newRole === 'admin';
         setCurrentAdminStatus(newAdminStatus);
-        console.log('✅ [Settings] Statut admin mis à jour instantanément:', newAdminStatus);
         
         // Forcer un re-render en mettant à jour l'état
         setActiveTab(prev => prev); // Trigger re-render
@@ -120,12 +117,10 @@ const Settings = () => {
 
     // Ajouter le listener d'événement
     window.addEventListener('adminRoleChanged', handleAdminRoleChange as EventListener);
-    console.log('👂 [Settings] Listener adminRoleChanged ajouté');
 
     // Cleanup
     return () => {
       window.removeEventListener('adminRoleChanged', handleAdminRoleChange as EventListener);
-      console.log('🧹 [Settings] Listener adminRoleChanged supprimé');
     };
   }, []);
 

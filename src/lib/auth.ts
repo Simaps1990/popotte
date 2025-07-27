@@ -47,8 +47,6 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
     // Créer un full_name combiné pour le trigger SQL qui l'attend
     const fullName = cleanFirstName + (cleanLastName ? ' ' + cleanLastName : '');
     
-
-    
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password: password.trim(),
@@ -62,8 +60,6 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
         emailRedirectTo: window.location.origin + '/auth/callback'
       }
     })
-
-
     
     if (signUpError) {
       console.error('❌ Erreur lors de la création du compte:', signUpError)
@@ -77,8 +73,6 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
     if (!signUpData.user) {
       throw new Error('Aucun utilisateur retourné après l\'inscription')
     }
-    
-
     
     // Attendre un court instant avant de tenter de se connecter
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -109,8 +103,6 @@ export const signUp = async ({ email, password, username, firstName = '', lastNa
 
 export const signIn = async (email: string, password: string) => {
   try {
-    console.log('🔑 Tentative de connexion avec email:', email);
-    
     // Connexion avec Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -183,8 +175,6 @@ export const signIn = async (email: string, password: string) => {
 
 export const signOut = async () => {
   try {
-    console.log('🔒 Déconnexion en cours...');
-    
     // Déconnexion complète (y compris suppression des sessions persistantes)
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     
@@ -192,8 +182,6 @@ export const signOut = async () => {
       console.error('❌ Erreur lors de la déconnexion:', error);
       throw error;
     }
-    
-    console.log('✅ Déconnexion réussie');
     
     // Forcer un petit délai pour permettre à Supabase de terminer les opérations de nettoyage
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -208,8 +196,6 @@ export const signOut = async () => {
 export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-
-
   
   // Récupérer les informations du profil depuis les deux tables
   const [secureResult, profilesResult] = await Promise.all([
@@ -241,15 +227,11 @@ export const getCurrentUser = async () => {
   // Utiliser les données de secure_profiles en priorité, puis profiles
   const profileData = secureResult.data || profilesResult.data
   
-
-
   return { ...user, profile: profileData }
 }
 
 export const isAdmin = async () => {
   try {
-
-    
     // Vérifier d'abord si on est connecté
     const { data: { user }, error } = await supabase.auth.getUser()
     
@@ -257,8 +239,6 @@ export const isAdmin = async () => {
       console.error('❌ Erreur lors de la récupération de l\'utilisateur:', error)
       return false
     }
-    
-
     
     // Vérifier le rôle dans les métadonnées de l'application (app_metadata)
     const roles = user.app_metadata?.roles || [];
@@ -299,8 +279,6 @@ export const isAdmin = async () => {
     } catch (err) {
       console.warn('Erreur lors de la récupération du rôle depuis le profil:', err);
     }
-
-
 
     return isAdmin;
   } catch (error) {
