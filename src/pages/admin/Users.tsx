@@ -706,7 +706,7 @@ const Users: React.FC = () => {
 
   if (loading.users && users.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-16">
+      <div className="min-h-screen pb-16">
         <main className="container mx-auto px-4 py-6 max-w-md">
           <div className="flex justify-center items-center h-64">
             <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
@@ -718,7 +718,7 @@ const Users: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-16">
+      <div className="min-h-screen pb-16">
         <main className="container mx-auto px-4 py-6 max-w-md">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
@@ -729,7 +729,7 @@ const Users: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen pb-16">
       <main className="container mx-auto px-4 py-6 max-w-md">
         {/* Liste des utilisateurs (si aucun utilisateur sélectionné) */}
         {!selectedUser && (
