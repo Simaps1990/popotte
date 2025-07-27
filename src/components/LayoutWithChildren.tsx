@@ -36,21 +36,29 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
   const isHeaderVisible = !window.location.pathname.startsWith('/auth');
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white" style={{ background: isHeaderVisible ? '#10182a' : '#fff' }}>
+    {/*
+      Structure corrigée :
+      - Le fond bleu foncé n'est visible que derrière le header
+      - Le main et le footer sont toujours sur fond blanc pur
+      - Ajout d'une classe utilitaire .text-header-blue pour les titres (à utiliser dans les sous-menus)
+    */}
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white">
       {isHeaderVisible && (
         <header className="site-header w-full flex justify-center items-center pt-8 pb-2 md:pt-10 md:pb-3" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 32 }}>
           {/* Header bleu foncé avec logo centré */}
           <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
         </header>
       )}
-      <main className="w-full max-w-md mx-auto px-4 py-2 flex-grow pb-20">
+      <main className="w-full max-w-md mx-auto px-4 py-2 flex-grow pb-20 bg-white">
         <div className="w-full">
           {children}
         </div>
       </main>
-      <div className="w-full max-w-md mx-auto border-0 border-none" style={{ border: 'none' }}>
+      <div className="w-full max-w-md mx-auto border-0 border-none bg-white" style={{ border: 'none' }}>
         <BottomNavigation />
       </div>
+      {/* Classe utilitaire pour titres bleu header */}
+      <style>{`.text-header-blue { color: #10182a !important; }`}</style>
     </div>
   );
 };

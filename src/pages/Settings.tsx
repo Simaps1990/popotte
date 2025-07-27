@@ -209,7 +209,8 @@ const Settings = () => {
     <div className="w-full min-h-screen pb-20 relative">
       <div className="space-y-6 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
+          {/* Titre principal en bleu foncé header */}
+          <h2 className="text-2xl font-bold text-header-blue">Paramètres</h2>
         </div>
 
 
@@ -217,19 +218,22 @@ const Settings = () => {
             
             {/* Statistiques financières - visible pour tous les utilisateurs */}
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistiques financières</h2>
+              {/* Sous-titre section en bleu header */}
+              <h3 className="text-lg font-semibold text-header-blue mb-2">Statistiques financières</h3>
               <DebtSummaryPanel className="mb-4" />
               <PendingDebtSummaryPanel className="mb-4" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestion du site</h2>
+            {/* Sous-titre section en bleu header */}
+            <h3 className="text-lg font-semibold text-header-blue mb-2">Gestion du site</h3>
 
             <div className="grid grid-cols-1 gap-4">
               {/* Boutons d'administration - visibles uniquement pour les administrateurs */}
               {isAdmin && (
                 <>
+                  {/* Bouton Gestion des utilisateurs */}
                   <button 
                     onClick={() => navigateTo('/admin/users')}
-                    className="card hover:bg-blue-50 transition-colors cursor-pointer border-l-4 border-blue-500 text-left w-full"
+                    className="card bg-white hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-[#10182a] text-left w-full"
                   >
                     <div className="flex items-center space-x-4 p-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -241,17 +245,17 @@ const Settings = () => {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-blue-900">Gestion des utilisateurs</h3>
-                        <p className="text-sm text-blue-600">Gérer les comptes et permissions</p>
+                        <h3 className="font-semibold text-header-blue">Gestion des utilisateurs</h3>
+                        <p className="text-sm text-gray-600">Gérer les comptes et permissions</p>
                       </div>
-                      <span className="text-blue-400">→</span>
+                      <span className="text-gray-400">→</span>
                     </div>
                   </button>
 
                   {/* Bouton Paiements à vérifier */}
                   <button 
                     onClick={() => navigateTo('/admin/payments')}
-                    className="card hover:bg-orange-50 transition-colors cursor-pointer border-l-4 border-orange-500 text-left w-full"
+                    className="card bg-white hover:bg-orange-50 transition-colors cursor-pointer border-l-4 border-[#10182a] text-left w-full"
                   >
                     <div className="flex items-center space-x-4 p-4">
                       <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
@@ -261,17 +265,17 @@ const Settings = () => {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-orange-900">Paiements à vérifier</h3>
-                        <p className="text-sm text-orange-600">Confirmer les paiements notifiés</p>
+                        <h3 className="font-semibold text-header-blue">Paiements à vérifier</h3>
+                        <p className="text-sm text-gray-600">Confirmer les paiements notifiés</p>
                       </div>
-                      <span className="text-orange-400">→</span>
+                      <span className="text-gray-400">→</span>
                     </div>
                   </button>
 
                   {/* Bouton Gestion des actualités */}
                   <button 
                     onClick={() => navigateTo('/admin/news')}
-                    className="card hover:bg-purple-50 transition-colors cursor-pointer border-l-4 border-purple-500 text-left w-full"
+                    className="card bg-white hover:bg-purple-50 transition-colors cursor-pointer border-l-4 border-[#10182a] text-left w-full"
                   >
                     <div className="flex items-center space-x-4 p-4">
                       <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -284,17 +288,17 @@ const Settings = () => {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-purple-900">Gestion des actualités</h3>
-                        <p className="text-sm text-purple-600">Publier et modifier les articles</p>
+                        <h3 className="font-semibold text-header-blue">Gestion des actualités</h3>
+                        <p className="text-sm text-gray-600">Publier et modifier les articles</p>
                       </div>
-                      <span className="text-purple-400">→</span>
+                      <span className="text-gray-400">→</span>
                     </div>
                   </button>
 
                   {/* Bouton Gestion des produits */}
                   <button 
                     onClick={() => navigateTo('/admin/products')}
-                    className="card hover:bg-orange-50 transition-colors cursor-pointer border-l-4 border-orange-500 text-left w-full"
+                    className="card bg-white hover:bg-orange-50 transition-colors cursor-pointer border-l-4 border-[#10182a] text-left w-full"
                   >
                     <div className="flex items-center space-x-4 p-4">
                       <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
@@ -306,10 +310,10 @@ const Settings = () => {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-orange-900">Gestion des produits</h3>
-                        <p className="text-sm text-orange-600">Gérer le menu et les prix</p>
+                        <h3 className="font-semibold text-header-blue">Gestion des produits</h3>
+                        <p className="text-sm text-gray-600">Gérer le menu et les prix</p>
                       </div>
-                      <span className="text-orange-400">→</span>
+                      <span className="text-gray-400">→</span>
                     </div>
                   </button>
                 </>
@@ -317,26 +321,30 @@ const Settings = () => {
 
               
               {/* Bouton Mon profil - visible pour tous les utilisateurs */}
-<Link 
-  to="/admin/profile"
-  className="card hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-gray-500 text-left w-full block"
->
-  <div className="flex items-center space-x-4 p-4">
-    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
+              <Link 
+                to="/admin/profile"
+                className="card bg-white hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-[#10182a] text-left w-full block"
+              >
+                <div className="flex items-center space-x-4 p-4">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-header-blue">Mon profil</h3>
+                    <p className="text-sm text-gray-600">Modifier mes informations personnelles</p>
+                  </div>
+                  <span className="text-gray-400">→</span>
+                </div>
+              </Link>
       </svg>
     </div>
     <div className="flex-1">
       <h3 className="font-semibold text-gray-900">Mon profil</h3>
       <p className="text-sm text-gray-600">Modifier mes informations personnelles</p>
-    </div>
-    <span className="text-gray-400">→</span>
-  </div>
-</Link>
 
-              
               {/* Bouton Se déconnecter - visible pour tous les utilisateurs */}
               <button 
                 onClick={handleLogout}
@@ -359,10 +367,8 @@ const Settings = () => {
               </button>
             </div>
           </div>
-
-
+        </div>
       </div>
-
     </div>
   );
 };
