@@ -64,7 +64,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
 
   if (!isSupported) {
     return (
-      <div className="p-4 bg-yellow-50 text-yellow-800 rounded-md">
+      <div className="p-4 bg-white text-yellow-800 rounded-md">
         <p>Les notifications ne sont pas supportées par votre navigateur.</p>
       </div>
     );
@@ -127,11 +127,11 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
         </div>
 
         {!notificationsAllowed ? (
-          <div className="mt-3 p-3 bg-yellow-50 rounded-md text-sm text-yellow-700">
+          <div className="mt-3 p-3 bg-white rounded-md text-sm text-yellow-700">
             <p>Les notifications sont actuellement désactivées dans votre navigateur. Veuillez autoriser les notifications pour ce site dans les paramètres de votre navigateur.</p>
           </div>
         ) : !isEnabled ? (
-          <div className="mt-3 p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+          <div className="mt-3 p-3 bg-white rounded-md text-sm text-blue-700">
             <p>Activez les notifications pour être informé immédiatement lors de la publication de nouveaux articles.</p>
           </div>
         ) : (

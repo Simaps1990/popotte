@@ -154,9 +154,9 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
         <div className="px-4 py-5 sm:p-6">
           {message && (
             <div className={`mb-4 p-4 rounded-md ${
-              message.type === 'success' ? 'bg-green-50 text-green-800' : 
-              message.type === 'error' ? 'bg-red-50 text-red-800' :
-              'bg-blue-50 text-blue-800'
+              message.type === 'success' ? 'bg-white text-green-800' : 
+              message.type === 'error' ? 'bg-white text-red-800' :
+              'bg-white text-blue-800'
             }`}>
               <p className="text-sm">{message.text}</p>
             </div>
@@ -292,7 +292,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
         <div className="px-4 py-5 sm:p-6">
           {passwordMessage && (
             <div className={`mb-4 p-4 rounded-md ${
-              passwordMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+              passwordMessage.type === 'success' ? 'bg-white text-green-800' : 'bg-white text-red-800'
             }`}>
               <p className="text-sm">{passwordMessage.text}</p>
             </div>
