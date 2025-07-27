@@ -41,6 +41,12 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
         <header className="site-header w-full flex justify-center items-center pt-8 pb-2 md:pt-10 md:pb-3" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 32 }}>
           {/* Header bleu foncé avec logo centré */}
           <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
+          {/* Arrondi inversé en bas du header */}
+          <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 32, pointerEvents: 'none', zIndex: 2}}>
+            <svg width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 32}}>
+              <path d="M0,32 Q5,0 50,0 Q95,0 100,32 Z" fill="#fff" />
+            </svg>
+          </div>
         </header>
       )}
       <main className="w-full max-w-md mx-auto px-4 py-2 flex-grow pb-20">
