@@ -284,21 +284,55 @@ export const isAdmin = async (userId: string) => {
     })
     
     // Vérifier le rôle dans les métadonnées de l'application (app_metadata)
-    const roles = user.app_metadata?.roles || []
-    const rawRoles = user.app_metadata?.raw_app_meta_data?.roles || []
-    const isAdmin = 
+    const roles = user.app_metadata?.roles || [];
+    const rawRoles = user.app_metadata?.raw_app_meta_data?.roles || [];
+    let isAdmin =
       (Array.isArray(roles) && roles.includes('admin')) ||
-      (Array.isArray(rawRoles) && rawRoles.includes('admin'))
+      (Array.isArray(rawRoles) && rawRoles.includes('admin'));
     
-    console.log('✅ Statut admin vérifié:', { 
-      userId, 
-      isAdmin, 
+    // Vérification supplémentaire via le profil (secure_profiles ou profiles)
+    let profileRole = null;
+    try {
+      const [secureResult, profilesResult] = await Promise.all([
+        supabase
+          .from('secure_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+          .then((res: { data: any; error: any }) => ({
+            data: res.data,
+            error: res.error,
+            source: 'secure_profiles',
+          })),
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+          .then((res: { data: any; error: any }) => ({
+            data: res.data,
+            error: res.error,
+            source: 'profiles',
+          })),
+      ]);
+      profileRole = secureResult.data?.role || profilesResult.data?.role;
+      if (!isAdmin && profileRole === 'admin') {
+        isAdmin = true;
+      }
+    } catch (err) {
+      console.warn('Erreur lors de la récupération du rôle depuis le profil:', err);
+    }
+
+    console.log('✅ Statut admin vérifié:', {
+      userId,
+      isAdmin,
       roles,
       rawRoles,
-      hasAdminRole: isAdmin
-    })
-    
-    return isAdmin
+      profileRole,
+      hasAdminRole: isAdmin,
+    });
+
+    return isAdmin;
   } catch (error) {
     console.error('❌ Erreur dans isAdmin:', error)
     return false

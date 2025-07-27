@@ -345,65 +345,48 @@ export const userService = {
         }))
       }));
     } catch (error) {
-      console.warn('Erreur inattendue lors de la récupération des commandes, retour d\'un tableau vide:', error);
-      return [];
-    }
-  },
-
-  // Mettre à jour le rôle d'un utilisateur
-  async updateUserRole(userId: string, role: 'admin' | 'user'): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Erreur lors de la mise à jour du rôle:', error);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Erreur inattendue lors de la mise à jour du rôle:', error);
       return false;
     }
-  },
 
-  // S'abonner aux mises à jour des utilisateurs
-  subscribeToUsers(callback: (payload: any) => void): () => void {
-    try {
-      const subscription = supabase
-        .channel('custom-all-channel')
-        .on(
-          'postgres_changes',
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'profiles' 
-          },
-          (payload: any) => {
-            try {
-              callback(payload);
-            } catch (error) {
-              console.error('Erreur dans le callback de subscribeToUsers:', error);
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        try {
-          subscription.unsubscribe();
-        } catch (error) {
-          console.error('Erreur lors de la désinscription de subscribeToUsers:', error);
-        }
-      };
-    } catch (error) {
-      console.error('Erreur lors de l\'abonnement aux mises à jour des utilisateurs:', error);
-      // Retourner une fonction vide en cas d'erreur
-      return () => {};
+    // 2. Récupérer l'utilisateur côté auth pour modifier app_metadata
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, raw_app_meta_data')
+      .eq('id', userId)
+      .single();
+    if (userError || !userData) {
+      console.error('Erreur lors de la récupération de l\'utilisateur (auth.users):', userError);
+      return false;
     }
+    let roles = [];
+    try {
+      const meta = userData.raw_app_meta_data || {};
+      if (Array.isArray(meta.roles)) {
+        roles = meta.roles;
+      } else if (typeof meta.roles === 'string') {
+        try { roles = JSON.parse(meta.roles); } catch { roles = [meta.roles]; }
+      } else {
+        roles = [];
+      }
+    } catch {
+      roles = [];
+    }
+    if (role === 'admin') {
+      if (!roles.includes('admin')) roles.push('admin');
+    } else {
+      roles = roles.filter((r: string) => r !== 'admin');
+    }
+    // 3. Mettre à jour app_metadata.roles
+    const { error: metaError } = await supabase
+      .from('users')
+      .update({ raw_app_meta_data: { ...userData.raw_app_meta_data, roles } })
+      .eq('id', userId);
+    if (metaError) {
+      console.error('Erreur lors de la mise à jour de app_metadata.roles:', metaError);
+      return false;
+    }
+    console.log(`✅ Rôle ${role} synchronisé dans profiles et app_metadata.roles pour l'utilisateur`, userId);
+    return true;
   },
 
   // S'abonner aux mises à jour des dettes d'un utilisateur
@@ -482,42 +465,13 @@ export const userService = {
           .select();
         
         if (debtsUpdateError) {
-          console.error('Erreur lors de la mise à jour des dettes:', debtsUpdateError);
-          // On continue malgré cette erreur
-        } else {
-          console.log(`Dettes marquées comme payées avec succès: ${debtsData?.length || 0} dettes mises à jour`);
-        }
-      } catch (err) {
-        console.warn('Erreur lors de la gestion des dettes:', err);
-      }
 
-      // 2. Supprimer les commandes de l'utilisateur si nécessaire
-      try {
-        // D'abord compter les commandes pour le log
-        const { count: orderCount, error: countError } = await supabase
-          .from('orders')
-          .select('id', { count: 'exact' })
-          .eq('user_id', userId);
-          
-        console.log(`Nombre de commandes à supprimer: ${orderCount || 0}`);
         
-        // Ensuite supprimer
-        const { error: ordersError } = await supabase
-          .from('orders')
+        // Force la suppression en cascade si possible
+        const { error: deleteError } = await supabase
+          .from('profiles')
           .delete()
-          .eq('user_id', userId);
-
-        if (ordersError) {
-          console.error('Erreur lors de la suppression des commandes:', ordersError);
-        } else {
-          console.log(`Commandes supprimées avec succès: ${orderCount || 0} commandes`);
-        }
-      } catch (err) {
-        console.warn('Erreur lors de la tentative de suppression des commandes:', err);
-      }
-
-      // 3. Tenter directement la suppression physique (plus fiable)
-      console.log('Tentative de suppression physique du profil utilisateur');
+          .eq('id', userId);
       try {
         // Vérifier d'abord s'il existe des contraintes FK qui empêcheraient la suppression
         const { count: relatedDebts } = await supabase

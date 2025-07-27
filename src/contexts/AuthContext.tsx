@@ -59,6 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ])
       
       // Mettre à jour l'état
+      let detectedAdmin = adminStatus;
+      if (userWithProfile?.profile?.role === 'admin') {
+        detectedAdmin = true;
+        console.log('🟦 Statut admin détecté via profile.role');
+      }
       if (userWithProfile) {
         console.log('👤 Données du profil récupérées:', userWithProfile)
         setUser(userWithProfile)
@@ -67,13 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('⚠️ Aucune donnée de profil trouvée')
       }
       
-      console.log('🔑 Statut administrateur:', adminStatus ? 'OUI' : 'NON')
-      setIsUserAdmin(adminStatus)
+      console.log('🔑 Statut administrateur:', detectedAdmin ? 'OUI' : 'NON')
+      setIsUserAdmin(detectedAdmin)
       
       console.log('✅ Données utilisateur mises à jour', { 
         userId: user.id,
         email: user.email,
-        isAdmin: adminStatus,
+        isAdmin: detectedAdmin,
         hasProfile: !!userWithProfile
       })
     } catch (error) {
@@ -497,43 +502,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUserRole = async () => {
     try {
       if (!user) return false;
-      
       console.log('🔄 Rafraîchissement du statut admin pour:', user.email);
-      
       // Récupérer le profil utilisateur complet pour s'assurer d'avoir les données les plus récentes
       const userWithProfile = await getCurrentUser();
-      
-      // Vérifier le statut admin
-      const adminStatus = await isAdmin(user.id);
-      
-      console.log('🔑 Nouveau statut administrateur:', adminStatus ? 'OUI' : 'NON');
-      
-      // Mettre à jour le profil et le statut admin en même temps pour garantir la cohérence
+      // Vérifier le statut admin (app_metadata OU profile.role)
+      let adminStatus = await isAdmin(user.id);
+      if (userWithProfile?.profile?.role === 'admin') {
+        adminStatus = true;
+        console.log('🟦 Statut admin détecté via profile.role (refreshUserRole)');
+      }
       if (userWithProfile) {
-        console.log('👤 Mise à jour du profil utilisateur avec les nouvelles données');
         setUser(userWithProfile);
         setProfile(userWithProfile.profile || null);
       }
-      
-      // Mettre à jour le statut admin
       setIsUserAdmin(adminStatus);
-      
       // Forcer un petit délai pour s'assurer que tous les composants ont le temps de se mettre à jour
       await new Promise(resolve => setTimeout(resolve, 100));
-      
       return adminStatus;
     } catch (error) {
       console.error('Erreur lors du rafraîchissement du statut admin:', error);
       return false;
     }
-  };
-
-  // Fonction pour permettre aux composants externes de contrôler l'état de chargement
-  // Utile pour résoudre le problème du spinner infini lors du retour sur l'application
-  const setLoadingState = (isLoading: boolean) => {
-    console.log(`🔄 État de chargement défini manuellement à: ${isLoading ? 'ACTIF' : 'INACTIF'}`);
-    setLoading(isLoading);
-  };
+  }
 
   const value = {
     user,
