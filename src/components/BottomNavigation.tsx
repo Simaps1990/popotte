@@ -34,14 +34,29 @@ export function BottomNavigation() {
 
   // Styles épurés pour les icônes du footer
   const iconStyle = (isActivePage: boolean) => ({
-    color: isActivePage ? '#10182a' : '#7b8690', // Bleu foncé pour actif, gris foncé sinon
+    color: isActivePage ? '#10182a' : '#7b8690',
     transition: 'color 0.2s',
+    width: 28,
+    height: 28,
+    minWidth: 28,
+    minHeight: 28,
+    maxWidth: 28,
+    maxHeight: 28,
+    display: 'block',
+    margin: '0 auto',
+    outline: 'none',
   })
   const textStyle = (isActivePage: boolean) => ({
     color: isActivePage ? '#10182a' : '#cfd8dc',
-    fontWeight: isActivePage ? 'bold' : 'normal',
+    fontWeight: 500,
     fontSize: '0.75rem',
+    lineHeight: '1rem',
     transition: 'color 0.2s',
+    textAlign: "center" as const,
+    minHeight: 16,
+    maxHeight: 16,
+    display: 'block',
+    outline: 'none',
   })
   // Footer blanc géré par CSS global (voir index.css)
 
