@@ -133,16 +133,11 @@ export function Profile() {
         </button>
         <h1 className="text-2xl font-bold text-[#10182a]">Mon profil</h1>
       </div>
-      <div className="card bg-blue-50 border-blue-200">
-        <p className="text-sm text-blue-700">
 
-        </p>
-      </div>
 
       {/* Informations personnelles */}
       <div className="space-y-4">
-        <div className="flex items-center space-x-2 mb-4">
-          <User size={20} className="btn-primary bg-[#10182a] hover:bg-blue-700 text-white" />
+        <div className="mb-4">
           <h2 className="text-lg font-semibold text-[#10182a]">Informations personnelles</h2>
         </div>
 
@@ -159,20 +154,6 @@ export function Profile() {
 
           <div className="card bg-white border-white">
             <div className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-[#10182a]">
-                  Nom d'utilisateur
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="input mt-1"
-                  required
-                />
-              </div>
-
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-[#10182a]">
                   Pseudo
@@ -232,8 +213,7 @@ export function Profile() {
 
       {/* Changement de mot de passe */}
       <div className="space-y-4">
-        <div className="flex items-center space-x-2 mb-4">
-          <Lock size={20} className="btn-primary bg-[#10182a] hover:bg-blue-700 text-white" />
+        <div className="mb-4">
           <h2 className="text-lg font-semibold text-[#10182a]">Changer le mot de passe</h2>
         </div>
 
