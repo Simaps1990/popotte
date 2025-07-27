@@ -135,12 +135,9 @@ export function NewsList() {
   return (
     <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
-        {/* Header STRICTEMENT identique à Products :
-            - Bouton "Nouvel article" à gauche (btn-primary)
-            - Titre centré
-            - Bouton "Retour" à droite (flex-row-reverse)
-        */}
-        <div className="flex items-center justify-between mb-8 flex-row-reverse">
+        {/* Ligne 1 : Titre à gauche, bouton retour à droite */}
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
           <button
             onClick={() => navigate(-1)}
             className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
@@ -148,23 +145,15 @@ export function NewsList() {
             <ArrowLeft size={20} />
             <span>Retour</span>
           </button>
-          <h1 className="text-2xl font-bold text-[#10182a] text-center flex-1">Gestion des actualités</h1>
+        </div>
+        {/* Ligne 2 : Bouton Nouvel article aligné à gauche */}
+        <div className="mb-8">
           <button
             className="btn-primary flex items-center space-x-2"
             onClick={handleAddPost}
           >
             <Plus size={20} />
             <span>Nouvel article</span>
-          </button>
-          {/* Titre centré */}
-          <h1 className="text-2xl font-bold text-[#10182a] text-center flex-1">Gestion des actualités</h1>
-          {/* Bouton "Retour" à droite du titre */}
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            <span>Retour</span>
           </button>
         </div>
 
