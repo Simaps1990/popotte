@@ -7,32 +7,8 @@
  * À utiliser dans les composants de page pour recharger les données lorsque nécessaire
  * @param refreshCallback Fonction à appeler pour recharger les données
  */
-export const useDataRefresh = (refreshCallback: () => void) => {
-  const location = useLocation();
-  const refreshedRef = useRef(false);
-  
-  useEffect(() => {
-    // Vérifier si un rechargement des données est demandé
-    const shouldRefresh = sessionStorage.getItem('forceDataRefresh') === 'true';
-    const lastPath = sessionStorage.getItem('lastPath');
-    
-    // Si un rechargement est demandé et que nous sommes sur la bonne page
-    if (shouldRefresh && lastPath === location.pathname && !refreshedRef.current) {
-      console.log(`🔄 Rechargement des données détecté pour ${location.pathname}`);
-      
-      // Marquer comme traité pour éviter les rechargements multiples
-      refreshedRef.current = true;
-      
-      // Nettoyer le flag de rechargement
-      sessionStorage.removeItem('forceDataRefresh');
-      
-      // Appeler la fonction de rechargement
-      refreshCallback();
-    }
-    
-    // Réinitialiser le flag lorsque l'utilisateur quitte la page
-    return () => {
-      refreshedRef.current = false;
-    };
-  }, [location.pathname, refreshCallback]);
-};
+// Hook obsolète : ne pas utiliser ni importer.
+// Toute la logique de rafraîchissement manuel a été supprimée au profit des abonnements temps réel Supabase.
+// Ce fichier est conservé uniquement pour éviter les erreurs de build si un import subsiste accidentellement.
+export {};
+
