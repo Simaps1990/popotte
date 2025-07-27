@@ -704,17 +704,230 @@ const Users: React.FC = () => {
     return matchesSearch;
   });
 
-  if (loading.users && users.length === 0) {
-    return (
-      <div className="min-h-screen bg-white pb-16">
-        <main className="container mx-auto px-4 py-6 max-w-md">
+  // --- RENDU PRINCIPAL DE LA PAGE ADMIN USERS ---
+  return (
+    <div className="min-h-screen bg-white pb-16">
+      <main className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Titre principal */}
+        <h1 className="text-2xl font-bold text-[#10182a] mb-6 text-center">Gestion des utilisateurs</h1>
+
+        {/* Affichage erreur global */}
+        {error && (
+          <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Barre de recherche et filtres */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="flex-1 flex items-center space-x-2">
+            <input
+              type="text"
+              className="w-full md:w-72 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
+              placeholder="Rechercher par nom ou email..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <Search className="text-[#10182a]" size={20} />
+          </div>
+          <div className="flex space-x-2">
+            <button
+              className={`px-4 py-2 rounded-lg border ${activeFilter === 'all' ? 'bg-[#10182a] text-white' : 'bg-white text-[#10182a] border-[#10182a]'} font-medium`}
+              onClick={() => setActiveFilter('all')}
+            >Tous</button>
+            <button
+              className={`px-4 py-2 rounded-lg border ${activeFilter === 'hasDebt' ? 'bg-[#10182a] text-white' : 'bg-white text-[#10182a] border-[#10182a]'} font-medium`}
+              onClick={() => setActiveFilter('hasDebt')}
+            >Avec dettes</button>
+            <button
+              className={`px-4 py-2 rounded-lg border ${activeFilter === 'noDebt' ? 'bg-[#10182a] text-white' : 'bg-white text-[#10182a] border-[#10182a]'} font-medium`}
+              onClick={() => setActiveFilter('noDebt')}
+            >Sans dette</button>
+          </div>
+        </div>
+
+        {/* Loader principal */}
+        {loading.users && users.length === 0 ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
           </div>
-        </main>
-      </div>
-    );
-  }
+        ) : null}
+
+        {/* Liste des utilisateurs ou fiche utilisateur */}
+        {!selectedUser ? (
+          <div className="space-y-4">
+            {filteredUsers.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">Aucun utilisateur trouvé.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredUsers.map(user => (
+                  <div
+                    key={user.id}
+                    className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer"
+                    onClick={() => handleSelectUser(user)}
+                  >
+                    <div>
+                      <div className="font-semibold text-[#10182a]">{user.username || user.email}</div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-xs text-gray-400">{user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="text-lg font-bold text-[#10182a]">{user.debt ? `${user.debt.toFixed(2)} €` : '0 €'}</div>
+                      {user.debt && user.debt > 0 ? (
+                        <span className="text-xs text-blue-600 bg-blue-50 rounded-full px-2 py-0.5 mt-1">Dette en cours</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 mt-1">Aucune dette</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          // --- FICHE UTILISATEUR ---
+          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-6">
+            <button
+              className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors rounded px-3 py-1 mb-4 bg-white border border-[#10182a]"
+              onClick={handleBackToUserList}
+            >
+              <ArrowLeft size={20} />
+              <span>Retour à la liste</span>
+            </button>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+              <div>
+                <div className="text-xl font-bold text-[#10182a]">{selectedUser?.username || selectedUser?.email}</div>
+                <div className="text-sm text-gray-500">{selectedUser?.email}</div>
+                <div className="text-xs text-gray-400">{selectedUser?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold text-[#10182a]">{debtSummary?.totalUnpaid?.toFixed(2) || '0.00'} €</div>
+                <div className="text-xs text-gray-500">Total dettes en cours</div>
+              </div>
+            </div>
+
+            {/* Section dettes et formulaire d'ajout */}
+            <div className="space-y-6">
+              {/* Formulaire d'ajout de dette */}
+              <form
+                className="flex flex-col md:flex-row md:items-end gap-4 bg-white p-4 rounded-lg border border-gray-100"
+                onSubmit={e => { e.preventDefault(); handleAddDebt(); }}
+              >
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-[#10182a] mb-1">Montant</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
+                    placeholder="Montant (€)"
+                    value={newDebt.amount}
+                    onChange={e => setNewDebt(d => ({ ...d, amount: e.target.value }))}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-[#10182a] mb-1">Description</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
+                    placeholder="Description de la dette"
+                    value={newDebt.description}
+                    onChange={e => setNewDebt(d => ({ ...d, description: e.target.value }))}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-[#10182a] text-white font-medium hover:bg-blue-900 transition-colors disabled:opacity-50"
+                  disabled={addingDebt}
+                >
+                  {addingDebt ? <Loader2 className="animate-spin h-5 w-5" /> : 'Ajouter'}
+                </button>
+              </form>
+
+              {/* Historique des dettes (cartes) */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-[#10182a] mb-2">Historique des dettes</h2>
+                {debtHistory.length === 0 ? (
+                  <div className="text-center text-gray-400">Aucune dette trouvée.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {debtHistory.map(debt => (
+                      <div key={debt.id} className={`bg-white border rounded-lg p-4 shadow-sm flex flex-col gap-2 ${debt.status === 'paid' ? 'opacity-60' : ''}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-lg font-bold text-[#10182a]">{debt.amount.toFixed(2)} €</div>
+                          <span className={`text-xs rounded-full px-2 py-0.5 ${debt.status === 'paid' ? 'bg-green-100 text-green-700' : debt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {debt.status === 'paid' ? 'Réglée' : debt.status === 'pending' ? 'En attente' : 'Non réglée'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">{debt.description}</div>
+                        <div className="text-xs text-gray-400">{formatDate(debt.created_at)}</div>
+                        {/* Boutons édition/suppression si non réglée/non notifiée */}
+                        {debt.status === 'unpaid' && (
+                          <div className="flex space-x-2 mt-2">
+                            <button
+                              className="flex items-center px-3 py-1 rounded bg-[#10182a] text-white text-xs font-medium hover:bg-blue-900 transition-colors"
+                              onClick={() => handleStartEditDebt(debt)}
+                            >
+                              <Edit size={16} className="mr-1" /> Éditer
+                            </button>
+                            <button
+                              className="flex items-center px-3 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors"
+                              onClick={() => handleDeleteDebt(debt.id!)}
+                            >
+                              <Trash2 size={16} className="mr-1" /> Supprimer
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Édition de dette (modal simple) */}
+            {editingDebt && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                  <h3 className="text-lg font-semibold text-[#10182a] mb-4">Éditer la dette</h3>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-[#10182a] mb-1">Montant</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
+                      value={editingDebt.amount}
+                      onChange={e => setEditingDebt(d => d ? { ...d, amount: e.target.value } : d)}
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-[#10182a] mb-1">Description</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10182a] bg-white"
+                      value={editingDebt.description}
+                      onChange={e => setEditingDebt(d => d ? { ...d, description: e.target.value } : d)}
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      className="px-4 py-2 rounded-lg bg-gray-200 text-[#10182a] font-medium hover:bg-gray-300 transition-colors"
+                      onClick={handleCancelEditDebt}
+                    >Annuler</button>
+                    <button
+                      className="px-4 py-2 rounded-lg bg-[#10182a] text-white font-medium hover:bg-blue-900 transition-colors"
+                      onClick={handleUpdateDebt}
+                    >Enregistrer</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
 };
 
 export default Users;
