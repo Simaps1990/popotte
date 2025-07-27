@@ -132,7 +132,7 @@ export function Home() {
 
       </div>
 
-      <div className="w-full py-4 pb-4 mt-2">
+      <div className="w-full py-2 pb-4 mt-0">
         <div className="flex flex-col space-y-4">
           <h2 className="text-xl font-bold">Les nouveautés de la popotte</h2>
           
