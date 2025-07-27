@@ -130,9 +130,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-          {/* Titre principal en bleu foncé header */}
-          <h2 className="text-2xl font-bold text-header-blue mb-6">Mon profil</h2>
-          <h3 className="mt-2 text-sm font-medium text-header-blue">non trouvé</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Profil non trouvé</h3>
           <p className="mt-1 text-sm text-gray-500">Impossible de charger les informations du profil.</p>
         </div>
       </div>
@@ -167,8 +165,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
           <form onSubmit={handleProfileSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
               <div className="sm:col-span-3">
-                {/* Label champ en bleu header */}
-<label htmlFor="first_name" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
                   Prénom
                 </label>
                 <div className="mt-1">
@@ -184,8 +181,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
               </div>
 
               <div className="sm:col-span-3">
-                {/* Label champ en bleu header */}
-<label htmlFor="last_name" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
                   Nom
                 </label>
                 <div className="mt-1">
@@ -220,8 +216,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
               </div>
 
               <div className="sm:col-span-4">
-                {/* Label champ en bleu header */}
-<label htmlFor="username" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                   Nom d'utilisateur
                 </label>
                 <div className="mt-1">
@@ -237,8 +232,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
               </div>
 
               <div className="sm:col-span-6">
-                {/* Label champ en bleu header */}
-<label htmlFor="phone" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                   Téléphone
                 </label>
                 <div className="mt-1">
@@ -254,8 +248,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
               </div>
 
               <div className="sm:col-span-6">
-                {/* Label champ en bleu header */}
-<label htmlFor="address" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                   Adresse
                 </label>
                 <div className="mt-1">
@@ -308,8 +301,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
           <form onSubmit={handlePasswordSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                {/* Label champ en bleu header */}
-<label htmlFor="current-password" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="current-password" className="block text-sm font-medium text-gray-700">
                   Mot de passe actuel
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
@@ -340,8 +332,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
               </div>
 
               <div>
-                {/* Label champ en bleu header */}
-<label htmlFor="new-password" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">
                   Nouveau mot de passe
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
@@ -372,8 +363,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
               </div>
 
               <div>
-                {/* Label champ en bleu header */}
-<label htmlFor="confirm-password" className="block text-sm font-medium text-header-blue">
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
                   Confirmer le nouveau mot de passe
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
