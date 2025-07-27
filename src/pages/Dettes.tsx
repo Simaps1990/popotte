@@ -100,18 +100,15 @@ export function Dettes() {
   
   // Callbacks pour les abonnements temps réel
   const handlePaymentNotificationChange = React.useCallback(() => {
-    console.log('🔔 Notification de paiement modifiée - Rechargement des données');
     fetchNotifications();
     fetchAllDebtsAndOrders();
   }, []);
 
   const handleDebtChange = React.useCallback(() => {
-    console.log('🔔 Dette modifiée - Rechargement des données');
     fetchAllDebtsAndOrders();
   }, []);
 
   const handleOrderChange = React.useCallback(() => {
-    console.log('🔔 Commande modifiée - Rechargement des données');
     fetchAllDebtsAndOrders();
   }, []);
 

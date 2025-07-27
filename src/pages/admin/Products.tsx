@@ -79,10 +79,7 @@ const Products = () => {
           <ChevronDown size={18} />
         </button>
         <button
-          onClick={() => {
-            console.log('Clic sur le bouton modifier pour:', product.name, 'disponible:', product.is_available);
-            handleEditProduct(product);
-          }}
+          onClick={() => handleEditProduct(product)}
           className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
           title="Modifier le produit"
         >

@@ -111,9 +111,7 @@ export const checkDatabaseStructure = async (): Promise<{
     // Vérifier si la table debts existe
     result.debtsTableExists = await tableExists('debts');
     
-    if (!result.debtsTableExists) {
-      console.warn("La table 'debts' n'existe pas. Elle doit être créée via une migration SQL.");
-    }
+
 
     // Vérifier si la fonction get_user_debts existe
     // On utilise une requête SQL directe pour vérifier si la fonction existe
@@ -133,7 +131,7 @@ export const checkDatabaseStructure = async (): Promise<{
       
       result.getDebtsFunctionExists = true;
     } catch (error) {
-      console.warn("La fonction RPC 'get_user_debts' n'existe pas ou n'est pas accessible.", error);
+      // La fonction RPC 'get_user_debts' n'existe pas ou n'est pas accessible
     }
 
     return result;
@@ -392,7 +390,7 @@ export const getProducts = async (categoryId?: string, includeUnavailable: boole
         }));
       }
     } catch (joinError) {
-      console.warn('Erreur avec la jointure, tentative sans jointure:', joinError);
+      // Erreur avec la jointure, tentative sans jointure
     }
 
     // Si la jointure échoue, essayer sans jointure
@@ -439,13 +437,11 @@ const ensureDebtsTableExists = async (): Promise<void> => {
     // Si la requête réussit, la table existe déjà
     if (tableExists !== null) return;
     
-    console.warn('La table user_debts n\'existe pas. Elle doit être créée dans Supabase.');
-    
+    // La table user_debts n'existe pas. Elle doit être créée dans Supabase.
     // On ne crée pas la table automatiquement car elle nécessite des permissions spéciales
     // L'administrateur doit la créer manuellement avec la bonne structure
     throw new Error('La table user_debts n\'existe pas. Veuillez la créer dans Supabase.');
   } catch (error) {
-    console.warn('Erreur lors de la vérification de la table user_debts:', error);
     // On propage l'erreur pour que l'utilisateur soit informé
     throw error;
   }

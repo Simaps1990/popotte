@@ -313,8 +313,8 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-6 max-w-md">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Mon profil</h1>
-            <button 
+          <h1 className="text-2xl font-bold text-[#10182a]">Mon profil</h1>
+          <button 
               onClick={() => navigate(-1)}
               className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
             >

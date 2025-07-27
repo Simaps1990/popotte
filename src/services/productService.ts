@@ -56,8 +56,6 @@ import { getProducts as getSupabaseProducts } from '../lib/supabase';
 
 export const getProducts = async (available?: boolean): Promise<ProductWithRelations[]> => {
   try {
-    console.log('🔄 Récupération des produits depuis Supabase...');
-    
     // Utiliser la fonction getProducts de supabase.ts avec le paramètre includeUnavailable
     // Si available est undefined, on récupère tous les produits (pour l'admin)
     // Si available est défini, on filtre selon ce critère
@@ -80,8 +78,6 @@ export const getProducts = async (available?: boolean): Promise<ProductWithRelat
       } : null
     }));
     
-    console.log(`✅ ${formattedData.length} produits récupérés`);
-    
     return formattedData;
   } catch (error) {
     console.error('❌ Erreur lors de la récupération des produits:', error);
@@ -91,7 +87,6 @@ export const getProducts = async (available?: boolean): Promise<ProductWithRelat
 
 export const getProductById = async (id: string): Promise<ProductWithRelations | null> => {
   try {
-    console.log(`🔄 Récupération du produit ${id}...`);
     return await fetchProductWithRelations(id);
   } catch (error) {
     console.error(`❌ Erreur lors de la récupération du produit ${id}:`, error);
@@ -105,7 +100,7 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
   try {
     await supabaseClient.rpc('begin');
     
-    console.log('🔄 Création d\'un nouveau produit...', productData);
+
     
     // Création du produit de base
     const { data: product, error: productError } = await supabaseClient
@@ -151,7 +146,6 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
     const fullProduct = await fetchProductWithRelations(product.id);
     if (!fullProduct) throw new Error('Échec de la récupération du produit créé');
     
-    console.log('✅ Produit créé avec succès:', fullProduct);
     return fullProduct;
   } catch (error) {
     await supabaseClient.rpc('rollback');
@@ -343,7 +337,6 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     }
     
     // Récupérer le produit avec toutes ses relations
-    console.log('Récupération du produit mis à jour avec ses relations...');
     const fullProduct = await fetchProductWithRelations(id);
     if (!fullProduct) {
       console.error('❌ Échec de la récupération du produit mis à jour');
