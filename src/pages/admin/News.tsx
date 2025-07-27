@@ -188,13 +188,15 @@ export function News() {
     )
   }
 
+  // --- CLONE PARFAIT DE LA STRUCTURE PRODUITS POUR LES ACTUALITÉS ---
   return (
     <NewsPageLayout>
-      <main className="bg-white min-h-screen pb-16">
+      <div className="min-h-screen bg-white pb-16">
         <div className="container mx-auto px-4 py-6 max-w-md">
+          {/* Header identique à Produits */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
             >
@@ -202,8 +204,8 @@ export function News() {
               <span>Retour</span>
             </button>
           </div>
-
-          <div className="flex items-center justify-between">
+          {/* Bouton action identique */}
+          <div className="flex items-center justify-between mb-6">
             <button
               onClick={handleNewArticleClick}
               className="btn-primary flex items-center space-x-2"
@@ -213,20 +215,19 @@ export function News() {
               <span>Nouvel article</span>
             </button>
           </div>
-
+          {/* Formulaire de création/modification d'article */}
           {isCreating && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="card mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">{editingPost ? "Modifier l'article" : "Nouvel article"}</h3>
-                <button 
-                  type="button" 
-                  className="text-gray-500 hover:text-gray-700" 
+                <button
+                  type="button"
+                  className="text-gray-500 hover:text-gray-700"
                   onClick={handleCancel}
                 >
                   <X size={20} />
                 </button>
               </div>
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700">
@@ -241,7 +242,6 @@ export function News() {
                     required
                   />
                 </div>
-
                 <div>
                   <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
                     Extrait (optionnel)
@@ -254,7 +254,6 @@ export function News() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   />
                 </div>
-
                 <div>
                   <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">
                     URL de l'image (optionnel)
@@ -268,7 +267,6 @@ export function News() {
                     placeholder="https://example.com/image.jpg"
                   />
                 </div>
-
                 <div>
                   <label htmlFor="content" className="block text-sm font-medium text-gray-700">
                     Contenu
@@ -277,24 +275,23 @@ export function News() {
                     id="content"
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 h-32 resize-none"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    rows={4}
                     required
                   />
                 </div>
-
                 <div className="flex items-center">
                   <input
                     id="published"
                     type="checkbox"
                     checked={formData.published}
                     onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
                   <label htmlFor="published" className="ml-2 block text-sm text-[#10182a]">
                     Publier l'article
                   </label>
                 </div>
-
                 <div className="flex space-x-2">
                   <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
                     <Save size={20} />
@@ -311,79 +308,52 @@ export function News() {
               </form>
             </div>
           )}
-
-          <div style={{ 
-            backgroundColor: '#ffffff', 
-            color: '#000000',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-            margin: '1rem 0',
-            border: '1px solid #e5e7eb'
-          }}>
+          {/* Liste des actualités sous forme de cartes (identique à produits) */}
+          <div className="space-y-4">
             {posts.length === 0 ? (
               <div className="bg-white p-6 rounded-lg shadow-md text-center">
                 <p className="text-gray-500">Aucun article trouvé.</p>
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} style={{ 
-                  backgroundColor: '#ffffff', 
-                  color: '#000000',
-                  padding: '1.5rem',
-                  borderRadius: '0.5rem',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                  margin: '1rem 0',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  {post.image_url && (
-                    <img
-                      src={post.image_url}
-                      alt={post.title}
-                      className="w-full h-32 object-cover rounded-lg mb-4"
-                    />
-                  )}
-                  
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-semibold text-[#10182a]">{post.title}</h3>
-                        {!post.published && (
-                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
-                            Brouillon
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        {formatDate(post.created_at)}
-                      </p>
-                      {post.excerpt && (
-                        <p className="text-gray-600 mb-2 italic">{post.excerpt}</p>
+                <div key={post.id} className="flex items-center justify-between p-3 rounded-lg shadow-sm border border-gray-200 bg-white">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="font-medium text-[#10182a]">{post.title}</h3>
+                      {!post.published && (
+                        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
+                          Brouillon
+                        </span>
                       )}
-                      <p className="text-gray-600 whitespace-pre-wrap">{post.content}</p>
                     </div>
-                    
-                    <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={() => handleEdit(post)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(post.id)}
-                        className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {formatDate(post.created_at)}
+                    </p>
+                    {post.excerpt && (
+                      <p className="text-gray-600 mb-2 italic">{post.excerpt}</p>
+                    )}
+                    <p className="text-gray-600 whitespace-pre-wrap">{post.content}</p>
+                  </div>
+                  <div className="flex space-x-2 ml-4">
+                    <button
+                      onClick={() => handleEdit(post)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
               ))
             )}
           </div>
         </div>
-      </main>
+      </div>
     </NewsPageLayout>
   )
 }
