@@ -14,7 +14,7 @@ interface AuthContextType {
   updateProfile: (profileData: Partial<UserProfile>) => Promise<{ error: any } | null>
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any } | null>
   refreshUserRole: () => Promise<boolean>
-  setLoadingState: (isLoading: boolean) => void
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -536,7 +536,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateProfile: handleUpdateProfile,
     changePassword: handleChangePassword,
     refreshUserRole,
-    setLoadingState
+    setLoading
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

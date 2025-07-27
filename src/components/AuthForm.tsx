@@ -428,7 +428,6 @@ export function AuthForm() {
         <button
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition mb-3"
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-          className="text-sm text-[#10182a] hover:text-[#22315c] font-medium transition-colors"
         >
           {mode === 'login'
             ? "Pas encore de compte ? S'inscrire"

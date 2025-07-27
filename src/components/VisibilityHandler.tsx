@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
  */
 const VisibilityHandler: React.FC = () => {
   // Accéder au contexte d'authentification pour gérer l'état de chargement
-  const { loading, setLoadingState } = useAuth();
+  const { loading, setLoading } = useAuth();
   
   // Référence pour suivre si une intervention a déjà eu lieu
   const hasIntervenedRef = useRef(false);
@@ -39,8 +39,8 @@ const hideLoadingSpinner = () => {
     (loadingContainer as HTMLElement).style.display = 'none';
     
     // Forçage de l'état de chargement à false dans le contexte Auth
-    if (setLoadingState) {
-      setLoadingState(false);
+    if (setLoading) {
+      setLoading(false);
     }
     
     // Marquer que nous sommes intervenus
