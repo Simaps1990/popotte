@@ -8,7 +8,8 @@ import { useAuth } from '../../contexts/AuthContext'
 import { toast } from 'react-hot-toast'
 import '../../styles/news.css'
 
-export function News() {
+// Page de gestion des actualités - strictement calquée sur la structure de Products.tsx
+const News = () => {
   const navigate = useNavigate();
   const { user } = useAuth()
   const [posts, setPosts] = useState<NewsPost[]>([])
@@ -180,41 +181,35 @@ export function News() {
 
   if (loading) {
     return (
-      <NewsPageLayout>
+      <div className="w-full min-h-screen pb-20 relative bg-white" style={{ background: '#fff' }}>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      </NewsPageLayout>
-    )
+      </div>
+    );
   }
 
-  // --- CLONE PARFAIT DE LA STRUCTURE PRODUITS POUR LES ACTUALITÉS ---
   return (
     <NewsPageLayout>
-      <div className="min-h-screen bg-white pb-16">
-        <div className="container mx-auto px-4 py-6 max-w-md">
-          {/* Header identique à Produits */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
+      <div className="w-full min-h-screen pb-20 relative bg-white" style={{ background: '#fff' }}>
+        <div className="max-w-3xl mx-auto py-8 px-4">
+          {/* Header strictement identique à Products.tsx */}
+          <div className="flex items-center mb-6">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
+              className="mr-4 p-2 rounded-full hover:bg-gray-100"
+              title="Retour"
             >
-              <ArrowLeft size={20} />
-              <span>Retour</span>
+              <ArrowLeft size={24} />
             </button>
-          </div>
-          {/* Actions identiques à Produits : un seul bloc horizontal */}
-          <div className="flex items-center space-x-2 mb-6">
+            <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
             <button
               onClick={handleNewArticleClick}
-              className="btn-primary flex items-center space-x-2"
-              disabled={isCreating}
+              className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
             >
               <Plus size={20} />
               <span>Nouvel article</span>
             </button>
-            {/* Si besoin d'autres boutons, les ajouter ici, à droite du bouton principal */}
           </div>
           {/* Formulaire de création/modification d'article */}
           {isCreating && (
@@ -298,18 +293,11 @@ export function News() {
                     <Save size={20} />
                     <span>{editingPost ? 'Modifier' : 'Créer'}</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="bg-white border-[#10182a] hover:bg-gray-300 text-[#10182a] px-4 py-2 rounded-lg"
-                  >
-                    Annuler
-                  </button>
                 </div>
               </form>
             </div>
           )}
-          {/* Liste des actualités sous forme de cartes, structure identique à produits mais avec images */}
+          {/* Liste des actualités sous forme de cartes */}
           <div className="space-y-4">
             {posts.length === 0 ? (
               <div className="bg-white p-6 rounded-lg shadow-md text-center">
@@ -319,7 +307,6 @@ export function News() {
               posts.map((post) => (
                 <div key={post.id} className="flex items-center justify-between p-3 rounded-lg shadow-sm border border-gray-200 bg-white">
                   <div className="flex-1">
-                    {/* Affichage des images en haut de la carte, si présentes */}
                     {post.image_url && (
                       <img
                         src={post.image_url}
@@ -364,5 +351,8 @@ export function News() {
         </div>
       </div>
     </NewsPageLayout>
-  )
+  );
 }
+
+export { News };
+export default News;
