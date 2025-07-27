@@ -217,12 +217,14 @@ const Settings = () => {
 
           <div className="space-y-4">
             
-            {/* Statistiques financières - visible pour tous les utilisateurs */}
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Statistiques financières</h2>
-              <DebtSummaryPanel className="mb-4" />
-              <PendingDebtSummaryPanel className="mb-4" />
-            </div>
+            {/* Statistiques financières - visible uniquement pour les administrateurs */}
+            {isAdmin && (
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Statistiques financières</h2>
+                <DebtSummaryPanel className="mb-4" />
+                <PendingDebtSummaryPanel className="mb-4" />
+              </div>
+            )}
             <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Gestion du site</h2>
 
             <div className="grid grid-cols-1 gap-4">
@@ -319,8 +321,9 @@ const Settings = () => {
 
               
               {/* Bouton Mon profil - visible pour tous les utilisateurs */}
-<Link 
-  to="/admin/profile"
+<button
+  type="button"
+  onClick={() => setActiveTab('profile')}
   className="card hover:bg-white transition-colors cursor-pointer border-l-4 border-gray-500 text-left w-full block bg-white"
 >
   <div className="flex items-center space-x-4 p-4">
@@ -336,7 +339,7 @@ const Settings = () => {
     </div>
     <span className="text-gray-400">→</span>
   </div>
-</Link>
+</button>
 
               
               {/* Bouton Se déconnecter - visible pour tous les utilisateurs */}
