@@ -7,8 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Les variables d\'environnement VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY sont requises');
 }
 
-console.log('🔑 Initialisation du client Supabase avec URL:', supabaseUrl);
-console.log('🔑 Clé anonyme présente:', !!supabaseAnonKey);
+
 
 // Vérifier si une instance existe déjà dans la fenêtre globale
 const _global = window as any;
@@ -37,37 +36,31 @@ if (!_global.__supabaseClient) {
     debug: import.meta.env.DEV,
   };
 
-  console.log('🔑 Création d\'un nouveau client Supabase avec configuration:', JSON.stringify(config));
   _global.__supabaseClient = createClient(supabaseUrl, supabaseAnonKey, config);
-  console.log('🔑 Client Supabase créé avec succès');
 }
 
 export const supabase = _global.__supabaseClient;
 
 // Vérifier que le client est correctement configuré pour l'accès anonyme
-supabase.auth.onAuthStateChange((event: string, session: any) => {
-  console.log('🔑 Événement d\'authentification Supabase:', event, session ? 'Session active' : 'Pas de session');
+supabase.auth.onAuthStateChange(() => {
+  // Événement d'authentification Supabase
 });
 
 // Tester l'accès anonyme aux actualités
-supabase.from('news').select('count').eq('published', true).then(({ data, error }: { data: any, error: any }) => {
+supabase.from('news').select('count').eq('published', true).then(({ error }: { data: any, error: any }) => {
   if (error) {
     console.error('❌ Test d\'accès anonyme aux actualités échoué:', error);
-  } else {
-    console.log('✅ Test d\'accès anonyme aux actualités réussi:', data);
   }
 });
 
 // Exporter une fonction pour tester la déconnexion
 export const testSignOut = async () => {
   try {
-    console.log('🔑 Test de déconnexion...');
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     if (error) {
       console.error('❌ Test de déconnexion échoué:', error);
       return { success: false, error };
     }
-    console.log('✅ Test de déconnexion réussi');
     return { success: true, error: null };
   } catch (e) {
     console.error('❌ Erreur lors du test de déconnexion:', e);

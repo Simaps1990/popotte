@@ -78,8 +78,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
         if (uploadSuccess) break;
         
         try {
-          console.log(`Tentative d'upload vers le bucket "${bucketName}" avec le chemin "${fileName}"`);
-          
           // Télécharger le fichier
           const { data, error: uploadError } = await supabase.storage
             .from(bucketName)
@@ -89,7 +87,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
             });
           
           if (uploadError) {
-            console.log(`Échec avec le bucket "${bucketName}": ${uploadError.message}`);
             lastError = uploadError;
             continue;
           }
@@ -98,7 +95,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
           const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(fileName);
           
           if (urlData && urlData.publicUrl) {
-            console.log(`Image téléchargée avec succès dans "${bucketName}": ${urlData.publicUrl}`);
             publicUrl = urlData.publicUrl;
             uploadSuccess = true;
             break;
@@ -111,7 +107,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
       
       if (!uploadSuccess) {
         console.error('Échec de l\'upload sur tous les buckets disponibles. Dernière erreur:', lastError);
-        console.log('Pour résoudre ce problème, créez un bucket dans Supabase Storage via l\'interface d\'administration.');
         return null;
       }
       

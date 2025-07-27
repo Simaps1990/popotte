@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Récupérer les données utilisateur en parallèle
       const [userWithProfile, adminStatus] = await Promise.all([
         getCurrentUser(),
-        isAdmin(user.id)
+        isAdmin()
       ])
       
       // Mettre à jour l'état
@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userWithProfile) {
         setUser(userWithProfile)
         setProfile(userWithProfile.profile || null)
-        const adminStatus = await isAdmin(userWithProfile.id)
+        const adminStatus = await isAdmin()
         setIsUserAdmin(adminStatus)
       }
     }
@@ -491,7 +491,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Récupérer le profil utilisateur complet pour s'assurer d'avoir les données les plus récentes
       const userWithProfile = await getCurrentUser();
       // Vérifier le statut admin (app_metadata OU profile.role)
-      let adminStatus = await isAdmin(user.id);
+      let adminStatus = await isAdmin();
       if (userWithProfile?.profile?.role === 'admin') {
         adminStatus = true;
 
