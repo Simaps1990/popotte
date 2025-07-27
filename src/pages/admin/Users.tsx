@@ -31,6 +31,7 @@ const Users: React.FC = () => {
   const [editingDebt, setEditingDebt] = useState<{ id: string; amount: string; description: string } | null>(null);
   const [blockAutoReload, setBlockAutoReload] = useState(false);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, UserDebt>>(new Map());
+  const [roleUpdateLocks, setRoleUpdateLocks] = useState<Set<string>>(new Set());
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
@@ -275,47 +276,56 @@ const Users: React.FC = () => {
   };
 
   const updateUserRole = async (userId: string, newRole: 'user' | 'admin') => {
-    try {
-      console.log(`🚀 [updateUserRole] Début promotion ${newRole} pour utilisateur ${userId}`);
-      
-      // 1. OPTIMISTIC UPDATE INSTANTANÉ - Mise à jour immédiate de l'UI
-      const targetUser = users.find(u => u.id === userId);
-      if (targetUser) {
-        // Mettre à jour la liste des utilisateurs immédiatement
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user.id === userId 
-              ? { ...user, role: newRole }
-              : user
-          )
-        );
-        
-        // Mettre à jour l'utilisateur sélectionné si c'est le même
-        if (selectedUser && selectedUser.id === userId) {
-          setSelectedUser(prev => prev ? { ...prev, role: newRole } : null);
-        }
-        
-        console.log(`✨ [updateUserRole] Optimistic update appliqué - ${targetUser.username} est maintenant ${newRole}`);
-      }
-      
-      // Afficher un toast de confirmation immédiat
-      toast.success(
-        `${targetUser?.username || 'Utilisateur'} ${newRole === 'admin' ? 'promu administrateur' : 'rétrogradé utilisateur'} !`,
-        { duration: 3000 }
+  // SYSTÈME DE VERROUILLAGE - Éviter les mises à jour concurrentes
+  if (roleUpdateLocks.has(userId)) {
+    return; // Opération déjà en cours pour cet utilisateur
+  }
+
+  try {
+    // 1. VERROUILLER L'UTILISATEUR
+    setRoleUpdateLocks(prev => new Set([...prev, userId]));
+    
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      throw new Error('Utilisateur non trouvé');
+    }
+
+    // 2. OPTIMISTIC UPDATE INSTANTANÉ ET STABLE
+    const optimisticUpdate = () => {
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, role: newRole }
+            : user
+        )
       );
       
-      // 2. MISE À JOUR BACKEND - Synchronisation avec la base de données
-      const success = await userService.updateUserRole(userId, newRole);
-      
-      if (success) {
-        // 3. SYNCHRONISATION CONTEXTE AUTH - CRITIQUE : Forcer la propagation globale
-        try {
-          // TOUJOURS rafraîchir le contexte auth, même si ce n'est pas l'utilisateur courant
-          // Cela garantit que tous les composants qui dépendent du statut admin sont mis à jour
-          const updatedAdminStatus = await refreshUserRole();
-          
-          // Toast spécial pour l'utilisateur qui vient d'être promu/rétrogradé
-          if (currentUser && userId === currentUser.id) {
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role: newRole } : null);
+      }
+    };
+    
+    // Appliquer l'optimistic update immédiatement
+    optimisticUpdate();
+    
+    // Toast de confirmation immédiat
+    toast.success(
+      `${targetUser.username} ${newRole === 'admin' ? 'promu administrateur' : 'rétrogradé utilisateur'} !`,
+      { duration: 3000 }
+    );
+    
+    // 3. MISE À JOUR BACKEND - Sans attendre pour l'UI
+    const success = await userService.updateUserRole(userId, newRole);
+    
+    if (success) {
+      // 4. SYNCHRONISATION CONTEXTE AUTH - Seulement si nécessaire
+      if (currentUser && userId === currentUser.id) {
+        // Délai minimal pour éviter les conflits
+        setTimeout(async () => {
+          try {
+            await refreshUserRole();
+            
+            // Toast spécial pour l'utilisateur concerné
             if (newRole === 'admin') {
               toast.success(
                 '🎉 Vous avez maintenant accès aux fonctions administrateur !',
@@ -327,74 +337,70 @@ const Users: React.FC = () => {
                 { duration: 4000 }
               );
             }
+          } catch (authError) {
+            console.error('⚠️ Erreur lors du rafraîchissement du contexte auth:', authError);
           }
-          
-          // FORCER LA MISE À JOUR DE TOUS LES COMPOSANTS
-          // Déclencher un événement personnalisé pour notifier tous les composants
-          window.dispatchEvent(new CustomEvent('adminRoleChanged', {
-            detail: { userId, newRole, isCurrentUser: currentUser?.id === userId }
-          }));
-          
-        } catch (authError) {
-          console.error('⚠️ [updateUserRole] Erreur lors du rafraîchissement du contexte auth:', authError);
-        }
-        // 4. VÉRIFICATION FINALE - S'assurer que les données sont cohérentes
-        // Recharger les détails de l'utilisateur pour vérification
-        if (selectedUser && selectedUser.id === userId) {
-          try {
-            await fetchUserDetails(userId);
-          } catch (detailsError) {
-            console.warn('⚠️ [updateUserRole] Erreur lors du rechargement des détails:', detailsError);
-          }
-        }
-        
-      } else {
-        // ROLLBACK en cas d'erreur backend
-        console.error(`❌ [updateUserRole] Échec de la synchronisation backend - rollback`);
-        
-        // Annuler l'optimistic update
-        if (targetUser) {
-          const originalRole = targetUser.role === 'admin' ? 'user' : 'admin'; // Inverser
-          setUsers(prevUsers => 
-            prevUsers.map(user => 
-              user.id === userId 
-                ? { ...user, role: originalRole }
-                : user
-            )
-          );
-          
-          if (selectedUser && selectedUser.id === userId) {
-            setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
-          }
-        }
-        
-        toast.error('Erreur lors de la mise à jour du rôle. Veuillez réessayer.');
+        }, 100);
       }
       
-    } catch (err) {
-      console.error('❌ [updateUserRole] Erreur inattendue:', err);
+      // 5. NOTIFICATION GLOBALE - Après un délai pour éviter les conflits
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('adminRoleChanged', {
+          detail: { userId, newRole, isCurrentUser: currentUser?.id === userId }
+        }));
+      }, 150);
       
-      // Rollback en cas d'erreur
-      const targetUser = users.find(u => u.id === userId);
-      if (targetUser) {
-        const originalRole = newRole === 'admin' ? 'user' : 'admin'; // Inverser
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user.id === userId 
-              ? { ...user, role: originalRole }
-              : user
-          )
-        );
-        
-        if (selectedUser && selectedUser.id === userId) {
-          setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
-        }
+    } else {
+      // ROLLBACK en cas d'erreur backend
+      const originalRole = targetUser.role;
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, role: originalRole }
+            : user
+        )
+      );
+      
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
       }
       
       toast.error('Erreur lors de la mise à jour du rôle. Veuillez réessayer.');
     }
-  };
-  
+    
+  } catch (err) {
+    console.error('❌ [updateUserRole] Erreur inattendue:', err);
+    
+    // Rollback en cas d'erreur
+    const targetUser = users.find(u => u.id === userId);
+    if (targetUser) {
+      const originalRole = newRole === 'admin' ? 'user' : 'admin';
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, role: originalRole }
+            : user
+        )
+      );
+      
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
+      }
+    }
+    
+    toast.error('Erreur lors de la mise à jour du rôle. Veuillez réessayer.');
+  } finally {
+    // 6. DÉVERROUILLER L'UTILISATEUR - Toujours après un délai
+    setTimeout(() => {
+      setRoleUpdateLocks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }, 500);
+  }
+};
+
   const handleDeleteUser = async (userId: string) => {
     // Demander confirmation avant de supprimer
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce compte utilisateur ? Cette action est irréversible.')) {
