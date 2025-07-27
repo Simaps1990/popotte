@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { NewsForm } from '../../components/admin/NewsForm';
 import { type NewsPost } from '../../lib/supabase';
 import { newsService } from '../../services/newsService';
@@ -135,10 +135,8 @@ export function NewsList() {
   return (
     <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#10182a] text-center">Gestion des actualités</h1>
-        </div>
-        <div className="flex items-center justify-between mb-6">
+        {/* Header avec bouton retour et titre principal, aligné comme Products */}
+        <div className="flex items-center justify-between mb-8">
           <button 
             onClick={() => navigate(-1)}
             className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
@@ -146,8 +144,16 @@ export function NewsList() {
             <ArrowLeft size={20} />
             <span>Retour</span>
           </button>
+          <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow"
+            onClick={handleAddPost}
+          >
+            <Plus size={20} />
+            <span>Nouvel article</span>
+          </button>
         </div>
-            
+
         <div className="space-y-6">
           <div className="flex justify-end">
             <button 
