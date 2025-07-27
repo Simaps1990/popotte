@@ -135,47 +135,43 @@ export function NewsList() {
   return (
     <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
-        {/* Header avec bouton retour et titre principal, aligné comme Products */}
-        <div className="flex items-center justify-between mb-8">
-          <button 
+        {/* Header STRICTEMENT identique à Products :
+            - Bouton "Nouvel article" à gauche (btn-primary)
+            - Titre centré
+            - Bouton "Retour" à droite (flex-row-reverse)
+        */}
+        <div className="flex items-center justify-between mb-8 flex-row-reverse">
+          <button
             onClick={() => navigate(-1)}
             className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
           >
             <ArrowLeft size={20} />
             <span>Retour</span>
           </button>
-          <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
+          <h1 className="text-2xl font-bold text-[#10182a] text-center flex-1">Gestion des actualités</h1>
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow"
+            className="btn-primary flex items-center space-x-2"
             onClick={handleAddPost}
           >
             <Plus size={20} />
             <span>Nouvel article</span>
           </button>
+          {/* Titre centré */}
+          <h1 className="text-2xl font-bold text-[#10182a] text-center flex-1">Gestion des actualités</h1>
+          {/* Bouton "Retour" à droite du titre */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span>Retour</span>
+          </button>
         </div>
 
         <div className="space-y-6">
-          <div className="flex justify-end">
-            <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-              onClick={handleAddPost}
-            >
-              <Plus size={20} />
-              <span>Nouvel article</span>
-              <span>Retour</span>
-            </button>
-          </div>
             
           <div className="space-y-6">
-            <div className="flex justify-end">
-              <button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-                onClick={handleAddPost}
-              >
-                <Plus size={20} />
-                <span>Nouvel article</span>
-              </button>
-            </div>
+            
             
             {showForm && (
               <div className="mb-6">
