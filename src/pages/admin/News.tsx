@@ -191,7 +191,7 @@ const News = () => {
 
   return (
     <NewsPageLayout>
-      <div className="w-full min-h-screen pb-20 relative bg-white" style={{ background: '#fff' }}>
+      <div className="w-full min-h-screen pb-20 relative bg-white">
         <div className="max-w-3xl mx-auto py-8 px-4">
           {/* Header strictement identique à Products.tsx */}
           <div className="flex items-center justify-between mb-6">
@@ -204,7 +204,7 @@ const News = () => {
               <ArrowLeft size={24} />
             </button>
           </div>
-          {/* Bouton "Nouvel article" comme sur Products, ferré à gauche, bleu header */}
+          {/* Bouton "Nouvel article" ferré à gauche, rouge */}
           <div className="mb-6">
             <button
               onClick={handleNewArticleClick}
