@@ -6,6 +6,7 @@ import * as categoryService from '../../services/categoryService';
 import { Product, Category } from '../../services/types';
 import { toast } from 'react-hot-toast';
 import { ProductForm } from '../../components/admin/ProductForm';
+import { supabase } from '../../lib/supabaseClient';
 
 type ProductsByCategory = (Category & { products: Product[] })[];
 
@@ -30,25 +31,91 @@ const Products = () => {
         // N'affiche côté admin que les produits (disponibles ou non)
     }));
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsData, categoriesData] = await Promise.all([
-          productService.getProducts(),
-          categoryService.getCategories()
-        ]);
-        setProducts(productsData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-        toast.error('Erreur lors du chargement des données');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fonction pour charger les données
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [productsData, categoriesData] = await Promise.all([
+        productService.getProducts(),
+        categoryService.getCategories()
+      ]);
+      setProducts(productsData);
+      setCategories(categoriesData);
+      console.log('✅ [Products] Données mises à jour:', {
+        products: productsData.length,
+        categories: categoriesData.length
+      });
+    } catch (error) {
+      console.error('❌ [Products] Erreur lors du chargement des données:', error);
+      toast.error('Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Chargement initial et abonnements temps réel
+  useEffect(() => {
+    let isMounted = true;
+    
+    // Chargement initial
     fetchData();
+    
+    // Abonnements temps réel pour les produits et catégories
+    const subscriptions = [
+      // Abonnement aux changements de produits
+      supabase
+        .channel('products_admin_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'products'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Products] Changement de produit détecté:', payload);
+            if (isMounted) {
+              // Délai pour éviter les conflits avec les mutations en cours
+              setTimeout(() => {
+                fetchData();
+                toast.success('Produits mis à jour automatiquement');
+              }, 500);
+            }
+          }
+        )
+        .subscribe(),
+        
+      // Abonnement aux changements de catégories
+      supabase
+        .channel('categories_admin_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'categories'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Products] Changement de catégorie détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => {
+                fetchData();
+                toast.success('Catégories mises à jour automatiquement');
+              }, 500);
+            }
+          }
+        )
+        .subscribe()
+    ];
+    
+    console.log('🔔 [Products] Abonnements temps réel activés pour produits et catégories');
+    
+    // Nettoyage lors du démontage
+    return () => {
+      console.log('🔕 [Products] Désabonnement des canaux temps réel');
+      isMounted = false;
+      subscriptions.forEach(subscription => {
+        subscription.unsubscribe();
+      });
+    };
   }, []);
 
   // Composant séparé pour les boutons d'action

@@ -3,6 +3,8 @@ import { Plus, Minus, ShoppingCart, Package } from 'lucide-react'
 import { getProducts, getCategories, createOrder } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Product, Category } from '../lib/mockData'
+import { supabase } from '../lib/supabaseClient'
+import { toast } from 'react-hot-toast'
 
 interface CartItem {
   product: Product
@@ -18,9 +20,82 @@ export function Commande() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
+  // Fonction pour charger toutes les données
+  const fetchAllData = async () => {
+    await Promise.all([
+      fetchProducts(),
+      fetchCategories()
+    ]);
+  };
+
+  // Chargement initial et abonnements temps réel
   useEffect(() => {
-    fetchProducts()
-    fetchCategories()
+    let isMounted = true;
+    
+    // Chargement initial
+    fetchAllData();
+    
+    // Abonnements temps réel pour les produits et catégories
+    const subscriptions = [
+      // Abonnement aux changements de produits
+      supabase
+        .channel('commande_products_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'products'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Commande] Changement de produit détecté:', payload);
+            if (isMounted) {
+              // Mise à jour automatique des produits
+              setTimeout(() => {
+                fetchProducts();
+                // Notification discrète pour l'utilisateur
+                if (payload.eventType === 'UPDATE') {
+                  toast.success('Produits mis à jour', { duration: 2000 });
+                }
+              }, 500);
+            }
+          }
+        )
+        .subscribe(),
+        
+      // Abonnement aux changements de catégories
+      supabase
+        .channel('commande_categories_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'categories'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Commande] Changement de catégorie détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => {
+                fetchCategories();
+                if (payload.eventType === 'UPDATE') {
+                  toast.success('Menu mis à jour', { duration: 2000 });
+                }
+              }, 500);
+            }
+          }
+        )
+        .subscribe()
+    ];
+    
+    console.log('🔔 [Commande] Abonnements temps réel activés pour produits et catégories');
+    
+    // Nettoyage lors du démontage
+    return () => {
+      console.log('🔕 [Commande] Désabonnement des canaux temps réel');
+      isMounted = false;
+      subscriptions.forEach(subscription => {
+        subscription.unsubscribe();
+      });
+    };
   }, [])
 
   const fetchProducts = async () => {

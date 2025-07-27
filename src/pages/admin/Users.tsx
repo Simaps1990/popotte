@@ -32,6 +32,8 @@ const Users: React.FC = () => {
   const [blockAutoReload, setBlockAutoReload] = useState(false);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, UserDebt>>(new Map());
   const [roleUpdateLocks, setRoleUpdateLocks] = useState<Set<string>>(new Set());
+  const [isPageActive, setIsPageActive] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
 
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
@@ -122,104 +124,235 @@ const Users: React.FC = () => {
       if (userData) {
         setSelectedUser(userData);
         
-        // Récupérer le résumé des dettes avec debtService pour avoir la même valeur que dans la page des dettes
+        // Récupérer le résumé des dettes avec debtService pour avoir la même valeur que dans la page de
+        // dettes (utilisation de la même source de données)
         const summary = await debtService.getDebtSummary(userId);
         setDebtSummary(summary);
         
-        // Récupérer les dettes et les merger avec les optimistic updates
-        const debts = await userService.getUserDebtHistory(userId, true);
-        const mergedDebts = mergeDebtData(debts);
+        // Récupérer l'historique des dettes avec fusion des optimistic updates
+        const backendDebts = await userService.getUserDebtHistory(userId);
+        const mergedDebts = mergeDebtData(backendDebts);
         setDebtHistory(mergedDebts);
         
+        // Récupérer les commandes de l'utilisateur
         const orders = await userService.getUserOrders(userId);
         setUserOrders(orders);
-      } else {
-        setError('Utilisateur non trouvé');
       }
     } catch (err) {
-      console.error('Error fetching user details:', err);
-      setError('Erreur lors du chargement des détails utilisateur');
+      console.error('Erreur lors du chargement des détails de l\'utilisateur:', err);
+      setError('Erreur lors du chargement des détails de l\'utilisateur');
     } finally {
       setLoading(prev => ({ ...prev, userDetails: false }));
     }
-  }, []);
+  }, [mergeDebtData]);
 
-  // Références pour stocker les fonctions de désabonnement
-  const unsubscribeRef = React.useRef<(() => void) | null>(null);
-  const unsubscribeDebtRef = React.useRef<(() => void) | null>(null);
-  
-  // Fonction pour s'abonner aux mises à jour des utilisateurs
-  const subscribeToUserUpdates = useCallback(() => {
-    console.log('Abonnement aux mises à jour des utilisateurs...');
-    const unsubscribe = userService.subscribeToUsers((payload) => {
-      console.log('Mise à jour des utilisateurs:', payload);
-      // Utiliser un flag pour éviter les appels redondants
-      if (!loading.users) {
-        fetchUsers();
-      }
-    });
+  // Fonction de synchronisation complète des données
+  const syncAllData = useCallback(async (force = false) => {
+    if (!isPageActive && !force) return;
     
-    // Stocker la fonction de désabonnement dans la référence
-    unsubscribeRef.current = unsubscribe;
-    return unsubscribe;
-  }, [fetchUsers, loading.users]);
-  
-  // Fonction pour se désabonner temporairement
-  const unsubscribeFromUserUpdates = useCallback(() => {
-    if (unsubscribeRef.current) {
-      console.log('Désabonnement temporaire des mises à jour utilisateurs');
-      const unsubscribe = unsubscribeRef.current;
-      unsubscribeRef.current = null;
-      unsubscribe();
+    try {
+      console.log('🔄 [syncAllData] Synchronisation complète des données utilisateurs');
+      
+      // Synchroniser la liste des utilisateurs
+      await fetchUsers();
+      
+      // Si un utilisateur est sélectionné, synchroniser ses détails
+      if (selectedUser) {
+        await fetchUserDetails(selectedUser.id);
+      }
+      
+      setLastSyncTime(Date.now());
+      console.log('✅ [syncAllData] Synchronisation terminée');
+    } catch (error) {
+      console.error('❌ [syncAllData] Erreur lors de la synchronisation:', error);
     }
-  }, []);
-  
-  // Effet pour le chargement initial des utilisateurs et l'abonnement
-  useEffect(() => {
-    // Chargement initial des utilisateurs
-    fetchUsers();
+  }, [isPageActive, fetchUsers, fetchUserDetails, selectedUser]);
+
+  // Abonnement temps réel aux changements de profils utilisateurs
+  const subscribeToProfileUpdates = useCallback(() => {
+    console.log('📡 [subscribeToProfileUpdates] Démarrage abonnement profils');
     
-    // S'abonner aux mises à jour des utilisateurs
-    subscribeToUserUpdates();
-    
-    // Se désabonner lors du démontage du composant
+    const subscription = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload: any) => {
+          console.log('🔔 [subscribeToProfileUpdates] Changement profil détecté:', payload);
+          
+          if (payload.eventType === 'UPDATE') {
+            const updatedProfile = payload.new as any;
+            
+            // Mettre à jour la liste des utilisateurs
+            setUsers(prevUsers => 
+              prevUsers.map(user => 
+                user.id === updatedProfile.id 
+                  ? { ...user, role: updatedProfile.role, username: updatedProfile.username }
+                  : user
+              )
+            );
+            
+            // Mettre à jour l'utilisateur sélectionné si c'est le même
+            if (selectedUser && selectedUser.id === updatedProfile.id) {
+              setSelectedUser(prev => prev ? {
+                ...prev,
+                role: updatedProfile.role,
+                username: updatedProfile.username
+              } : null);
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
-      if (unsubscribeDebtRef.current) {
-        unsubscribeDebtRef.current();
-      }
+      console.log('🔌 [subscribeToProfileUpdates] Déconnexion abonnement profils');
+      subscription.unsubscribe();
     };
-  }, []); // Aucune dépendance pour éviter les rechargements multiples
-  
-  // Effet séparé pour restaurer l'utilisateur sélectionné
+  }, [selectedUser]);
+
+  // Abonnement temps réel aux changements de dettes
+  const subscribeToDebtUpdates = useCallback(() => {
+    console.log('📡 [subscribeToDebtUpdates] Démarrage abonnement dettes');
+    
+    const subscription = supabase
+      .channel('debts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'debts'
+        },
+        (payload: any) => {
+          console.log('🔔 [subscribeToDebtUpdates] Changement dette détecté:', payload);
+          
+          // Synchroniser les données après un changement de dette
+          setTimeout(() => {
+            syncAllData(true);
+          }, 500);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔌 [subscribeToDebtUpdates] Déconnexion abonnement dettes');
+      subscription.unsubscribe();
+    };
+  }, [syncAllData]);
+
+  // Gestionnaire de visibilité de la page
+  const handleVisibilityChange = useCallback(() => {
+    const isVisible = !document.hidden;
+    setIsPageActive(isVisible);
+    
+    if (isVisible) {
+      console.log('👁️ [handleVisibilityChange] Page redevenue visible - synchronisation');
+      // Synchroniser si la page a été inactive plus de 30 secondes
+      if (Date.now() - lastSyncTime > 30000) {
+        syncAllData(true);
+      }
+    } else {
+      console.log('👁️ [handleVisibilityChange] Page masquée');
+    }
+  }, [lastSyncTime, syncAllData]);
+
+  // Gestionnaire d'événements personnalisés (changements de rôle admin)
+  const handleAdminRoleChanged = useCallback((event: CustomEvent) => {
+    console.log('🎭 [handleAdminRoleChanged] Changement de rôle admin détecté:', event.detail);
+    
+    // Synchroniser les données après un changement de rôle
+    setTimeout(() => {
+      syncAllData(true);
+    }, 200);
+  }, [syncAllData]);
+
+  // useEffect principal - Initialisation et abonnements
   useEffect(() => {
-    // Ne rien faire si les utilisateurs ne sont pas encore chargés
-    if (users.length === 0 || loading.users) return;
+    console.log('🚀 [useEffect] Initialisation de la page Users');
     
-    // Vérifier d'abord l'URL pour l'ID utilisateur
-    const urlUserId = searchParams.get('userId');
-    
-    // Ensuite vérifier localStorage si rien dans l'URL
-    const savedUserId = urlUserId || localStorage.getItem('selectedUserId');
-    
-    if (savedUserId) {
-      console.log('Restauration de l\'utilisateur sélectionné:', savedUserId);
-      const savedUser = users.find(u => u.id === savedUserId);
-      if (savedUser) {
-        console.log('Utilisateur trouvé, restauration de la sélection');
-        setSelectedUser(savedUser);
-        fetchUserDetails(savedUserId);
-        
-        // Mettre à jour l'URL si nécessaire
-        if (!urlUserId) {
-          setSearchParams({ userId: savedUserId });
+    // Chargement initial des données
+    const initializeData = async () => {
+      // Récupérer l'utilisateur sélectionné depuis l'URL ou localStorage
+      const userIdFromUrl = searchParams.get('userId');
+      const userIdFromStorage = localStorage.getItem('selectedUserId');
+      const targetUserId = userIdFromUrl || userIdFromStorage;
+      
+      // Charger la liste des utilisateurs
+      await fetchUsers();
+      
+      // Charger les détails de l'utilisateur sélectionné si disponible
+      if (targetUserId) {
+        const userData = await userService.getUserById(targetUserId);
+        if (userData) {
+          setSelectedUser(userData);
+          await fetchUserDetails(targetUserId);
         }
       }
+    };
+    
+    initializeData();
+    
+    // Configurer les abonnements temps réel
+    const unsubscribeProfiles = subscribeToProfileUpdates();
+    const unsubscribeDebts = subscribeToDebtUpdates();
+    
+    // Configurer les gestionnaires d'événements
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('adminRoleChanged', handleAdminRoleChanged as EventListener);
+    
+    // Synchronisation périodique (toutes les 2 minutes si la page est active)
+    const syncInterval = setInterval(() => {
+      if (isPageActive && Date.now() - lastSyncTime > 120000) {
+        console.log('⏰ [useEffect] Synchronisation périodique');
+        syncAllData();
+      }
+    }, 60000); // Vérifier toutes les minutes
+    
+    // Nettoyage
+    return () => {
+      console.log('🧹 [useEffect] Nettoyage des abonnements');
+      unsubscribeProfiles();
+      unsubscribeDebts();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('adminRoleChanged', handleAdminRoleChanged as EventListener);
+      clearInterval(syncInterval);
+    };
+  }, []);
+  
+  // useEffect pour la synchronisation lors des changements de navigation
+  useEffect(() => {
+    console.log('🧭 [useEffect] Changement de navigation détecté');
+    
+    // Synchroniser les données lors du retour sur la page
+    if (location.pathname === '/admin/users') {
+      syncAllData(true);
     }
-  }, [users, loading.users, fetchUserDetails, searchParams, setSearchParams]);
-
+  }, [location.pathname, syncAllData]);
+  
+  // useEffect pour la gestion de l'utilisateur sélectionné via URL
+  useEffect(() => {
+    const userIdFromUrl = searchParams.get('userId');
+    
+    if (userIdFromUrl && (!selectedUser || selectedUser.id !== userIdFromUrl)) {
+      console.log('🎯 [useEffect] Changement utilisateur sélectionné via URL:', userIdFromUrl);
+      
+      const loadUserFromUrl = async () => {
+        const userData = await userService.getUserById(userIdFromUrl);
+        if (userData) {
+          setSelectedUser(userData);
+          await fetchUserDetails(userIdFromUrl);
+        }
+      };
+      
+      loadUserFromUrl();
+    }
+  }, [searchParams, selectedUser, fetchUserDetails]);
+  
   useEffect(() => {
     if (!selectedUser) return;
     
@@ -230,22 +363,13 @@ const Users: React.FC = () => {
       }
     });
     
-    return () => {
-      unsubscribeDebts();
-    };
+    return unsubscribeDebts;
   }, [selectedUser, fetchUserDetails]);
 
   const subscribeToUserDebtUpdates = useCallback((userId: string) => {
     console.log(`🔔 Abonnement aux mises à jour des dettes pour l'utilisateur ${userId}`);
     
-    // Se désabonner d'abord si un abonnement existe déjà
-    if (unsubscribeDebtRef.current) {
-      unsubscribeDebtRef.current();
-      unsubscribeDebtRef.current = null;
-    }
-    
-    // S'abonner aux mises à jour des dettes
-    unsubscribeDebtRef.current = userService.subscribeToUserDebts(userId, (payload) => {
+    const unsubscribe = userService.subscribeToUserDebts(userId, (payload) => {
       console.log('📡 Mise à jour de dette reçue dans Users.tsx:', payload);
       
       // Vérifier si les rechargements sont bloqués
@@ -257,6 +381,8 @@ const Users: React.FC = () => {
       // Rafraîchir les détails de l'utilisateur pour mettre à jour les dettes
       fetchUserDetails(userId);
     });
+    
+    return unsubscribe;
   }, [fetchUserDetails]);
 
   useEffect(() => {
@@ -264,7 +390,9 @@ const Users: React.FC = () => {
       fetchUserDetails(selectedUser.id);
       
       // S'abonner aux mises à jour des dettes de l'utilisateur sélectionné
-      subscribeToUserDebtUpdates(selectedUser.id);
+      const unsubscribe = subscribeToUserDebtUpdates(selectedUser.id);
+      
+      return unsubscribe;
     }
   }, [selectedUser?.id, fetchUserDetails, subscribeToUserDebtUpdates]);
 
@@ -412,9 +540,7 @@ const Users: React.FC = () => {
       
       console.log('Tentative de suppression de l\'utilisateur:', userId);
       
-      // IMPORTANT: Se désabonner temporairement des mises à jour en temps réel
-      // pour éviter que l'utilisateur supprimé ne réapparaisse dans la liste
-      unsubscribeFromUserUpdates();
+      // Le nouveau système de synchronisation temps réel gère automatiquement les suppressions
       
       // Supprimer l'utilisateur via le service
       const success = await userService.deleteUser(userId);
@@ -459,8 +585,7 @@ const Users: React.FC = () => {
       console.error('Erreur lors de la suppression du compte utilisateur:', err);
       alert('Erreur lors de la suppression du compte utilisateur.');
     } finally {
-      // Réactiver l'abonnement aux mises à jour en temps réel
-      subscribeToUserUpdates();
+      // Le nouveau système de synchronisation temps réel se réactive automatiquement
       setLoading(prev => ({ ...prev, users: false }));
     }
   };

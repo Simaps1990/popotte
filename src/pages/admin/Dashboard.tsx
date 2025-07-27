@@ -55,49 +55,165 @@ export const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Chargement initial et mise à jour automatique via abonnements temps réel Supabase
-useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        
-        // Récupérer les statistiques depuis Supabase
-        const [
-          { count: usersCount },
-          { count: productsCount },
-          { count: pendingPayments },
-          { data: salesData, error: salesError },
-          { data: debtsData, error: debtsError }
-        ] = await Promise.all([
-          supabase.from('profiles').select('*', { count: 'exact', head: true }),
-          supabase.from('products').select('*', { count: 'exact', head: true }),
-          supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-          supabase.from('orders').select('total').eq('status', 'completed'),
-          supabase.from('debts').select('amount').eq('status', 'unpaid')
-        ]);
+  // Fonction pour récupérer les statistiques
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Récupérer les statistiques depuis Supabase
+      const [
+        { count: usersCount },
+        { count: productsCount },
+        { count: pendingPayments },
+        { data: salesData, error: salesError },
+        { data: debtsData, error: debtsError }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('orders').select('total').eq('status', 'completed'),
+        supabase.from('debts').select('amount').eq('status', 'unpaid')
+      ]);
 
-        // Définir les types pour les données de réduction
-        interface Order { total?: number }
-        interface Debt { amount?: number }
+      // Définir les types pour les données de réduction
+      interface Order { total?: number }
+      interface Debt { amount?: number }
 
-        const totalSales = salesData?.reduce((sum: number, order: Order) => sum + (order.total || 0), 0) || 0;
-        const totalDebts = debtsData?.reduce((sum: number, debt: Debt) => sum + (debt.amount || 0), 0) || 0;
+      const totalSales = salesData?.reduce((sum: number, order: Order) => sum + (order.total || 0), 0) || 0;
+      const totalDebts = debtsData?.reduce((sum: number, debt: Debt) => sum + (debt.amount || 0), 0) || 0;
 
-        setStats({
-          totalUsers: usersCount || 0,
-          totalProducts: productsCount || 0,
-          pendingPayments: pendingPayments || 0,
-          totalSales,
-          activeDebts: totalDebts,
-        });
-      } catch (error) {
-        console.error('Erreur lors de la récupération des statistiques:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setStats({
+        totalUsers: usersCount || 0,
+        totalProducts: productsCount || 0,
+        pendingPayments: pendingPayments || 0,
+        totalSales,
+        activeDebts: totalDebts,
+      });
+      
+      console.log('✅ [Dashboard] Statistiques mises à jour:', {
+        totalUsers: usersCount || 0,
+        totalProducts: productsCount || 0,
+        pendingPayments: pendingPayments || 0,
+        totalSales,
+        activeDebts: totalDebts,
+      });
+    } catch (error) {
+      console.error('❌ [Dashboard] Erreur lors de la récupération des statistiques:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Chargement initial et abonnements temps réel
+  useEffect(() => {
+    let isMounted = true;
+    
+    // Chargement initial
     fetchStats();
+    
+    // Abonnements temps réel pour toutes les tables critiques
+    const subscriptions = [
+      // Abonnement aux changements de profils (utilisateurs)
+      supabase
+        .channel('dashboard_profiles_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'profiles'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Dashboard] Changement de profil détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => fetchStats(), 500); // Délai pour éviter les conflits
+            }
+          }
+        )
+        .subscribe(),
+        
+      // Abonnement aux changements de produits
+      supabase
+        .channel('dashboard_products_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'products'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Dashboard] Changement de produit détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => fetchStats(), 500);
+            }
+          }
+        )
+        .subscribe(),
+        
+      // Abonnement aux changements de paiements
+      supabase
+        .channel('dashboard_payments_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'payments'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Dashboard] Changement de paiement détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => fetchStats(), 500);
+            }
+          }
+        )
+        .subscribe(),
+        
+      // Abonnement aux changements de commandes
+      supabase
+        .channel('dashboard_orders_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'orders'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Dashboard] Changement de commande détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => fetchStats(), 500);
+            }
+          }
+        )
+        .subscribe(),
+        
+      // Abonnement aux changements de dettes
+      supabase
+        .channel('dashboard_debts_changes')
+        .on('postgres_changes', 
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'debts'
+          }, 
+          (payload: any) => {
+            console.log('📡 [Dashboard] Changement de dette détecté:', payload);
+            if (isMounted) {
+              setTimeout(() => fetchStats(), 500);
+            }
+          }
+        )
+        .subscribe()
+    ];
+    
+    console.log('🔔 [Dashboard] Abonnements temps réel activés pour toutes les statistiques');
+    
+    // Nettoyage lors du démontage
+    return () => {
+      console.log('🔕 [Dashboard] Désabonnement de tous les canaux temps réel');
+      isMounted = false;
+      subscriptions.forEach(subscription => {
+        subscription.unsubscribe();
+      });
+    };
   }, []);
 
   const navigateTo = (path: string) => {
