@@ -732,7 +732,6 @@ const Users: React.FC = () => {
     <div className="min-h-screen pb-16">
   <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
     <div className="mb-8">
-      <h1 className="text-2xl font-bold text-[#10182a]">Gestion des utilisateurs</h1>
     </div>
         {/* Liste des utilisateurs (si aucun utilisateur sélectionné) */}
         {!selectedUser && (
