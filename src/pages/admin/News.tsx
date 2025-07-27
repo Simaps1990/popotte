@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit, Trash2, Save, X, ArrowLeft } from 'lucide-react'
 import { NewsPageLayout } from '../../components/admin/NewsPageLayout'
 import { newsService } from '../../services/newsService'
 import { type NewsPost } from '../../lib/supabase'
@@ -8,6 +9,7 @@ import { toast } from 'react-hot-toast'
 import '../../styles/news.css'
 
 export function News() {
+  const navigate = useNavigate();
   const { user } = useAuth()
   const [posts, setPosts] = useState<NewsPost[]>([])
   const [loading, setLoading] = useState(true)
@@ -188,18 +190,24 @@ export function News() {
 
   return (
     <NewsPageLayout>
-      <main className="flex-1 overflow-y-auto p-6 news-page" style={{ backgroundColor: '#f9fafb' }}>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Gestion des actualités</h1>
+      <main className="bg-white min-h-screen pb-16">
+        <div className="container mx-auto px-4 py-6 max-w-md">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
+            <button 
+              onClick={() => navigate(-1)}
+              className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
+            >
+              <ArrowLeft size={20} />
+              <span>Retour</span>
+            </button>
           </div>
 
           <div className="flex items-center justify-between">
             <button
               onClick={handleNewArticleClick}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-              type="button"
-              id="new-article-button"
+              className="btn-primary flex items-center space-x-2"
+              disabled={isCreating}
             >
               <Plus size={20} />
               <span>Nouvel article</span>
