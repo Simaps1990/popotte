@@ -38,18 +38,20 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-white" style={{ background: '#fff' }}>
       {window.location.pathname === '/' && (
-        <div style={{background: '#10182a', width: '100%', height: 40, position: 'relative', zIndex: 1}}></div>
-        <header className="site-header w-full flex justify-center items-center pb-8 md:pb-10" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 0, paddingBottom: 40, position: 'relative', boxShadow: 'none', zIndex: 2 }}>
-          {/* Header bleu foncé avec logo centré */}
-          <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
-          {/* Arrondi inversé en bas du header */}
-          {/* Arrondis inversés très petits sur les extrémités */}
-          <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 32, pointerEvents: 'none', zIndex: 2}}>
-            <svg width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 32}}>
-              <path d="M0,32 Q6,0 18,0 L82,0 Q94,0 100,32 Z" fill="#fff" />
-            </svg>
-          </div>
-        </header>
+        <>
+          <div style={{background: '#10182a', width: '100%', height: 40, position: 'relative', zIndex: 1}}></div>
+          <header className="site-header w-full flex justify-center items-center pb-8 md:pb-10" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 0, paddingBottom: 40, position: 'relative', boxShadow: 'none', zIndex: 2 }}>
+            {/* Header bleu foncé avec logo centré */}
+            <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
+            {/* Arrondi inversé en bas du header */}
+            {/* Arrondis inversés très petits sur les extrémités */}
+            <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 32, pointerEvents: 'none', zIndex: 2}}>
+              <svg width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none" style={{display: 'block', width: '100%', height: 32}}>
+                <path d="M0,32 Q6,0 18,0 L82,0 Q94,0 100,32 Z" fill="#fff" />
+              </svg>
+            </div>
+          </header>
+        </>
       )}
       <main className="w-full max-w-md mx-auto px-4 py-2 flex-grow pb-20 bg-white">
         <div className="w-full">
