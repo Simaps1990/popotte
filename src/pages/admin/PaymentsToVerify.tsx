@@ -137,8 +137,10 @@ const PaymentsToVerify: React.FC = () => {
   return (
     <div className="min-h-screen bg-white pb-16">
   <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
+    <div className="mb-8">
+      <h1 className="text-2xl font-bold text-[#10182a] text-center">Paiements à vérifier</h1>
+    </div>
     <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold text-[#10182a]">Paiements à vérifier</h1>
       <button
         className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors rounded px-3 py-1 border border-[#10182a] bg-white"
         onClick={() => window.history.back()}

@@ -244,7 +244,7 @@ const Settings = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold" style={{ color: '#10182a' }}>Gestion des utilisateurs</h3>
-                        <p className="text-sm" style={{ color: '#10182a' }}>Gérer les comptes et permissions</p>
+                        <p className="text-sm" style={{ color: '#10182a' }}>Gérer les comptes</p>
                       </div>
                       <span className="text-blue-400">→</span>
                     </div>
@@ -264,7 +264,7 @@ const Settings = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold" style={{ color: '#10182a' }}>Paiements à vérifier</h3>
-                        <p className="text-sm" style={{ color: '#10182a' }}>Confirmer les paiements notifiés</p>
+                        <p className="text-sm" style={{ color: '#10182a' }}>Confirmer les paiements</p>
                       </div>
                       <span className="text-orange-400">→</span>
                     </div>
@@ -333,7 +333,6 @@ const Settings = () => {
     <div className="flex-1">
       <h3 className="font-semibold text-[#10182a]" /* Charte graphique : Titres principaux en text-[#10182a] */>Mon profil</h3>
       <p className="text-sm text-[#10182a]" /* Charte graphique : Titres principaux en text-[#10182a] */>Modifier mes informations personnelles</p>
-      <p className="text-sm" style={{ color: '#10182a' }}>Modifier mes informations personnelles</p>
     </div>
     <span className="text-gray-400">→</span>
   </div>

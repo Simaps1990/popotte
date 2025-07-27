@@ -712,9 +712,10 @@ const DebtSection: React.FC<DebtSectionProps> = ({
     </div>
     <div className="mt-1 text-sm text-gray-700 whitespace-pre-line">
       {debt.order.order_items && debt.order.order_items.length > 0
-        ? debt.order.order_items.map(item =>
-            `${item.quantity}x ${item.product_name ?? 'Produit'} - ${(typeof item.unit_price === 'number' ? item.unit_price : 0).toFixed(2)} €`
-          ).join('\n')
+        ? debt.order.order_items.map(item => {
+            const nomProduit = item.product_name || (item.products?.name) || 'Produit inconnu';
+            return `${item.quantity}x ${nomProduit} - ${(typeof item.unit_price === 'number' ? item.unit_price : 0).toFixed(2)} €`;
+          }).join('\n')
         : 'Aucun produit'}
     </div>
   </div>
@@ -731,7 +732,10 @@ const DebtSection: React.FC<DebtSectionProps> = ({
     </div>
     <div className="space-y-1 mb-3">
       <div className="text-sm text-gray-600">{debt.description || `Dette #${debt.id.slice(0, 8)}`}{debt.order && debt.order.order_items && debt.order.order_items.length > 0 ?
-        ': ' + debt.order.order_items.map(item => `${item.quantity}x ${item.product_name ?? 'Produit'} - ${(typeof item.unit_price === 'number' ? item.unit_price : 0).toFixed(2)} €`).join(', ')
+        ': ' + debt.order.order_items.map(item => {
+            const nomProduit = item.product_name || (item.products?.name) || 'Produit inconnu';
+            return `${item.quantity}x ${nomProduit} - ${(typeof item.unit_price === 'number' ? item.unit_price : 0).toFixed(2)} €`;
+          }).join(', ')
         : ''}
       </div>
     </div>
