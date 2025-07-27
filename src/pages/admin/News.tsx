@@ -204,8 +204,8 @@ export function News() {
               <span>Retour</span>
             </button>
           </div>
-          {/* Bouton action identique */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Actions identiques à Produits : un seul bloc horizontal */}
+          <div className="flex items-center space-x-2 mb-6">
             <button
               onClick={handleNewArticleClick}
               className="btn-primary flex items-center space-x-2"
@@ -214,6 +214,7 @@ export function News() {
               <Plus size={20} />
               <span>Nouvel article</span>
             </button>
+            {/* Si besoin d'autres boutons, les ajouter ici, à droite du bouton principal */}
           </div>
           {/* Formulaire de création/modification d'article */}
           {isCreating && (
@@ -308,7 +309,7 @@ export function News() {
               </form>
             </div>
           )}
-          {/* Liste des actualités sous forme de cartes (identique à produits) */}
+          {/* Liste des actualités sous forme de cartes, structure identique à produits mais avec images */}
           <div className="space-y-4">
             {posts.length === 0 ? (
               <div className="bg-white p-6 rounded-lg shadow-md text-center">
@@ -318,6 +319,14 @@ export function News() {
               posts.map((post) => (
                 <div key={post.id} className="flex items-center justify-between p-3 rounded-lg shadow-sm border border-gray-200 bg-white">
                   <div className="flex-1">
+                    {/* Affichage des images en haut de la carte, si présentes */}
+                    {post.image_url && (
+                      <img
+                        src={post.image_url}
+                        alt={post.title}
+                        className="w-full h-32 object-cover rounded-lg mb-4"
+                      />
+                    )}
                     <div className="flex items-center space-x-2 mb-1">
                       <h3 className="font-medium text-[#10182a]">{post.title}</h3>
                       {!post.published && (
