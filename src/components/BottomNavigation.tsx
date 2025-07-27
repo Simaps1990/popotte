@@ -34,7 +34,7 @@ export function BottomNavigation() {
 
   // Styles épurés pour les icônes du footer
   const iconStyle = (isActivePage: boolean) => ({
-    color: isActivePage ? '#10182a' : '#cfd8dc', // Bleu foncé pour actif, gris clair sinon
+    color: isActivePage ? '#10182a' : '#7b8690', // Bleu foncé pour actif, gris foncé sinon
     transition: 'color 0.2s',
   })
   const textStyle = (isActivePage: boolean) => ({

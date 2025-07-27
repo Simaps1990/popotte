@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AuthForm } from '../components/AuthForm'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export function AuthPage() {
   console.log('AuthPage monté')
@@ -50,6 +51,7 @@ export function AuthPage() {
 
   // Header/logo centré
   return (
+    <>
     <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <header className="site-header">
         <img src="/logo.png" alt="Logo Popotte" />
@@ -68,5 +70,7 @@ export function AuthPage() {
         </div>
       </div>
     </div>
+    <BottomNavigation />
+    </>
   )
 }

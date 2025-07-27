@@ -2,7 +2,7 @@ import React, { Suspense, StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import './background.css' // Import du CSS de fond avec priorité
+
 import { loadApp } from './lib/initAuth'
 
 // Déclaration du type pour window.__APP_LOADED__

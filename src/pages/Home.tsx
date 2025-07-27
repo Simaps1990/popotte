@@ -4,7 +4,6 @@ import { Calendar } from 'lucide-react'
 import { getNews, type NewsPost } from '../lib/supabase'
 import { useRealTimeSubscriptions, useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
-const headerUrl = '/header.png'
 
 // Style pour supprimer les marges par défaut du body et html
 const resetStyle = document.createElement('style')
@@ -130,16 +129,7 @@ export function Home() {
           position: 'relative'
         }}
       >
-        <img 
-          src={headerUrl} 
-          alt="Popotte Association" 
-          style={{
-            width: '100%',
-            height: '200px',
-            objectFit: 'contain', // 'contain' pour conserver les proportions
-            objectPosition: 'center'
-          }}
-        />
+
       </div>
 
       <div className="w-full py-4 pb-4 mt-2">
