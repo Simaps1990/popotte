@@ -39,9 +39,9 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-white" style={{ background: '#fff' }}>
       {window.location.pathname === '/' && (
         <>
-          <div style={{background: '#10182a', width: '100%', height: 40, position: 'relative', zIndex: 1}}></div>
-          <header className="site-header w-full flex justify-center items-center pb-8 md:pb-10" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 0, paddingBottom: 40, position: 'relative', boxShadow: 'none', zIndex: 2 }}>
-            {/* Header bleu foncé avec logo centré */}
+          <div style={{background: 'linear-gradient(to bottom, #0a1018, #10182a)', width: '100%', height: 40, position: 'relative', zIndex: 1}}></div>
+          <header className="site-header w-full flex justify-center items-center pb-8 md:pb-10" style={{ background: 'linear-gradient(to bottom, #10182a, #1a2a40)', marginTop: 0, borderTop: 'none', paddingTop: 0, paddingBottom: 50, position: 'relative', boxShadow: 'none', zIndex: 2 }}>
+            {/* Header bleu foncé avec logo centré et gradient */}
             <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
             {/* Arrondi inversé en bas du header */}
             {/* Arrondis inversés très petits sur les extrémités */}
@@ -53,7 +53,7 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
           </header>
         </>
       )}
-      <main className="w-full max-w-md mx-auto px-4 py-2 flex-grow pb-20 bg-white">
+      <main className="w-full max-w-md mx-auto px-4 py-0 flex-grow pb-20 bg-white">
         <div className="w-full">
           {children}
         </div>
