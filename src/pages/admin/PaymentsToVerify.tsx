@@ -135,47 +135,61 @@ const PaymentsToVerify: React.FC = () => {
 
   console.log("[ADMIN DEBUG] PaymentsToVerify RENDER");
   return (
-    <div className="min-h-screen bg-white pb-16"> // fond blanc partout (charte graphique)
-      <main className="container mx-auto px-4 py-6 max-w-md bg-white border border-[#10182a] rounded"> // container avec fond blanc et bordure claire
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#10182a]">Paiements à vérifier</h1>
-          <button
-            className="flex items-center space-x-2 text-white bg-[#10182a] hover:bg-blue-700 transition-colors rounded" // bouton principal bleu foncé
-            onClick={() => window.history.back()}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
-            <span>Retour</span>
-          </button>
-        </div>
-        <div className="space-y-6 mt-6">
-          <div className="card text-center mb-6">
-            <div className="text-2xl font-bold text-orange-600">{notifications.length}</div>
-            <div className="text-sm text-gray-600">Paiements à vérifier</div>
-          </div>
-          {loading && <div>Chargement...</div>}
-          {error && <div className="text-red-600">Erreur : {error}</div>}
-          {Array.isArray(notifications) && notifications.length === 0 && !loading ? (
-            <div className="text-gray-500">Aucun paiement à vérifier.</div>
-          ) : Array.isArray(notifications) && notifications.length > 0 ? (
-            <ul className="space-y-4">
-              {notifications.map((notif) => (
-      <AdminPaymentNotificationCard
-        key={notif.notification_id}
-        id={notif.notification_id}
-        amount={parseFloat(notif.total_amount)}
-        notifiedAt={notif.notified_at}
-        userName={notif.user_full_name || notif.user_username || notif.user_email}
-        userEmail={notif.user_email}
-        onConfirm={() => handleValidate(notif.notification_id)}
-        onDelete={() => handleCancel(notif.notification_id)}
-        processing={processing === notif.notification_id}
-      />
-    ))}
-            </ul>
-          ) : null}
-        </div>
-      </main>
+    <div className="min-h-screen bg-white pb-16">
+  <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
+    <div className="flex items-center justify-between mb-6">
+      <h1 className="text-2xl font-bold text-[#10182a]">Paiements à vérifier</h1>
+      <button
+        className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors rounded px-3 py-1 border border-[#10182a] bg-white"
+        onClick={() => window.history.back()}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+        <span>Retour</span>
+      </button>
     </div>
+    <div className="space-y-6">
+      <div className="flex justify-center">
+        <div className="bg-white border border-orange-200 rounded-lg shadow-sm px-8 py-4 text-center">
+          <div className="text-2xl font-bold text-orange-600">{notifications.length}</div>
+          <div className="text-sm text-gray-600">Paiements à vérifier</div>
+        </div>
+      </div>
+      {loading && (
+        <div className="text-center p-8 bg-white rounded-lg">
+          <p className="text-gray-500">Chargement des paiements...</p>
+        </div>
+      )}
+      {error && (
+        <div className="text-center p-8 bg-red-50 rounded-lg">
+          <p className="text-red-500">Erreur : {error}</p>
+        </div>
+      )}
+      {!loading && !error && notifications.length === 0 && (
+        <div className="text-center p-8 bg-white rounded-lg">
+          <p className="text-gray-500">Aucun paiement à vérifier.</p>
+        </div>
+      )}
+      {!loading && !error && notifications.length > 0 && (
+        <div className="space-y-4">
+          {notifications.map((notif) => (
+            <AdminPaymentNotificationCard
+              key={notif.notification_id}
+              id={notif.notification_id}
+              amount={parseFloat(notif.total_amount)}
+              notifiedAt={notif.notified_at}
+              userName={notif.user_full_name || notif.user_username || notif.user_email}
+              userEmail={notif.user_email}
+              onConfirm={() => handleValidate(notif.notification_id)}
+              onDelete={() => handleCancel(notif.notification_id)}
+              processing={processing === notif.notification_id}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </main>
+</div>
+
   );
 };
 
