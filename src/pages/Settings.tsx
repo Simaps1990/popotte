@@ -335,6 +335,7 @@ const Settings = () => {
                   <span className="text-gray-400">→</span>
                 </div>
               </Link>
+
               
               {/* Bouton Se déconnecter - visible pour tous les utilisateurs */}
               <button 

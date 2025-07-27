@@ -32,8 +32,16 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
     return <Navigate to="/auth" replace />;
   }
 
+  // Afficher le header (logo centré) sauf sur la page de login et callback
+  const isHeaderVisible = !window.location.pathname.startsWith('/auth');
+
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-transparent">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white">
+      {isHeaderVisible && (
+        <header className="site-header">
+          <img src="/logo.png" alt="Logo Popotte" />
+        </header>
+      )}
       <main className="w-full max-w-md mx-auto px-4 py-6 flex-grow pb-20">
         <div className="w-full">
           {children}

@@ -32,37 +32,24 @@ export function BottomNavigation() {
 
   // Afficher la navigation même si l'utilisateur n'est pas connecté
 
-  // Styles pour l'effet "creusé dans le bois"
-  const woodIconStyle = (isActivePage: boolean) => ({
-    filter: isActivePage 
-      ? 'drop-shadow(1px 1px 3px rgba(0, 0, 0, 0.7))' 
-      : 'drop-shadow(1px 1px 1px rgba(245, 235, 220, 0.8))',
-    color: isActivePage ? '#FFFFFF' : '#5D4037' // Blanc pour la page active, marron foncé sinon
+  // Styles épurés pour les icônes du footer
+  const iconStyle = (isActivePage: boolean) => ({
+    color: isActivePage ? '#10182a' : '#cfd8dc', // Bleu foncé pour actif, gris clair sinon
+    transition: 'color 0.2s',
   })
-  
-  const woodTextStyle = (isActivePage: boolean) => ({
-    textShadow: isActivePage 
-      ? '1px 1px 3px rgba(0, 0, 0, 0.7)' 
-      : '1px 1px 1px rgba(245, 235, 220, 0.8)',
-    color: isActivePage ? '#FFFFFF' : '#5D4037', // Blanc pour la page active, marron foncé sinon
-    fontWeight: isActivePage ? 'bold' : 'normal' // Gras pour la page active
+  const textStyle = (isActivePage: boolean) => ({
+    color: isActivePage ? '#10182a' : '#cfd8dc',
+    fontWeight: isActivePage ? 'bold' : 'normal',
+    fontSize: '0.75rem',
+    transition: 'color 0.2s',
   })
-  
-  // Style pour le fond en bois
-  const woodBackgroundStyle = {
-    backgroundImage: 'url(/footer.png)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    height: '100px', // Augmenté de 80px à 100px
-    border: 'none' // Suppression de tous les bordures
-  }
+  // Footer blanc géré par CSS global (voir index.css)
 
   // Rendu conditionnel en fonction de la page
   if (isLoginPage) {
     // Footer spécial pour la page de login (mode "hors connexion" avec seulement deux icônes)
     return (
-      <nav className="fixed bottom-0 left-0 right-0 border-t-0" style={woodBackgroundStyle}>
+      <nav className="fixed bottom-0 left-0 right-0 border-t-0">
         <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
           <div className="flex justify-around items-center w-full">
             {/* Icône Accueil */}
@@ -71,8 +58,8 @@ export function BottomNavigation() {
               className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
               onClick={() => handleNavigationClick('/')}
             >
-              <Home size={24} style={woodIconStyle(isActive('/'))} />
-              <span className="text-xs mt-1" style={woodTextStyle(isActive('/'))}>Accueil</span>
+              <Home size={24} style={iconStyle(isActive('/'))} />
+              <span className="text-xs mt-1" style={textStyle(isActive('/'))}>Accueil</span>
             </Link>
             
             {/* Icône Connexion */}
@@ -84,8 +71,8 @@ export function BottomNavigation() {
                 handleNavigationClick('/auth');
               }}
             >
-              <Lock size={20} style={woodIconStyle(isActive('/auth'))} className="mb-1" />
-              <span className="text-xs" style={woodTextStyle(isActive('/auth'))}>Connexion</span>
+              <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
+              <span className="text-xs" style={textStyle(isActive('/auth'))}>Connexion</span>
             </Link>
           </div>
         </div>
@@ -95,7 +82,7 @@ export function BottomNavigation() {
   
   // Footer normal pour les autres pages
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t-0" style={woodBackgroundStyle}>
+    <nav className="fixed bottom-0 left-0 right-0 border-t-0">
       <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
         <div className="flex justify-around items-center w-full">
           {/* Icône Accueil (toujours visible) */}
@@ -104,8 +91,8 @@ export function BottomNavigation() {
             className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
             onClick={() => handleNavigationClick('/')}
           >
-            <Home size={24} style={woodIconStyle(isActive('/'))} />
-            <span className="text-xs mt-1" style={woodTextStyle(isActive('/'))}>Accueil</span>
+            <Home size={24} style={iconStyle(isActive('/'))} />
+            <span className="text-xs mt-1" style={textStyle(isActive('/'))}>Accueil</span>
           </Link>
           
           {/* Icônes visibles uniquement pour les utilisateurs connectés */}
@@ -115,8 +102,8 @@ export function BottomNavigation() {
               className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
               onClick={() => handleNavigationClick('/commande')}
             >
-              <ClipboardList size={24} style={woodIconStyle(isActive('/commande'))} />
-              <span className="text-xs mt-1" style={woodTextStyle(isActive('/commande'))}>Commander</span>
+              <ClipboardList size={24} style={iconStyle(isActive('/commande'))} />
+              <span className="text-xs mt-1" style={textStyle(isActive('/commande'))}>Commander</span>
             </Link>
           )}
           
@@ -127,8 +114,8 @@ export function BottomNavigation() {
                 className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
                 onClick={() => handleNavigationClick('/dettes')}
               >
-                <CreditCard size={24} style={woodIconStyle(isActive('/dettes'))} />
-                <span className="text-xs mt-1" style={woodTextStyle(isActive('/dettes'))}>Dettes</span>
+                <CreditCard size={24} style={iconStyle(isActive('/dettes'))} />
+                <span className="text-xs mt-1" style={textStyle(isActive('/dettes'))}>Dettes</span>
               </Link>
               
               <Link
@@ -136,8 +123,8 @@ export function BottomNavigation() {
                 className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
                 onClick={() => handleNavigationClick('/parametres')}
               >
-                <Settings size={24} style={woodIconStyle(isActive('/parametres'))} />
-                <span className="text-xs mt-1" style={woodTextStyle(isActive('/parametres'))}>Paramètres</span>
+                <Settings size={24} style={iconStyle(isActive('/parametres'))} />
+                <span className="text-xs mt-1" style={textStyle(isActive('/parametres'))}>Paramètres</span>
               </Link>
             </>
           )}
@@ -152,8 +139,8 @@ export function BottomNavigation() {
                 handleNavigationClick('/auth');
               }}
             >
-              <Lock size={20} style={woodIconStyle(isActive('/auth'))} className="mb-1" />
-              <span className="text-xs" style={woodTextStyle(isActive('/auth'))}>Connexion</span>
+              <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
+              <span className="text-xs" style={textStyle(isActive('/auth'))}>Connexion</span>
             </Link>
           )}
       </div>

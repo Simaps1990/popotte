@@ -7,17 +7,55 @@
     font-family: 'Inter', system-ui, sans-serif;
     margin: 0;
     padding: 0;
+    background: #fff; /* Fond général blanc */
   }
   
   body {
     @apply text-gray-900;
-    /* Fond retiré pour permettre à l'image de fond d'être visible */
+    background: #fff; /* Fond général blanc */
+  }
+  
+  /* Header bleu foncé presque noir */
+  header.site-header {
+    background: #10182a;
+    color: #fff;
+    width: 100vw;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(16,24,42,0.08);
+    position: relative;
+    z-index: 10;
+  }
+  header.site-header img {
+    display: block;
+    margin: 0 auto;
+    max-height: 60px;
+    max-width: 90vw;
+  }
+  
+  /* Footer blanc */
+  footer.site-footer, nav.fixed.bottom-0 {
+    background: #fff !important;
+    color: #10182a;
+    border: none !important;
+    box-shadow: 0 -2px 8px rgba(16,24,42,0.04);
   }
 }
 
+
 @layer components {
   .btn-primary {
-    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-150;
+    background: #10182a;
+    color: #fff;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover {
+    background: #22315c;
   }
   
   .btn-secondary {
