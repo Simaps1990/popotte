@@ -163,7 +163,7 @@ export function NewsList() {
             
             {showForm && (
               <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+                <div className="bg-white border border-blue-200 p-3 rounded-lg mb-4">
                   <p className="text-sm text-blue-700">💡 Les articles sont maintenant sauvegardés dans Supabase.</p>
                 </div>
                 <NewsForm 
@@ -217,7 +217,7 @@ export function NewsList() {
                     </div>
                     <div className="flex space-x-2 ml-4">
                       <button 
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-white rounded-lg transition-colors"
                         onClick={() => handleEditPost(post)}
                       >
                         <Edit size={16} />

@@ -341,7 +341,7 @@ export function News() {
                       <div className="flex items-center space-x-2 mb-1">
                         <h3 className="text-lg font-semibold text-[#10182a]">{post.title}</h3>
                         {!post.published && (
-                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
+                          <span className="px-2 py-1 text-xs bg-white border border-gray-200 text-gray-800 rounded-full">
                             Brouillon
                           </span>
                         )}
@@ -358,7 +358,7 @@ export function News() {
                     <div className="flex space-x-2 ml-4">
                       <button
                         onClick={() => handleEdit(post)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-white rounded-lg transition-colors"
                       >
                         <Edit size={16} />
                       </button>

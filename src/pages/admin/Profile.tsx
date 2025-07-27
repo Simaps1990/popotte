@@ -309,7 +309,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-white pb-16">
       <div className="container mx-auto px-4 py-6 max-w-md">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -349,7 +349,7 @@ const Profile = () => {
                         type="email"
                         disabled
                         value={profile.email}
-                        className="input mt-1 bg-gray-50 cursor-not-allowed w-full"
+                        className="input mt-1 bg-white cursor-not-allowed w-full"
                       />
                       <p className="text-xs text-gray-500 mt-1">L'email ne peut pas être modifié</p>
                     </div>
@@ -506,7 +506,7 @@ const Profile = () => {
                       </div>
                     </div>
                     
-                    <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="bg-white border border-blue-200 p-3 rounded-lg">
                       <p className="text-sm text-blue-700">
                         <strong>Conseils pour votre mot de passe :</strong>
                       </p>

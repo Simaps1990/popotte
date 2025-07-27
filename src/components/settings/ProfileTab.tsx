@@ -207,7 +207,7 @@ export function ProfileTab({ profile, onUpdate }: ProfileTabProps) {
                     type="email"
                     value={profile.email}
                     disabled
-                    className="bg-gray-100 block w-full sm:text-sm border-gray-300 rounded-md"
+                    className="bg-white block w-full sm:text-sm border-gray-300 rounded-md"
                   />
                 </div>
                 <p className="mt-2 text-sm text-gray-500">

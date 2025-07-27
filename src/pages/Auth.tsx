@@ -76,7 +76,7 @@ export function Auth() {
           <p className="mt-2 text-gray-600">
             {isLogin ? 'Connectez-vous à votre compte' : 'Rejoignez notre association'}
           </p>
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mt-4 p-3 bg-white border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
 
             </p>
@@ -107,7 +107,7 @@ export function Auth() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
-                  <p className="text-xs text-white bg-gray-100 mt-1">
+                  <p className="text-xs text-gray-600 bg-white mt-1">
                     Uniquement lettres, chiffres et underscores. Pas d'espaces.
                   </p>
                 </div>

@@ -43,6 +43,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { signOut, isAdmin } = useAuth();
   const [user, setUser] = useState<any>(null);
+  const [currentAdminStatus, setCurrentAdminStatus] = useState(isAdmin);
   const [profile, setProfile] = useState<{first_name: string; last_name: string; phone: string | null} | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +95,40 @@ const Settings = () => {
   // Utiliser le hook de rafraîchissement des données
   // Appel supprimé : la logique de rafraîchissement manuel est désormais obsolète.
   
+  // Synchronisation du statut admin avec le contexte Auth
+  useEffect(() => {
+    setCurrentAdminStatus(isAdmin);
+    console.log('🔄 [Settings] Synchronisation statut admin:', isAdmin);
+  }, [isAdmin]);
+
+  // Listener pour les changements de rôle admin en temps réel
+  useEffect(() => {
+    const handleAdminRoleChange = (event: CustomEvent) => {
+      const { userId, newRole, isCurrentUser } = event.detail;
+      console.log('📢 [Settings] Événement adminRoleChanged reçu:', { userId, newRole, isCurrentUser });
+      
+      if (isCurrentUser) {
+        // Si c'est l'utilisateur courant, mettre à jour le statut immédiatement
+        const newAdminStatus = newRole === 'admin';
+        setCurrentAdminStatus(newAdminStatus);
+        console.log('✅ [Settings] Statut admin mis à jour instantanément:', newAdminStatus);
+        
+        // Forcer un re-render en mettant à jour l'état
+        setActiveTab(prev => prev); // Trigger re-render
+      }
+    };
+
+    // Ajouter le listener d'événement
+    window.addEventListener('adminRoleChanged', handleAdminRoleChange as EventListener);
+    console.log('👂 [Settings] Listener adminRoleChanged ajouté');
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('adminRoleChanged', handleAdminRoleChange as EventListener);
+      console.log('🧹 [Settings] Listener adminRoleChanged supprimé');
+    };
+  }, []);
+
   // Chargement initial des données
   useEffect(() => {
     loadUserData();
@@ -218,7 +253,7 @@ const Settings = () => {
           <div className="space-y-4">
         {/* Onglets : dashboard (par défaut) ou profil */}
         {/* Statistiques financières - visible uniquement pour les administrateurs */}
-        {isAdmin && (
+        {currentAdminStatus && (
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Statistiques financières</h2>
             <DebtSummaryPanel className="mb-4" />
@@ -228,7 +263,7 @@ const Settings = () => {
         <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Gestion du site</h2>
         <div className="grid grid-cols-1 gap-4">
               {/* Boutons d'administration - visibles uniquement pour les administrateurs */}
-              {isAdmin && (
+              {currentAdminStatus && (
                 <>
                   <button onClick={() => navigateTo('/admin/users')} className="card hover:bg-blue-100 transition-colors cursor-pointer border-l-4 border-blue-500 text-left w-full bg-white">
                     <div className="flex items-center space-x-4 p-4">

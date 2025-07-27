@@ -285,13 +285,13 @@ export function ProductsList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-white p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-gray-100 rounded-lg"></div>
+              <div key={i} className="h-20 bg-white border border-gray-200 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -300,7 +300,7 @@ export function ProductsList() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-md">
         <div className="space-y-6">
           {/* En-tête avec titre et bouton retour */}
@@ -340,13 +340,13 @@ export function ProductsList() {
             {categories.map((category) => (
               <div key={category.id} className="space-y-4">
                 {/* En-tête de catégorie */}
-                <div className="flex items-center space-x-2 group bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center space-x-2 group bg-white p-3 rounded-lg">
                   <h2 className="text-lg font-semibold text-gray-800 flex-1 cursor-pointer hover:text-blue-600 transition-colors">
                     {category.name.toUpperCase()}
                   </h2>
                   <div className="flex items-center space-x-1">
                     <button 
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                       title="Monter la catégorie"
                     >
                       <ChevronUp 
@@ -380,7 +380,7 @@ export function ProductsList() {
                     />
                     </button>
                     <button 
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                       title="Descendre la catégorie"
                       onClick={async () => {
                         try {
@@ -412,7 +412,7 @@ export function ProductsList() {
                       <ChevronDown className="w-4 h-4" />
                     </button>
                     <button 
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                       title="Modifier la catégorie"
                       onClick={() => {
                         setEditingCategory(category);
@@ -431,7 +431,7 @@ export function ProductsList() {
                     </button>
                     <button 
                       onClick={() => toggleCategory(category.id)}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                     >
                       {expandedCategories[category.id] ? (
                         <ChevronUp className="w-4 h-4" />
@@ -440,7 +440,7 @@ export function ProductsList() {
                       )}
                     </button>
                   </div>
-                  <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                  <span className="px-2 py-1 text-xs bg-white border border-gray-200 text-gray-600 rounded-full">
                     {category.products.length} {category.products.length > 1 ? 'produits' : 'produit'}
                   </span>
                 </div>
@@ -458,7 +458,7 @@ export function ProductsList() {
                               className="w-20 h-20 object-cover rounded-lg"
                             />
                           ) : (
-                            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                            <div className="w-20 h-20 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-400">
                               <span>Pas d'image</span>
                             </div>
                           )}
@@ -509,7 +509,7 @@ export function ProductsList() {
                         </div>
                         <div className="flex space-x-2">
                           <button 
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-blue-600 hover:bg-white rounded-lg transition-colors"
                             onClick={() => console.log('Modifier le produit:', product.id)}
                           >
                             <PenSquare 
@@ -641,7 +641,7 @@ export function ProductsList() {
                 <button
                   type="button"
                   onClick={() => setShowNewProductForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-white"
                 >
                   Annuler
                 </button>
@@ -714,7 +714,7 @@ export function ProductsList() {
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-white"
                 >
                   Annuler
                 </button>

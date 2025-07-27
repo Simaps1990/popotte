@@ -96,7 +96,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
       <div className="p-4 border rounded-lg bg-white shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-full ${isEnabled ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+            <div className={`p-2 rounded-full ${isEnabled ? 'bg-blue-100 text-blue-600' : 'bg-white border border-gray-200 text-gray-400'}`}>
               <BookOpen className="h-5 w-5" />
             </div>
             <div>

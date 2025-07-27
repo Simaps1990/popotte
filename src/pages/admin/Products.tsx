@@ -57,7 +57,7 @@ const Products = () => {
       <div className="flex items-center space-x-1">
         <button
           onClick={() => toggleProductAvailability(product)}
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
           title={product.is_available ? "Rendre indisponible" : "Rendre disponible"}
         >
           {product.is_available ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -65,7 +65,7 @@ const Products = () => {
         <button
           onClick={() => handleMoveProduct(product.id, 'up')}
           disabled={index === 0}
-          className={`p-2 rounded-lg transition-colors ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
+          className={`p-2 rounded-lg transition-colors ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-white'}`}
           title="Monter le produit"
         >
           <ChevronUp size={18} />
@@ -73,7 +73,7 @@ const Products = () => {
         <button
           onClick={() => handleMoveProduct(product.id, 'down')}
           disabled={index === productsInCategory.length - 1}
-          className={`p-2 rounded-lg transition-colors ${index === productsInCategory.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
+          className={`p-2 rounded-lg transition-colors ${index === productsInCategory.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-white'}`}
           title="Descendre le produit"
         >
           <ChevronDown size={18} />
@@ -83,7 +83,7 @@ const Products = () => {
             console.log('Clic sur le bouton modifier pour:', product.name, 'disponible:', product.is_available);
             handleEditProduct(product);
           }}
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
           title="Modifier le produit"
         >
           <PenSquare size={18} />
@@ -652,21 +652,21 @@ const Products = () => {
                           <div className="flex items-center space-x-1">
                             <button
                               onClick={() => handleMoveCategory(category.id, 'up')}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                               title="Monter la catégorie"
                             >
                               <ChevronUp size={18} />
                             </button>
                             <button
                               onClick={() => handleMoveCategory(category.id, 'down')}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                               title="Descendre la catégorie"
                             >
                               <ChevronDown size={18} />
                             </button>
                             <button
                               onClick={() => handleEditCategory(category)}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
                               title="Modifier la catégorie"
                             >
                               <PenSquare size={18} />
@@ -679,7 +679,7 @@ const Products = () => {
                               <Trash2 size={18} />
                             </button>
                           </div>
-                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                          <span className="px-2 py-1 text-xs bg-white border border-gray-200 text-gray-600 rounded-full">
                             {category.products.length} produit{category.products.length !== 1 ? 's' : ''}
                           </span>
                         </>

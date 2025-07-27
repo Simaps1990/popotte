@@ -316,24 +316,39 @@ const Users: React.FC = () => {
       if (success) {
         console.log(`✅ [updateUserRole] Synchronisation backend réussie`);
         
-        // 3. SYNCHRONISATION CONTEXTE AUTH - Si c'est l'utilisateur courant
-        if (currentUser && userId === currentUser.id) {
-          console.log(`🔄 [updateUserRole] Rafraîchissement du contexte auth pour l'utilisateur courant`);
-          try {
-            await refreshUserRole();
-            console.log(`✅ [updateUserRole] Contexte auth rafraîchi - accès admin mis à jour`);
-            
-            // Toast spécial pour l'utilisateur qui vient d'être promu
+        // 3. SYNCHRONISATION CONTEXTE AUTH - CRITIQUE : Forcer la propagation globale
+        console.log(`🔄 [updateUserRole] Rafraîchissement du contexte auth global`);
+        try {
+          // TOUJOURS rafraîchir le contexte auth, même si ce n'est pas l'utilisateur courant
+          // Cela garantit que tous les composants qui dépendent du statut admin sont mis à jour
+          const updatedAdminStatus = await refreshUserRole();
+          console.log(`✅ [updateUserRole] Contexte auth rafraîchi globalement - statut admin: ${updatedAdminStatus}`);
+          
+          // Toast spécial pour l'utilisateur qui vient d'être promu/rétrogradé
+          if (currentUser && userId === currentUser.id) {
             if (newRole === 'admin') {
               toast.success(
                 '🎉 Vous avez maintenant accès aux fonctions administrateur !',
                 { duration: 5000 }
               );
+            } else {
+              toast.success(
+                '📝 Votre statut a été mis à jour. Les menus admin ne sont plus accessibles.',
+                { duration: 4000 }
+              );
             }
-          } catch (authError) {
-            console.error('⚠️ [updateUserRole] Erreur lors du rafraîchissement du contexte auth:', authError);
           }
-        }
+          
+          // FORCER LA MISE À JOUR DE TOUS LES COMPOSANTS
+          // Déclencher un événement personnalisé pour notifier tous les composants
+          window.dispatchEvent(new CustomEvent('adminRoleChanged', {
+            detail: { userId, newRole, isCurrentUser: currentUser?.id === userId }
+          }));
+          console.log(`📢 [updateUserRole] Événement adminRoleChanged diffusé`);
+          
+        } catch (authError) {
+          console.error('⚠️ [updateUserRole] Erreur lors du rafraîchissement du contexte auth:', authError);
+        }  
         
         // 4. VÉRIFICATION FINALE - S'assurer que les données sont cohérentes
         console.log(`🔍 [updateUserRole] Vérification finale des données...`);
@@ -829,7 +844,7 @@ const Users: React.FC = () => {
   <button
     type="button"
     onClick={() => navigate('/parametres')}
-    className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-[#10182a] hover:bg-blue-50 hover:text-blue-700 transition-colors"
+    className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-[#10182a] hover:bg-white hover:text-blue-700 transition-colors"
   >
     <ArrowLeft className="h-6 w-6 mr-2" />
     <span className="font-semibold">Retour</span>
@@ -873,7 +888,7 @@ const Users: React.FC = () => {
                   filteredUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="card hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between"
+                      className="card hover:bg-white cursor-pointer transition-colors flex items-center justify-between"
                       onClick={() => handleSelectUser(user)}
                     >
                       <div className="flex items-center space-x-2">

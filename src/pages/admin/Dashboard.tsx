@@ -239,7 +239,7 @@ useEffect(() => {
           </button>
           <button 
             onClick={() => signOut()}
-            className="flex items-center justify-center p-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex items-center justify-center p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <LogOut className="mr-2" /> Se déconnecter
           </button>
