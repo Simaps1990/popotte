@@ -36,11 +36,11 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
   const isHeaderVisible = !window.location.pathname.startsWith('/auth');
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white" style={{ background: isHeaderVisible ? '#10182a' : '#fff' }}>
       {isHeaderVisible && (
-        <header className="site-header w-full flex justify-center items-center py-2 md:py-3" style={{ background: '#10182a' }}>
+        <header className="site-header w-full flex justify-center items-center pt-8 pb-2 md:pt-10 md:pb-3" style={{ background: '#10182a', marginTop: 0, borderTop: 'none', paddingTop: 32 }}>
           {/* Header bleu foncé avec logo centré */}
-          <img src="/logo.png" alt="Logo Popotte" className="h-20 md:h-24" style={{ maxHeight: 96 }} />
+          <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
         </header>
       )}
       <main className="w-full max-w-md mx-auto px-4 py-2 flex-grow pb-20">

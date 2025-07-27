@@ -74,21 +74,22 @@ export function BottomNavigation() {
               onClick={() => handleNavigationClick('/')}
             >
               <Home size={24} style={iconStyle(isActive('/'))} />
-              <span className="text-xs mt-1" style={textStyle(isActive('/'))}>Accueil</span>
+              <span className="text-xs mt-1" style={{display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}} style={textStyle(isActive('/'))}>Accueil</span>
             </Link>
             
             {/* Icône Connexion */}
-            <Link
-              to="/auth"
-              className="flex flex-col items-center p-2 rounded-lg transition-colors"
-              onClick={() => { 
-                console.log('Footer Connexion cliqué');
-                handleNavigationClick('/auth');
-              }}
-            >
-              <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
-              <span className="text-xs" style={textStyle(isActive('/auth'))}>Connexion</span>
-            </Link>
+            <div className="flex flex-col items-center p-2 rounded-lg transition-colors" style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}}>
+              <Link
+                to="/auth"
+                onClick={() => { 
+                  console.log('Footer Connexion cliqué');
+                  handleNavigationClick('/auth');
+                }}
+              >
+                <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
+                <span className="text-xs" style={{...textStyle(isActive('/auth')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Connexion</span>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -97,17 +98,18 @@ export function BottomNavigation() {
   
   // Footer normal pour les autres pages
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t-0">
+    <nav className="fixed bottom-0 left-0 right-0 border-t-0" style={{paddingBottom: 16}}>
       <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
         <div className="flex justify-around items-center w-full">
           {/* Icône Accueil (toujours visible) */}
           <Link
             to="/"
             className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+            style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
             onClick={() => handleNavigationClick('/')}
           >
             <Home size={24} style={iconStyle(isActive('/'))} />
-            <span className="text-xs mt-1" style={textStyle(isActive('/'))}>Accueil</span>
+            <span className="text-xs mt-1" style={{...textStyle(isActive('/')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Accueil</span>
           </Link>
           
           {/* Icônes visibles uniquement pour les utilisateurs connectés */}
@@ -115,10 +117,11 @@ export function BottomNavigation() {
             <Link
               to="/commande"
               className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+              style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
               onClick={() => handleNavigationClick('/commande')}
             >
               <ClipboardList size={24} style={iconStyle(isActive('/commande'))} />
-              <span className="text-xs mt-1" style={textStyle(isActive('/commande'))}>Commander</span>
+              <span className="text-xs mt-1" style={{...textStyle(isActive('/commande')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Commander</span>
             </Link>
           )}
           
@@ -127,19 +130,21 @@ export function BottomNavigation() {
               <Link
                 to="/dettes"
                 className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+                style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
                 onClick={() => handleNavigationClick('/dettes')}
               >
                 <CreditCard size={24} style={iconStyle(isActive('/dettes'))} />
-                <span className="text-xs mt-1" style={textStyle(isActive('/dettes'))}>Dettes</span>
+                <span className="text-xs mt-1" style={{...textStyle(isActive('/dettes')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Dettes</span>
               </Link>
               
               <Link
                 to="/parametres"
                 className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+                style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
                 onClick={() => handleNavigationClick('/parametres')}
               >
                 <Settings size={24} style={iconStyle(isActive('/parametres'))} />
-                <span className="text-xs mt-1" style={textStyle(isActive('/parametres'))}>Paramètres</span>
+                <span className="text-xs mt-1" style={{...textStyle(isActive('/parametres')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Paramètres</span>
               </Link>
             </>
           )}
@@ -148,18 +153,19 @@ export function BottomNavigation() {
           {!user && !isLoginPage && (
             <Link
               to="/auth"
-              className="flex flex-col items-center p-2 rounded-lg transition-colors"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
+              style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
               onClick={() => { 
                 console.log('Footer Connexion cliqué');
                 handleNavigationClick('/auth');
               }}
             >
               <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
-              <span className="text-xs" style={textStyle(isActive('/auth'))}>Connexion</span>
+              <span className="text-xs" style={{...textStyle(isActive('/auth')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Connexion</span>
             </Link>
           )}
+        </div>
       </div>
-    </div>
     </nav>
   )
 }

@@ -117,22 +117,8 @@ export function Home() {
   return (
     <div className="w-full min-h-screen pb-10">
       {/* En-tête avec l'image - Positionné en haut de la page sans marge */}
-      <div 
-        className="w-full" 
-        style={{
-          marginTop: '-16px', // Compense la marge du Layout
-          marginLeft: '-16px',
-          marginRight: '-16px',
-          width: 'calc(100% + 32px)',
-          height: '200px',
-          overflow: 'hidden',
-          position: 'relative'
-        }}
-      >
-
-      </div>
-
-      <div className="w-full py-2 pb-4 mt-0">
+      
+      <div className="w-full py-4 pb-4 mt-4">
         <div className="flex flex-col space-y-4">
           <h2 className="text-xl font-bold">Les nouveautés de la popotte</h2>
           
