@@ -195,10 +195,10 @@ const News = () => {
         <div className="max-w-3xl mx-auto py-8 px-4">
           {/* Header strictement identique à Products.tsx */}
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
+            <h1 className="text-2xl font-bold text-[#10182a] text-left">Gestion des actualités</h1>
             <button
               onClick={() => navigate(-1)}
-              className="p-2 rounded-full hover:bg-gray-100 ml-4"
+              className="p-2 rounded-full hover:bg-gray-100"
               title="Retour"
             >
               <ArrowLeft size={24} />
