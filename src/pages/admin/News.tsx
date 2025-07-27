@@ -208,7 +208,7 @@ const News = () => {
           <div className="mb-6">
             <button
               onClick={handleNewArticleClick}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
             >
               <Plus size={20} />
               <span>Nouvel article</span>
