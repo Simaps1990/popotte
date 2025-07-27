@@ -134,25 +134,24 @@ export function NewsList() {
 
   return (
     <div className="min-h-screen bg-white pb-16">
-      <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
+      <main className="container mx-auto px-4 py-6 max-w-md bg-white">
         {/* Ligne 1 : Titre à gauche, bouton retour à droite */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold text-[#10182a]">Gestion des actualités</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des actualités</h1>
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
+            className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft className="w-5 h-5" />
             <span>Retour</span>
           </button>
         </div>
-        {/* Ligne 2 : Bouton Nouvel article aligné à gauche */}
-        <div className="mb-8">
+        <div className="mb-6">
           <button
             className="btn-primary flex items-center space-x-2"
             onClick={handleAddPost}
           >
-            <Plus size={20} />
+            <Plus className="w-4 h-4" />
             <span>Nouvel article</span>
           </button>
         </div>

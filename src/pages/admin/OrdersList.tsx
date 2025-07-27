@@ -73,14 +73,14 @@ export function OrdersList() {
   const pendingOrders = orders.filter(order => order.status === 'pending');
 
   return (
-    <div className="min-h-screen bg-white pb-16">
-      <main className="container mx-auto px-4 py-6 max-w-md">
+    <div className="mb-6 min-h-screen bg-white pb-16">
+      <main className="container mx-auto px-4 py-6 max-w-md bg-white">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-[#10182a]">Paiements à vérifier</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Gestion des commandes</h1>
             <button 
               onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
+              className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
             >
               <ArrowLeft size={20} />
               <span>Retour</span>

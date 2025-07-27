@@ -136,19 +136,17 @@ const PaymentsToVerify: React.FC = () => {
   console.log("[ADMIN DEBUG] PaymentsToVerify RENDER");
   return (
     <div className="min-h-screen bg-white pb-16">
-  <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
-    <div className="mb-8">
-      <h1 className="text-2xl font-bold text-[#10182a] text-center">Paiements à vérifier</h1>
-    </div>
-    <div className="flex items-center justify-between mb-6">
-      <button
-        className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors rounded px-3 py-1 border border-[#10182a] bg-white"
-        onClick={() => window.history.back()}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
-        <span>Retour</span>
-      </button>
-    </div>
+      <main className="container mx-auto px-4 py-6 max-w-md bg-white">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Paiements à vérifier</h1>
+          <button
+            className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+            onClick={() => window.history.back()}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+            <span>Retour</span>
+          </button>
+        </div>
     <div className="space-y-6">
       <div className="flex justify-center">
         <div className="bg-white border border-orange-200 rounded-lg shadow-sm px-8 py-4 text-center">
