@@ -74,7 +74,7 @@ export function BottomNavigation() {
               onClick={() => handleNavigationClick('/')}
             >
               <Home size={24} style={iconStyle(isActive('/'))} />
-              <span className="text-xs mt-1" style={{display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}} style={textStyle(isActive('/'))}>Accueil</span>
+              <span className="text-xs mt-1" style={{...textStyle(isActive('/')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Accueil</span>
             </Link>
             
             {/* Icône Connexion */}
