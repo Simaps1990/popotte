@@ -43,7 +43,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { signOut, isAdmin } = useAuth();
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<{first_name: string; last_name: string; phone: string | null; username?: string} | null>(null);
+  const [profile, setProfile] = useState<{first_name: string; last_name: string; phone: string | null} | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'security'>('dashboard');
@@ -54,16 +54,14 @@ const Settings = () => {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    username: ''
+    phone: ''
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [saveStatus, setSaveStatus] = useState<{type: 'success' | 'error' | null, message: string}>({type: null, message: ''});
-  const [passwordStatus, setPasswordStatus] = useState<{type: 'success' | 'error' | null, message: string}>({type: null, message: ''});
+  const [saveStatus, setSaveStatus] = useState<{type: 'success' | 'error' | 'loading' | null, message: string}>({type: null, message: ''});
   
   // Référence pour éviter les rechargements multiples
   const refreshedRef = useRef(false);
@@ -82,8 +80,7 @@ const Settings = () => {
           firstName: profile.first_name || '',
           lastName: profile.last_name || '',
           email: user?.email || '',
-          phone: profile.phone || '',
-          username: profile.username || ''
+          phone: profile.phone || ''
         });
       }
     } catch (err) {
@@ -126,53 +123,6 @@ const Settings = () => {
     }));
   };
 
-  // Gestion des changements du formulaire mot de passe
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Gestion de la soumission du mot de passe
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordStatus({ type: 'error', message: 'Les nouveaux mots de passe ne correspondent pas' });
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      setPasswordStatus({ type: 'error', message: 'Le nouveau mot de passe doit contenir au moins 6 caractères' });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Mise à jour optimiste
-      setPasswordStatus({ type: 'success', message: 'Mot de passe mis à jour avec succès' });
-      
-      // Appel au service de changement de mot de passe
-      await changePasswordService(passwordData.currentPassword, passwordData.newPassword);
-      
-      // Réinitialiser le formulaire
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      
-    } catch (error) {
-      setPasswordStatus({ type: 'error', message: 'Erreur lors de la mise à jour du mot de passe' });
-      console.error('Erreur de mise à jour du mot de passe:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Gestion de la soumission du profil
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,8 +141,7 @@ const Settings = () => {
         setProfile({
           first_name: formData.firstName,
           last_name: formData.lastName,
-          phone: formData.phone,
-          username: formData.username
+          phone: formData.phone
         });
       }
       
@@ -200,8 +149,7 @@ const Settings = () => {
       const updatedProfile = await updateProfileService({
         first_name: formData.firstName,
         last_name: formData.lastName,
-        phone: formData.phone,
-        username: formData.username
+        phone: formData.phone
       });
       
       // Rafraîchir les données utilisateur
@@ -211,13 +159,47 @@ const Settings = () => {
         setProfile({
           first_name: refreshedProfile.first_name,
           last_name: refreshedProfile.last_name,
-          phone: refreshedProfile.phone,
-          username: refreshedProfile.username
+          phone: refreshedProfile.phone
         });
       }
     } catch (error) {
       setSaveStatus({ type: 'error', message: 'Erreur lors de la mise à jour du profil' });
       console.error('Erreur de mise à jour du profil:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gestion du changement de mot de passe
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setSaveStatus({ type: 'error', message: 'Les mots de passe ne correspondent pas' });
+      return;
+    }
+
+    // Sauvegarde des valeurs actuelles pour restauration en cas d'erreur
+    const previousPasswordData = { ...passwordData };
+    
+    try {
+      setLoading(true);
+      
+      // Mise à jour optimiste de l'interface utilisateur
+      setSaveStatus({ type: 'success', message: 'Mot de passe mis à jour avec succès' });
+      
+      // Réinitialiser le formulaire immédiatement pour une meilleure expérience utilisateur
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      // Appel au service de changement de mot de passe
+      await changePasswordService(previousPasswordData.currentPassword, previousPasswordData.newPassword);
+      
+    } catch (error) {
+      setSaveStatus({ type: 'error', message: 'Erreur lors du changement de mot de passe' });
+      console.error('Erreur:', error);
     } finally {
       setLoading(false);
     }
@@ -235,179 +217,16 @@ const Settings = () => {
 
           <div className="space-y-4">
         {/* Onglets : dashboard (par défaut) ou profil */}
-        {activeTab === 'profile' ? (
-          <div className="min-h-screen bg-white pb-16">
-            <div className="container mx-auto px-4 py-6 max-w-md">
-              <div className="space-y-6">
-                {/* Header avec titre et bouton retour */}
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold text-[#10182a]">Mon profil</h1>
-                  <button 
-                    onClick={() => setActiveTab('dashboard')}
-                    className="flex items-center space-x-2 text-[#10182a] hover:text-blue-700 transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 18l-6-6 6-6"/>
-                    </svg>
-                    <span>Retour</span>
-                  </button>
-                </div>
-                
-                <div className="space-y-6">
-                  {/* Section Informations personnelles */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h2 className="text-lg font-semibold text-[#10182a] mb-4">Informations personnelles</h2>
-                    
-                    <form onSubmit={handleProfileSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          disabled
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">L'email ne peut pas être modifié</p>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Pseudo</label>
-                        <input
-                          type="text"
-                          name="username"
-                          value={formData.username || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Votre nom d'utilisateur"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                        <input
-                          type="text"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                        <input
-                          type="text"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                        <input
-                          type="text"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      <div className="flex justify-end pt-4">
-                        <button 
-                          type="submit" 
-                          disabled={loading}
-                          className="px-4 py-2 bg-[#10182a] text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {loading ? 'Enregistrement...' : 'Enregistrer'}
-                        </button>
-                      </div>
-                      
-                      {saveStatus.type && (
-                        <div className={`p-3 rounded-md ${saveStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                          {saveStatus.message}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                  
-                  {/* Section Modification du mot de passe */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h2 className="text-lg font-semibold text-[#10182a] mb-4">Modifier le mot de passe</h2>
-                    
-                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel</label>
-                        <input
-                          type="password"
-                          name="currentPassword"
-                          value={passwordData.currentPassword}
-                          onChange={handlePasswordChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
-                        <input
-                          type="password"
-                          name="newPassword"
-                          value={passwordData.newPassword}
-                          onChange={handlePasswordChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
-                        <input
-                          type="password"
-                          name="confirmPassword"
-                          value={passwordData.confirmPassword}
-                          onChange={handlePasswordChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="flex justify-end pt-4">
-                        <button 
-                          type="submit" 
-                          disabled={loading}
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {loading ? 'Modification...' : 'Changer le mot de passe'}
-                        </button>
-                      </div>
-                      
-                      {passwordStatus.type && (
-                        <div className={`p-3 rounded-md ${passwordStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                          {passwordStatus.message}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Statistiques financières - visible uniquement pour les administrateurs */}
+        {isAdmin && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Statistiques financières</h2>
+            <DebtSummaryPanel className="mb-4" />
+            <PendingDebtSummaryPanel className="mb-4" />
           </div>
-        ) : (
-          <>
-            {/* Statistiques financières - visible uniquement pour les administrateurs */}
-            {isAdmin && (
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Statistiques financières</h2>
-                <DebtSummaryPanel className="mb-4" />
-                <PendingDebtSummaryPanel className="mb-4" />
-              </div>
-            )}
-            <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Gestion du site</h2>
-            <div className="grid grid-cols-1 gap-4">
+        )}
+        <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Gestion du site</h2>
+        <div className="grid grid-cols-1 gap-4">
               {/* Boutons d'administration - visibles uniquement pour les administrateurs */}
               {isAdmin && (
                 <>
@@ -481,7 +300,7 @@ const Settings = () => {
                 </>
               )}
               {/* Bouton Mon profil - visible pour tous les utilisateurs */}
-              <button type="button" onClick={() => setActiveTab('profile')} className="card hover:bg-white transition-colors cursor-pointer border-l-4 border-gray-500 text-left w-full block bg-white">
+              <button type="button" onClick={() => navigateTo('/profile')} className="card hover:bg-white transition-colors cursor-pointer border-l-4 border-gray-500 text-left w-full block bg-white">
                 <div className="flex items-center space-x-4 p-4">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center" style={{ border: '1px solid #10182a' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#10182a]">
@@ -514,8 +333,6 @@ const Settings = () => {
                 </div>
               </button>
             </div>
-          </>
-        )}
               {/* Boutons d'administration - visibles uniquement pour les administrateurs */}
               {isAdmin && (
                 <>
