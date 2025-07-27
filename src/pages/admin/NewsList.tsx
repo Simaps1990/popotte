@@ -132,7 +132,7 @@ export function NewsList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-md">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ export function NewsList() {
             <div className="space-y-4">
               {/* États de chargement et d'erreur */}
               {isLoading && (
-                <div className="text-center p-8 bg-gray-50 rounded-lg">
+                <div className="text-center p-8 bg-white rounded-lg">
                   <p className="text-gray-500">Chargement des articles...</p>
                 </div>
               )}
@@ -186,7 +186,7 @@ export function NewsList() {
               
               {/* Message lorsqu'il n'y a pas d'articles */}
               {!isLoading && !error && posts.length === 0 && (
-                <div className="text-center p-8 bg-gray-50 rounded-lg">
+                <div className="text-center p-8 bg-white rounded-lg">
                   <p className="text-gray-500">Aucun article disponible. Cliquez sur "Nouvel article" pour en créer un.</p>
                 </div>
               )}

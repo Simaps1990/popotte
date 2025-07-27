@@ -702,7 +702,7 @@ const DebtSection: React.FC<DebtSectionProps> = ({
     ? 'card border-l-4 border-orange-500 bg-orange-50'
     : debt.status === 'paid'
     ? 'card border-l-4 border-green-500 bg-green-50'
-    : 'card bg-gray-50 border-gray-200') + ' mb-4'
+    : 'card bg-white border-gray-200') + ' mb-4'
 }>
   {/* Affichage simplifié pour dettes impayées */}
 {debt.status === 'unpaid' && debt.order ? (
@@ -792,7 +792,7 @@ if (!user) {
 
 // Rendu principal du composant Dettes
 return (
-  <div className="min-h-screen bg-gray-50 pb-10">
+  <div className="min-h-screen bg-white pb-10">
     <main className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">
         Mes dettes

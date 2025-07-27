@@ -13,7 +13,7 @@ export function AdminLayout() {
         <Link
           to="/admin"
           className={`card text-center py-4 transition-colors ${
-            isActive('/admin') ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50'
+            isActive('/admin') ? 'bg-primary-50 border-primary-200' : 'hover:'
           }`}
         >
           <Users className="mx-auto mb-2 text-primary-500" size={24} />
@@ -23,7 +23,7 @@ export function AdminLayout() {
         <Link
           to="/admin/orders"
           className={`card text-center py-4 transition-colors ${
-            isActive('/admin/orders') ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50'
+            isActive('/admin/orders') ? 'bg-primary-50 border-primary-200' : 'hover:'
           }`}
         >
           <CreditCard className="mx-auto mb-2 text-primary-500" size={24} />
@@ -33,7 +33,7 @@ export function AdminLayout() {
         <Link
           to="/admin/news"
           className={`card text-center py-4 transition-colors ${
-            isActive('/admin/news') ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50'
+            isActive('/admin/news') ? 'bg-primary-50 border-primary-200' : 'hover:'
           }`}
         >
           <FileText className="mx-auto mb-2 text-primary-500" size={24} />
@@ -43,7 +43,7 @@ export function AdminLayout() {
         <Link
           to="/admin/products"
           className={`card text-center py-4 transition-colors ${
-            isActive('/admin/products') ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50'
+            isActive('/admin/products') ? 'bg-primary-50 border-primary-200' : 'hover:'
           }`}
         >
           <Package className="mx-auto mb-2 text-primary-500" size={24} />
@@ -53,7 +53,7 @@ export function AdminLayout() {
         <Link
           to="/admin/profile"
           className={`card text-center py-4 transition-colors ${
-            isActive('/admin/profile') ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50'
+            isActive('/admin/profile') ? 'bg-primary-50 border-primary-200' : 'hover:'
           }`}
         >
           <User className="mx-auto mb-2 text-primary-500" size={24} />

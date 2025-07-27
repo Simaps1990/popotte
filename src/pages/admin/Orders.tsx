@@ -122,8 +122,8 @@ export function Orders() {
       case 'pending': return 'border-red-500 bg-red-50'
       case 'payment_notified': return 'border-orange-500 bg-orange-50'
       case 'confirmed': return 'border-green-500 bg-green-50'
-      case 'cancelled': return 'border-gray-500 bg-gray-50'
-      default: return 'border-gray-500 bg-gray-50'
+      case 'cancelled': return 'border-gray-500 bg-white '
+      default: return 'border-gray-500 bg-white '
     }
   }
 

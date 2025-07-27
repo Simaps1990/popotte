@@ -188,13 +188,13 @@ export function OrderDetail() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handlePrint}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Printer className="w-4 h-4 mr-2" /> Imprimer
           </button>
           <button
             onClick={handleSendEmail}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Mail className="w-4 h-4 mr-2" /> Envoyer par email
           </button>
@@ -264,7 +264,7 @@ export function OrderDetail() {
         <div className="border-t border-gray-200">
           <dl>
             {/* Informations client */}
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <div className=" bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Client</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                 <div className="flex items-center">
@@ -278,7 +278,7 @@ export function OrderDetail() {
             </div>
 
             {/* Adresse de livraison */}
-            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <div className="bg-white bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Adresse de livraison</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                 <div className="flex items-start">
@@ -293,7 +293,7 @@ export function OrderDetail() {
             </div>
 
             {/* Méthode de paiement */}
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <div className=" bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Paiement</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                 <div className="flex items-center">
@@ -305,7 +305,7 @@ export function OrderDetail() {
 
             {/* Notes */}
             {order.notes && (
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <div className="bg-white bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Notes</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   <p className="italic">{order.notes}</p>
@@ -314,7 +314,7 @@ export function OrderDetail() {
             )}
 
             {/* Articles commandés */}
-            <div className="bg-gray-50 px-4 py-5 sm:px-6">
+            <div className=" bg-white px-4 py-5 sm:px-6">
               <h4 className="text-sm font-medium text-gray-500 mb-4">ARTICLES COMMANDÉS</h4>
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -366,7 +366,7 @@ export function OrderDetail() {
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-gray-50">
+                  <tfoot className="bg-white">
                     <tr>
                       <th colSpan={3} className="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
                         Sous-total

@@ -262,7 +262,7 @@ export function Commande() {
                         
                         return (
                           <div key={variant.name} className={`flex items-center justify-between p-3 border rounded-lg ${
-                            isOutOfStock ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                            isOutOfStock ? ' border-gray-200' : 'border-gray-300'
                           }`}>
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">

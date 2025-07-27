@@ -102,7 +102,7 @@ export default function DebtsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-white p-4 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Chargement de vos dettes...</p>
@@ -113,7 +113,7 @@ export default function DebtsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-white p-4 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
           <h2 className="text-xl font-semibold text-gray-800">Une erreur est survenue</h2>
@@ -130,7 +130,7 @@ export default function DebtsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-white pb-16">
       <main className="container mx-auto px-4 py-6 max-w-md">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
