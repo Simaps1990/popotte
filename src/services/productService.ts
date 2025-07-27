@@ -100,8 +100,6 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
   try {
     await supabaseClient.rpc('begin');
     
-
-    
     // Création du produit de base
     const { data: product, error: productError } = await supabaseClient
       .from('products')
@@ -261,33 +259,21 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
       updateData.description = currentProduct.description ?? '';
       updateData.image_url = currentProduct.image_url ?? '';
       updateData.display_order = currentProduct.display_order;
-      console.log('PATCH spécial stock_quantity=0, payload complet:', updateData);
     }
 
     if (Object.keys(updateData).length === 1) { // juste updated_at
-      console.log('Aucune modification réelle détectée, retour du produit courant sans patch.');
       const fullProduct = await fetchProductWithRelations(id);
       if (!fullProduct) throw new Error('Produit non trouvé');
       return fullProduct;
     }
     
-    console.log('Données de mise à jour:', updateData);
-    
     // Mettre à jour le produit
-    console.log('Envoi de la requête de mise à jour...');
     const { data: product, error: productError } = await supabase
       .from('products')
       .update(updateData)
       .eq('id', id)
       .select('*')
       .maybeSingle();
-      
-    console.log('Réponse de la mise à jour du produit:', { 
-      data: product, 
-      error: productError,
-      status: productError?.code,
-      message: productError?.message
-    });
     
     if (productError) {
       console.error('❌ Erreur lors de la mise à jour du produit:', productError);
@@ -298,11 +284,8 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
       throw new Error('Produit non trouvé après mise à jour');
     }
     
-    console.log('✅ Produit mis à jour avec succès');
-    
     // Si le stock est activé et qu'il y a des variantes, les créer
     if (updates.stock_enabled && stock_variants && stock_variants.length > 0) {
-      console.log('Mise à jour des variantes de stock...');
       // Supprimer les anciennes variantes
       const { error: deleteError } = await supabase
         .from('product_stock_variants')
@@ -322,8 +305,6 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
         price_adjustment: variant.price_adjustment || 0
       }));
       
-      console.log('Insertion des nouvelles variantes:', variantsToInsert);
-      
       const { error: variantsError } = await supabase
         .from('product_stock_variants')
         .insert(variantsToInsert);
@@ -332,18 +313,14 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
         console.error('❌ Erreur lors de l\'insertion des nouvelles variantes:', variantsError);
         throw variantsError;
       }
-      
-      console.log('✅ Variantes de stock mises à jour avec succès');
     }
     
     // Récupérer le produit avec toutes ses relations
     const fullProduct = await fetchProductWithRelations(id);
     if (!fullProduct) {
-      console.error('❌ Échec de la récupération du produit mis à jour');
       throw new Error('Échec de la récupération du produit mis à jour');
     }
     
-    console.log('✅ Produit mis à jour avec succès avec ses relations:', fullProduct);
     return fullProduct;
   } catch (error) {
     console.error(`❌ Erreur lors de la mise à jour du produit ${id}:`, error);
@@ -356,8 +333,6 @@ export const deleteProduct = async (id: string): Promise<void> => {
   
   try {
     await supabaseClient.rpc('begin');
-    
-    console.log(`🗑️ Suppression du produit ${id}...`);
     
     // Supprimer d'abord les variantes de stock
     const { error: variantsError } = await supabaseClient
@@ -376,8 +351,6 @@ export const deleteProduct = async (id: string): Promise<void> => {
     if (productError) throw productError;
     
     await supabaseClient.rpc('commit');
-    
-    console.log('✅ Produit et ses variantes supprimés avec succès');
   } catch (error) {
     await supabaseClient.rpc('rollback');
     console.error(`❌ Erreur lors de la suppression du produit ${id}:`, error);
