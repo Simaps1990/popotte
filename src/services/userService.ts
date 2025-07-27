@@ -59,11 +59,8 @@ export const userService = {
       }
 
       if (!users || users.length === 0) {
-        console.log('Aucun utilisateur trouvé');
         return [];
       }
-
-      console.log(`${users.length} utilisateurs récupérés de la base de données`);
 
       // Filtrage côté client moins restrictif
       const activeUsers = users.filter((user: UserProfile) => {
@@ -73,8 +70,6 @@ export const userService = {
                !(user.username?.toUpperCase().includes('SUPPRIME_')) && 
                !(user.email?.toLowerCase().includes('supprime_'));
       });
-
-      console.log(`${activeUsers.length} utilisateurs actifs après filtrage`);
 
       // 2. Récupérer les dettes impayées en parallèle
       const [debtsResult] = await Promise.all([
@@ -90,8 +85,6 @@ export const userService = {
         console.error('Erreur lors de la récupération des dettes:', debtsError);
         return activeUsers.map((user: UserProfile) => ({ ...user, debt: 0 }));
       }
-      
-      console.log(`${allDebts?.length || 0} dettes impayées récupérées`);
       
       // 3. Calculer les soldes de dettes par utilisateur (optimisé)
       const debtsByUser = new Map<string, number>();
@@ -140,7 +133,7 @@ export const userService = {
       if (!user.username || !user.email) return null;
       
       if (user.username.includes('SUPPRIME_') || user.email.includes('supprime_')) {
-        console.log(`Utilisateur ${userId} a été supprimé (marqueurs dans username/email), retourne null`);
+
         return null;
       }
 
@@ -192,7 +185,7 @@ export const userService = {
   // Mettre à jour le rôle d'un utilisateur de manière atomique (profil + app_metadata.roles Supabase)
   async updateUserRole(userId: string, role: 'admin' | 'user'): Promise<boolean> {
     try {
-      console.log(`🚀 [updateUserRole] Début mise à jour rôle '${role}' pour utilisateur ${userId}`);
+
       
       // Utiliser la fonction RPC côté serveur pour une mise à jour atomique
       const { data: result, error: rpcError } = await supabase
@@ -211,19 +204,10 @@ export const userService = {
         return false;
       }
 
-      console.log('✅ [updateUserRole] Mise à jour atomique réussie:', {
-        userId: result.user_id,
-        newRole: result.new_role,
-        profileUpdated: result.profile_updated,
-        metadataUpdated: result.metadata_updated,
-        roles: result.roles,
-        timestamp: result.timestamp
-      });
-
       // Attendre un court délai pour la propagation
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      console.log(`✅ [updateUserRole] Rôle '${role}' synchronisé avec succès pour user ${userId}`);
+
       return true;
       
     } catch (error) {
@@ -287,7 +271,7 @@ export const userService = {
         return null;
       }
 
-      console.log('Dette ajoutée avec succès:', data);
+
 
       // Convertir la réponse au format UserDebt
       return {
@@ -433,7 +417,6 @@ export const userService = {
   // S'abonner aux mises à jour des dettes d'un utilisateur
   subscribeToUserDebts(userId: string, callback: (payload: any) => void): () => void {
     try {
-      console.log(` Abonnement aux mises à jour des dettes pour l'utilisateur ${userId} (userService)`);
       
       const subscription = supabase
         .channel('custom-user-debts-channel')
@@ -447,20 +430,18 @@ export const userService = {
           },
           (payload: any) => {
             try {
-              console.log(' Mise à jour de dette reçue dans userService:', payload);
+
               callback(payload);
             } catch (error) {
               console.error('Erreur dans le callback de subscribeToUserDebts:', error);
             }
           }
         )
-        .subscribe((status: string) => {
-          console.log(`Statut de l'abonnement aux dettes (userService): ${status}`);
-        });
+        .subscribe();
 
       return () => {
         try {
-          console.log(' Désabonnement des mises à jour des dettes (userService)');
+
           subscription.unsubscribe();
         } catch (error) {
           console.error('Erreur lors de la désinscription de subscribeToUserDebts:', error);
@@ -474,7 +455,7 @@ export const userService = {
 
   // Supprimer un compte utilisateur
   async deleteUser(userId: string): Promise<boolean> {
-    console.log(`===== DÉBUT SUPPRESSION UTILISATEUR ${userId} =====`);
+
     try {
       // 0. Vérifier si l'utilisateur existe
       const { data: userCheck, error: userCheckError } = await supabase
@@ -494,7 +475,7 @@ export const userService = {
         return false;
       }
       
-      console.log(`Utilisateur trouvé: ID=${userCheck.id}, Username=${userCheck.username}, Email=${userCheck.email}, Role=${userCheck.role || 'non défini'}`);
+
       
       // 1. Gérer les dettes de l'utilisateur
       try {
@@ -509,7 +490,7 @@ export const userService = {
           console.error('Erreur lors de la mise à jour des dettes:', debtsUpdateError);
           // On continue malgré cette erreur
         } else {
-          console.log(`Dettes marquées comme payées avec succès: ${debtsData?.length || 0} dettes mises à jour`);
+
         }
       } catch (err) {
         console.warn('Erreur lors de la gestion des dettes:', err);
@@ -523,7 +504,7 @@ export const userService = {
           .select('id', { count: 'exact' })
           .eq('user_id', userId);
           
-        console.log(`Nombre de commandes à supprimer: ${orderCount || 0}`);
+
         
         // Ensuite supprimer
         const { error: ordersError } = await supabase
@@ -534,14 +515,14 @@ export const userService = {
         if (ordersError) {
           console.error('Erreur lors de la suppression des commandes:', ordersError);
         } else {
-          console.log(`Commandes supprimées avec succès: ${orderCount || 0} commandes`);
+
         }
       } catch (err) {
         console.warn('Erreur lors de la tentative de suppression des commandes:', err);
       }
 
       // 3. Tenter directement la suppression physique (plus fiable)
-      console.log('Tentative de suppression physique du profil utilisateur');
+
       try {
         // Vérifier d'abord s'il existe des contraintes FK qui empêcheraient la suppression
         const { count: relatedDebts } = await supabase
@@ -605,7 +586,7 @@ export const userService = {
               .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur
             
             if (checkUser) {
-              console.warn('ATTENTION: L\'utilisateur existe toujours après suppression!');
+
               return false;
             } else {
 
@@ -628,10 +609,8 @@ export const userService = {
 
             if (!checkUser.username.includes('SUPPRIME_') || 
                 !checkUser.email.includes('supprime_')) {
-              console.warn('ATTENTION: La mise à jour ne semble pas avoir été correctement appliquée!');
               return false;
             } else {
-
               return true;
             }
           }
@@ -645,8 +624,6 @@ export const userService = {
     } catch (err) {
       console.error('Erreur globale lors de la suppression:', err);
       return false;
-    } finally {
-      console.log(`===== FIN SUPPRESSION UTILISATEUR ${userId} =====`);
     }
   }
 };

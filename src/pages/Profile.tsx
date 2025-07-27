@@ -18,7 +18,6 @@ export function Profile() {
   // Mettre à jour les états locaux quand le profil change
   useEffect(() => {
     if (profile) {
-      console.log('Mise à jour des états locaux avec le profil:', profile)
       setFirstName(profile.first_name || '')
       setLastName(profile.last_name || '')
       setUsername(profile.username || '')
@@ -51,8 +50,6 @@ export function Profile() {
     // Mise à jour optimiste de l'interface utilisateur
     setProfileMessage('Informations mises à jour avec succès !')
     
-    console.log('Soumission du profil avec les données:', { firstName, lastName, username })
-
     try {
       // Créer un objet avec les données du profil à mettre à jour
       const profileData = { 
@@ -62,7 +59,6 @@ export function Profile() {
       }
       
       // Appeler la fonction de mise à jour du profil
-      console.log('Appel de updateProfile avec:', profileData)
       const result = await updateProfile(profileData)
       
       // Vérifier si la mise à jour a réussi
@@ -70,7 +66,7 @@ export function Profile() {
         throw result.error
       }
       
-      console.log('Mise à jour réussie, profil mis à jour')
+
       
       // Désactiver le chargement après un court délai pour que l'utilisateur voie le message de succès
       setTimeout(() => {

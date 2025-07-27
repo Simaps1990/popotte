@@ -48,9 +48,6 @@ export const debtService = {
   // Récupérer le total global de toutes les dettes en cours de tous les utilisateurs
   async getGlobalDebtSummary(): Promise<{ totalUnpaid: number; totalPending: number; totalPaid: number }> {
     try {
-      console.log('🔍 [getGlobalDebtSummary] === DÉBUT DIAGNOSTIC COMPLET ===');
-      console.log('🔍 [getGlobalDebtSummary] Timestamp:', new Date().toISOString());
-      
       // Récupérer toutes les dettes de tous les utilisateurs avec plus de détails
       const { data: allDebts, error } = await supabase
         .from('debts')
@@ -58,16 +55,8 @@ export const debtService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ [getGlobalDebtSummary] Erreur Supabase:', error);
         throw error;
       }
-
-      console.log('📊 [getGlobalDebtSummary] TOTAL dettes récupérées:', allDebts?.length || 0);
-      
-      // Afficher chaque dette individuellement
-      allDebts?.forEach((debt: any, index: number) => {
-        console.log(`📋 [${index + 1}] ID: ${debt.id}, Montant: ${debt.amount}€, Statut: '${debt.status}', User: ${debt.user_id}, Description: '${debt.description}'`);
-      });
 
       const summary = {
         totalUnpaid: 0,
@@ -86,28 +75,17 @@ export const debtService = {
         if (debt.status === 'unpaid') {
           summary.totalUnpaid += amount;
           unpaidCount++;
-          console.log(`💰 [UNPAID] +${amount}€ (total unpaid: ${summary.totalUnpaid}€)`);
         } else if (debt.status === 'payment_pending') {
           summary.totalPending += amount;
           pendingCount++;
-          console.log(`⏳ [PENDING] +${amount}€ (total pending: ${summary.totalPending}€)`);
         } else if (debt.status === 'paid') {
           summary.totalPaid += amount;
           paidCount++;
-          console.log(`✅ [PAID] +${amount}€ (total paid: ${summary.totalPaid}€)`);
-        } else {
-          console.warn(`⚠️ [UNKNOWN STATUS] Dette avec statut inconnu: '${debt.status}', montant: ${amount}€`);
         }
       });
 
-      console.log('📊 [getGlobalDebtSummary] === RÉSUMÉ FINAL ===');
-      console.log(`💰 UNPAID: ${unpaidCount} dettes = ${summary.totalUnpaid.toFixed(2)}€`);
-      console.log(`⏳ PENDING: ${pendingCount} dettes = ${summary.totalPending.toFixed(2)}€`);
-      console.log(`✅ PAID: ${paidCount} dettes = ${summary.totalPaid.toFixed(2)}€`);
-      console.log('📊 [getGlobalDebtSummary] === FIN DIAGNOSTIC ===');
-      console.log('📊 [getGlobalDebtSummary] === DÉTAILS DE LA RÉPONSE ===');
-      console.log('📊 [getGlobalDebtSummary] Réponse complète:', JSON.stringify(summary, null, 2));
-      console.log('📊 [getGlobalDebtSummary] === FIN DÉTAILS ===');
+
+
       return summary;
     } catch (error) {
       console.error('❌ [getGlobalDebtSummary] Erreur complète:', error);
@@ -257,7 +235,6 @@ export const debtService = {
    * @returns Fonction pour se désabonner
    */
   subscribeToDebtUpdates(userId: string, callback: (payload: any) => void) {
-    console.log(`🔔 Abonnement aux mises à jour des dettes pour l'utilisateur ${userId}`);
     
     const subscription = supabase
       .channel('debts_changes')
@@ -269,16 +246,14 @@ export const debtService = {
           filter: `user_id=eq.${userId}`
         }, 
         (payload: any) => {
-          console.log('📡 Mise à jour de dette reçue:', payload);
+
           callback(payload);
         }
       )
-      .subscribe((status: string) => {
-        console.log(`Statut de l'abonnement aux dettes: ${status}`);
-      });
+      .subscribe();
 
     return () => {
-      console.log('🔕 Désabonnement des mises à jour des dettes');
+
       subscription.unsubscribe();
     };
   },
@@ -324,7 +299,7 @@ export const debtService = {
         return false;
       }
       
-      console.log('Dette supprimée avec succès:', debtId);
+
       return true;
     } catch (error) {
       console.error('Erreur inattendue lors de la suppression de la dette:', error);

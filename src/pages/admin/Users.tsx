@@ -40,12 +40,9 @@ const Users: React.FC = () => {
       // Vider la liste actuelle pour éviter les problèmes de mise à jour
       setUsers([]);
       
-      console.log('Récupération de tous les utilisateurs...');
       const users = await userService.getAllUsers();
-      console.log('Utilisateurs récupérés:', users.length);
       
       if (users.length === 0) {
-        console.warn('Aucun utilisateur récupéré, vérifiez la fonction getAllUsers');
         setError('Aucun utilisateur trouvé. Veuillez réessayer ou contacter le support.');
         return;
       }
@@ -54,8 +51,6 @@ const Users: React.FC = () => {
       const filteredUsers = excludeUserId 
         ? users.filter(user => user.id !== excludeUserId)
         : users;
-      
-      console.log(`Utilisateurs après filtrage: ${filteredUsers.length} ${excludeUserId ? `(exclusion de ${excludeUserId})` : ''}`);
       
       // Optimisation : traitement par lots pour éviter de surcharger l'API
       const batchSize = 10;
@@ -310,19 +305,14 @@ const Users: React.FC = () => {
       );
       
       // 2. MISE À JOUR BACKEND - Synchronisation avec la base de données
-      console.log(`🔄 [updateUserRole] Synchronisation backend en cours...`);
       const success = await userService.updateUserRole(userId, newRole);
       
       if (success) {
-        console.log(`✅ [updateUserRole] Synchronisation backend réussie`);
-        
         // 3. SYNCHRONISATION CONTEXTE AUTH - CRITIQUE : Forcer la propagation globale
-        console.log(`🔄 [updateUserRole] Rafraîchissement du contexte auth global`);
         try {
           // TOUJOURS rafraîchir le contexte auth, même si ce n'est pas l'utilisateur courant
           // Cela garantit que tous les composants qui dépendent du statut admin sont mis à jour
           const updatedAdminStatus = await refreshUserRole();
-          console.log(`✅ [updateUserRole] Contexte auth rafraîchi globalement - statut admin: ${updatedAdminStatus}`);
           
           // Toast spécial pour l'utilisateur qui vient d'être promu/rétrogradé
           if (currentUser && userId === currentUser.id) {
@@ -344,26 +334,19 @@ const Users: React.FC = () => {
           window.dispatchEvent(new CustomEvent('adminRoleChanged', {
             detail: { userId, newRole, isCurrentUser: currentUser?.id === userId }
           }));
-          console.log(`📢 [updateUserRole] Événement adminRoleChanged diffusé`);
           
         } catch (authError) {
           console.error('⚠️ [updateUserRole] Erreur lors du rafraîchissement du contexte auth:', authError);
-        }  
-        
+        }
         // 4. VÉRIFICATION FINALE - S'assurer que les données sont cohérentes
-        console.log(`🔍 [updateUserRole] Vérification finale des données...`);
-        
         // Recharger les détails de l'utilisateur pour vérification
         if (selectedUser && selectedUser.id === userId) {
           try {
             await fetchUserDetails(userId);
-            console.log(`✅ [updateUserRole] Détails utilisateur rechargés et vérifiés`);
           } catch (detailsError) {
             console.warn('⚠️ [updateUserRole] Erreur lors du rechargement des détails:', detailsError);
           }
         }
-        
-        console.log(`🎉 [updateUserRole] Promotion ${newRole} terminée avec succès pour ${targetUser?.username}`);
         
       } else {
         // ROLLBACK en cas d'erreur backend

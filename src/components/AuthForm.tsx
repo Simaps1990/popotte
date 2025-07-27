@@ -42,13 +42,11 @@ export function AuthForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Soumission du formulaire en cours...')
     setError('')
     setCaptchaError('')
     setLoading(true)
 
     try {
-      console.log('Mode:', mode)
       
       // Vérifications de base
       if (!email || !password) {
@@ -71,7 +69,7 @@ export function AuthForm() {
       if (mode === 'signup') {
         const expectedAnswer = captchaNum1 + captchaNum2
         const userAnswer = parseInt(captchaAnswer)
-        console.log('Vérification CAPTCHA:', { expectedAnswer, userAnswer })
+
         
         if (isNaN(userAnswer) || userAnswer !== expectedAnswer) {
           setCaptchaError('Réponse incorrecte, veuillez réessayer')
@@ -83,52 +81,22 @@ export function AuthForm() {
 
       if (mode === 'login') {
         try {
-          console.log('🚀 === DÉBUT PROCESSUS DE CONNEXION AVEC LOGGING EXTENSIF ===')
-          console.log('📧 Email:', email)
-          console.log('🔐 Password présent:', !!password)
-          console.log('⏰ Timestamp:', new Date().toISOString())
-          
-          // Vérifier l'état avant connexion
-          console.log('🔍 État avant connexion:')
-          console.log('  - URL actuelle:', window.location.href)
-          console.log('  - User agent:', navigator.userAgent)
-          console.log('  - Local storage keys:', Object.keys(localStorage))
-          
-          console.log('🔑 Appel de signIn...')
           const startTime = Date.now()
           
           // TIMEOUT D'URGENCE - REDIRECTION FORCÉE SI SIGNIN BLOQUE
-          console.log('🚑 Démarrage timeout d\'urgence de 5s pour redirection forcée')
           const emergencyRedirect = setTimeout(() => {
-            console.log('🚨 TIMEOUT SIGNIN - REDIRECTION D\'URGENCE ACTIVÉE !')
-            console.log('🚨 signIn bloqué depuis 5s, redirection brutale...')
-            
             // REDIRECTION BRUTALE IMMÉDIATE SANS VÉRIFICATION
-            console.log('🔥 REDIRECTION INCONDITIONNELLE - AUCUNE VÉRIFICATION !')
-            console.log('🔥 window.location.href = "/" FORCÉ !')
-            
-            // Méthode 1: Redirection immédiate
             window.location.href = '/'
             
             // Méthode 2: Redirection de sécurité après 100ms
             setTimeout(() => {
-              console.log('🔥 REDIRECTION SÉCURITÉ #2: window.location.replace("/")')
               window.location.replace('/')
             }, 100)
             
             // Méthode 3: Redirection de sécurité après 500ms
             setTimeout(() => {
-              console.log('🔥 REDIRECTION SÉCURITÉ #3: window.location.assign("/")')
-              window.location.assign('/')
+              navigate('/', { replace: true })
             }, 500)
-            
-            // Méthode 4: Redirection ultime après 1s
-            setTimeout(() => {
-              console.log('🔥 REDIRECTION ULTIME: document.location = "/"')
-              document.location.href = '/'
-            }, 1000)
-            
-            console.log('🔥 TOUTES LES MÉTHODES DE REDIRECTION LANCÉES !')
           }, 5000)
           
           let signInResult
@@ -143,20 +111,6 @@ export function AuthForm() {
           const { user, error } = signInResult
           const endTime = Date.now()
           
-          console.log(`⏱️ signIn terminé en ${endTime - startTime}ms`)
-          console.log('📊 Résultat signIn:', {
-            user: user ? {
-              id: user.id,
-              email: user.email,
-              role: user.role
-            } : null,
-            error: error ? {
-              message: error.message,
-              status: (error as any).status || 'N/A',
-              statusText: (error as any).statusText || 'N/A'
-            } : null
-          })
-          
           if (error) {
             console.error('❌ ERREUR DE CONNEXION DÉTECTÉE:')
             console.error('  - Message:', error.message)
@@ -170,63 +124,27 @@ export function AuthForm() {
             throw new Error('Aucun utilisateur retourné par signIn')
           }
           
-          console.log('✅ CONNEXION RÉUSSIE - ANALYSE DE L\'UTILISATEUR:')
-          console.log('  - ID utilisateur:', user.id)
-          console.log('  - Email:', user.email)
-          console.log('  - Rôle:', user.role)
-          console.log('  - Métadonnées:', user.user_metadata)
-          
-          // Vérifier l'état de la session
-          console.log('🔍 Vérification session après connexion...')
-          const { data: sessionData } = await supabase.auth.getSession()
-          console.log('📊 Session actuelle:', {
-            session: sessionData.session ? {
-              user_id: sessionData.session.user.id,
-              expires_at: sessionData.session.expires_at,
-              access_token: sessionData.session.access_token ? 'présent' : 'absent'
-            } : null
-          })
-          
           setError('✅ Connexion réussie! Redirection en cours...')
           
-          console.log('🔄 === DÉBUT PROCESSUS DE REDIRECTION ===')
-          console.log('  - État loading avant redirection:', loading)
-          console.log('  - URL cible: /')
-          
           // Attendre un court délai pour que la session se stabilise
-          console.log('⏳ Attente 500ms pour stabilisation session...')
           await new Promise(resolve => setTimeout(resolve, 500))
           
           // Vérifier à nouveau la session
-          const { data: sessionData2 } = await supabase.auth.getSession()
-          console.log('📊 Session après attente:', {
-            session: sessionData2.session ? 'active' : 'inactive',
-            user_id: sessionData2.session?.user?.id
-          })
+          const { data: finalSessionCheck } = await supabase.auth.getSession()
           
-          console.log('🚀 REDIRECTION MULTIPLE POUR GARANTIR LE SUCCÈS:')
-          
-          // Méthode 1: React Router navigate
-          console.log('  1. Tentative navigate("/")')
-          navigate('/')
+          navigate('/', { replace: true })
           
           // Méthode 2: window.location.href (après délai)
-          console.log('  2. Programmation window.location.href après 100ms')
           setTimeout(() => {
-            console.log('  2. Exécution window.location.href = "/"')
             window.location.href = '/'
           }, 100)
           
           // Méthode 3: window.location.replace (après délai plus long)
-          console.log('  3. Programmation window.location.replace après 200ms')
           setTimeout(() => {
-            console.log('  3. Exécution window.location.replace("/")')
             window.location.replace('/')
-          }, 200)
+          }, 500)
           
           // MÉTHODE 4: REDIRECTION BRUTALE IMMÉDIATE (NOUVEAU)
-          console.log('  4. 🔥 REDIRECTION BRUTALE IMMÉDIATE - AUCUNE ÉCHAPPATOIRE !')
-          console.log('  4. 🔥 Current pathname:', window.location.pathname)
           
           // Forcer immédiatement
           if (window.location.pathname === '/auth') {
@@ -268,7 +186,7 @@ export function AuthForm() {
           throw loginError
         }
       } else {
-        console.log('Tentative d\'inscription...')
+
         const { user, error } = await signUp({ 
           email, 
           password, 
@@ -282,15 +200,13 @@ export function AuthForm() {
           throw error
         }
         
-        console.log('Inscription réussie, utilisateur:', user)
+
         setError('Connexion réussie! Redirection en cours...')
         
         // Attendre un peu pour que la session soit bien établie
-        console.log('Attente de 1 seconde pour stabiliser la session...')
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         // SOLUTION RADICALE: Forcer le rechargement de la page
-        console.log('🔄 Redirection forcée avec rechargement...')
         window.location.href = '/'
       }
     } catch (error) {

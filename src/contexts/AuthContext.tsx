@@ -37,10 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isUserAdmin, setIsUserAdmin] = useState(false)
 
   const updateUserData = async (user: any) => {
-    console.log('🔄 Mise à jour des données utilisateur pour:', user?.email || 'inconnu')
-    
     if (!user) {
-      console.log('❌ Aucun utilisateur fourni, réinitialisation de l\'état')
       setUser(null)
       setProfile(null)
       setIsUserAdmin(false)
@@ -52,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true)
       
       // Récupérer les données utilisateur en parallèle
-      console.log('🔍 Récupération des données utilisateur...')
       const [userWithProfile, adminStatus] = await Promise.all([
         getCurrentUser(),
         isAdmin(user.id)
@@ -62,25 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let detectedAdmin = adminStatus;
       if (userWithProfile?.profile?.role === 'admin') {
         detectedAdmin = true;
-        console.log('🟦 Statut admin détecté via profile.role');
       }
       if (userWithProfile) {
-        console.log('👤 Données du profil récupérées:', userWithProfile)
         setUser(userWithProfile)
         setProfile(userWithProfile.profile || null)
-      } else {
-        console.log('⚠️ Aucune donnée de profil trouvée')
       }
       
-      console.log('🔑 Statut administrateur:', detectedAdmin ? 'OUI' : 'NON')
       setIsUserAdmin(detectedAdmin)
-      
-      console.log('✅ Données utilisateur mises à jour', { 
-        userId: user.id,
-        email: user.email,
-        isAdmin: detectedAdmin,
-        hasProfile: !!userWithProfile
-      })
     } catch (error) {
       console.error('Erreur lors de la mise à jour des données utilisateur:', error)
     } finally {
@@ -91,14 +75,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
     
-    console.log('🚀 INITIALISATION AUTHCONTEXT - LOGIQUE SIMPLIFIÉE')
-    
     // Vérifier immédiatement si l'utilisateur est déjà connecté
     const checkExistingSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user && isMounted) {
-          console.log('🔍 Session existante détectée au chargement initial')
           setUser(session.user)
           setLoading(false)
           // Ne pas appeler updateUserData ici pour éviter le double chargement
@@ -442,8 +423,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: user.id
       };
       
-      console.log('Mise à jour du profil dans l\'état local avec:', updatedProfileData);
-      
       // Mettre à jour uniquement le profil local sans déclencher de rechargement complet
       setProfile({
         ...updatedProfileData,
@@ -508,14 +487,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUserRole = async () => {
     try {
       if (!user) return false;
-      console.log('🔄 Rafraîchissement du statut admin pour:', user.email);
+
       // Récupérer le profil utilisateur complet pour s'assurer d'avoir les données les plus récentes
       const userWithProfile = await getCurrentUser();
       // Vérifier le statut admin (app_metadata OU profile.role)
       let adminStatus = await isAdmin(user.id);
       if (userWithProfile?.profile?.role === 'admin') {
         adminStatus = true;
-        console.log('🟦 Statut admin détecté via profile.role (refreshUserRole)');
+
       }
       if (userWithProfile) {
         setUser(userWithProfile);
