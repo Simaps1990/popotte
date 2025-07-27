@@ -339,11 +339,6 @@ const Settings = () => {
                   <span className="text-gray-400">→</span>
                 </div>
               </Link>
-      </svg>
-    </div>
-    <div className="flex-1">
-      <h3 className="font-semibold text-gray-900">Mon profil</h3>
-      <p className="text-sm text-gray-600">Modifier mes informations personnelles</p>
 
               {/* Bouton Se déconnecter - visible pour tous les utilisateurs */}
               <button 
