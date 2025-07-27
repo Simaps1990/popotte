@@ -281,30 +281,119 @@ const Users: React.FC = () => {
 
   const updateUserRole = async (userId: string, newRole: 'user' | 'admin') => {
     try {
-      const success = await userService.updateUserRole(userId, newRole);
-      if (success) {
-        // Si c'est un succès, mettre à jour les détails de l'utilisateur
-        await fetchUserDetails(userId);
+      console.log(`🚀 [updateUserRole] Début promotion ${newRole} pour utilisateur ${userId}`);
+      
+      // 1. OPTIMISTIC UPDATE INSTANTANÉ - Mise à jour immédiate de l'UI
+      const targetUser = users.find(u => u.id === userId);
+      if (targetUser) {
+        // Mettre à jour la liste des utilisateurs immédiatement
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId 
+              ? { ...user, role: newRole }
+              : user
+          )
+        );
         
-        // Mettre également à jour la liste complète des utilisateurs pour rafraîchir les icônes
-        console.log('Rafraîchissement de la liste des utilisateurs après mise à jour du rôle...');
-        await fetchUsers();
-        
-        // Si l'utilisateur modifié est l'utilisateur courant, rafraîchir son statut admin
-        // pour que les menus d'administration apparaissent immédiatement sans actualisation
-        if (currentUser && userId === currentUser.id) {
-          console.log('Rafraîchissement du statut admin pour l\'utilisateur courant');
-          await refreshUserRole();
+        // Mettre à jour l'utilisateur sélectionné si c'est le même
+        if (selectedUser && selectedUser.id === userId) {
+          setSelectedUser(prev => prev ? { ...prev, role: newRole } : null);
         }
         
-        // Afficher un message de confirmation
-        alert(`L'utilisateur a été ${newRole === 'admin' ? 'promu administrateur' : 'rétrogradé utilisateur'} avec succès.`);
-      } else {
-        alert('Erreur lors de la mise à jour du rôle.');
+        console.log(`✨ [updateUserRole] Optimistic update appliqué - ${targetUser.username} est maintenant ${newRole}`);
       }
+      
+      // Afficher un toast de confirmation immédiat
+      toast.success(
+        `${targetUser?.username || 'Utilisateur'} ${newRole === 'admin' ? 'promu administrateur' : 'rétrogradé utilisateur'} !`,
+        { duration: 3000 }
+      );
+      
+      // 2. MISE À JOUR BACKEND - Synchronisation avec la base de données
+      console.log(`🔄 [updateUserRole] Synchronisation backend en cours...`);
+      const success = await userService.updateUserRole(userId, newRole);
+      
+      if (success) {
+        console.log(`✅ [updateUserRole] Synchronisation backend réussie`);
+        
+        // 3. SYNCHRONISATION CONTEXTE AUTH - Si c'est l'utilisateur courant
+        if (currentUser && userId === currentUser.id) {
+          console.log(`🔄 [updateUserRole] Rafraîchissement du contexte auth pour l'utilisateur courant`);
+          try {
+            await refreshUserRole();
+            console.log(`✅ [updateUserRole] Contexte auth rafraîchi - accès admin mis à jour`);
+            
+            // Toast spécial pour l'utilisateur qui vient d'être promu
+            if (newRole === 'admin') {
+              toast.success(
+                '🎉 Vous avez maintenant accès aux fonctions administrateur !',
+                { duration: 5000 }
+              );
+            }
+          } catch (authError) {
+            console.error('⚠️ [updateUserRole] Erreur lors du rafraîchissement du contexte auth:', authError);
+          }
+        }
+        
+        // 4. VÉRIFICATION FINALE - S'assurer que les données sont cohérentes
+        console.log(`🔍 [updateUserRole] Vérification finale des données...`);
+        
+        // Recharger les détails de l'utilisateur pour vérification
+        if (selectedUser && selectedUser.id === userId) {
+          try {
+            await fetchUserDetails(userId);
+            console.log(`✅ [updateUserRole] Détails utilisateur rechargés et vérifiés`);
+          } catch (detailsError) {
+            console.warn('⚠️ [updateUserRole] Erreur lors du rechargement des détails:', detailsError);
+          }
+        }
+        
+        console.log(`🎉 [updateUserRole] Promotion ${newRole} terminée avec succès pour ${targetUser?.username}`);
+        
+      } else {
+        // ROLLBACK en cas d'erreur backend
+        console.error(`❌ [updateUserRole] Échec de la synchronisation backend - rollback`);
+        
+        // Annuler l'optimistic update
+        if (targetUser) {
+          const originalRole = targetUser.role === 'admin' ? 'user' : 'admin'; // Inverser
+          setUsers(prevUsers => 
+            prevUsers.map(user => 
+              user.id === userId 
+                ? { ...user, role: originalRole }
+                : user
+            )
+          );
+          
+          if (selectedUser && selectedUser.id === userId) {
+            setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
+          }
+        }
+        
+        toast.error('Erreur lors de la mise à jour du rôle. Veuillez réessayer.');
+      }
+      
     } catch (err) {
-      console.error('Erreur lors de la mise à jour du rôle:', err);
-      alert('Erreur lors de la mise à jour du rôle.');
+      console.error('❌ [updateUserRole] Erreur inattendue:', err);
+      
+      // Rollback en cas d'erreur
+      const targetUser = users.find(u => u.id === userId);
+      if (targetUser) {
+        const originalRole = newRole === 'admin' ? 'user' : 'admin'; // Inverser
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId 
+              ? { ...user, role: originalRole }
+              : user
+          )
+        );
+        
+        if (selectedUser && selectedUser.id === userId) {
+          setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
+        }
+      }
+      
+      toast.error('Erreur lors de la mise à jour du rôle. Veuillez réessayer.');
     }
   };
   

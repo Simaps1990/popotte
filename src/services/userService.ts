@@ -189,69 +189,45 @@ export const userService = {
     }
   },
 
-  // Mettre à jour le rôle d'un utilisateur (profil + app_metadata.roles Supabase)
+  // Mettre à jour le rôle d'un utilisateur de manière atomique (profil + app_metadata.roles Supabase)
   async updateUserRole(userId: string, role: 'admin' | 'user'): Promise<boolean> {
     try {
-      // 1. Mettre à jour le champ 'role' dans profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('id', userId);
-      if (profileError) {
-        console.error('❌ Erreur lors de la mise à jour du rôle dans profiles:', profileError);
+      console.log(`🚀 [updateUserRole] Début mise à jour rôle '${role}' pour utilisateur ${userId}`);
+      
+      // Utiliser la fonction RPC côté serveur pour une mise à jour atomique
+      const { data: result, error: rpcError } = await supabase
+        .rpc('update_user_admin_role', {
+          target_user_id: userId,
+          new_role: role
+        });
+
+      if (rpcError) {
+        console.error('❌ [updateUserRole] Erreur RPC:', rpcError);
         return false;
       }
 
-      // 2. Mettre à jour le champ roles dans app_metadata de auth.users
-      // Récupérer l'utilisateur actuel
-      const { data: userData, error: userError } = await supabase
-        .from('auth.users')
-        .select('id, raw_app_meta_data')
-        .eq('id', userId)
-        .single();
-      if (userError || !userData) {
-        console.error('❌ Erreur lors de la récupération de l’utilisateur dans auth.users:', userError);
+      if (!result || !result.success) {
+        console.error('❌ [updateUserRole] Échec de la mise à jour:', result?.error || 'Erreur inconnue');
         return false;
       }
 
-      let appMeta = userData.raw_app_meta_data || {};
-      let roles: string[] = [];
-      if (Array.isArray(appMeta.roles)) {
-        roles = appMeta.roles;
-      } else if (typeof appMeta.roles === 'string') {
-        try {
-          roles = JSON.parse(appMeta.roles);
-        } catch {
-          roles = [];
-        }
-      }
+      console.log('✅ [updateUserRole] Mise à jour atomique réussie:', {
+        userId: result.user_id,
+        newRole: result.new_role,
+        profileUpdated: result.profile_updated,
+        metadataUpdated: result.metadata_updated,
+        roles: result.roles,
+        timestamp: result.timestamp
+      });
 
-      if (role === 'admin') {
-        // Ajouter admin si pas déjà présent
-        if (!roles.includes('admin')) roles.push('admin');
-      } else {
-        // Retirer admin si présent
-        roles = roles.filter(r => r !== 'admin');
-      }
+      // Attendre un court délai pour la propagation
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Nettoyage des doublons (sécurité)
-      roles = Array.from(new Set(roles));
-
-      // Mise à jour de l'app_metadata
-      const newAppMeta = { ...appMeta, roles };
-      const { error: metaError } = await supabase
-        .from('auth.users')
-        .update({ raw_app_meta_data: newAppMeta })
-        .eq('id', userId);
-      if (metaError) {
-        console.error('❌ Erreur lors de la mise à jour de app_metadata.roles:', metaError);
-        return false;
-      }
-
-      console.log(`✅ Rôle '${role}' synchronisé (profil + app_metadata) pour user ${userId}`);
+      console.log(`✅ [updateUserRole] Rôle '${role}' synchronisé avec succès pour user ${userId}`);
       return true;
+      
     } catch (error) {
-      console.error('❌ Erreur inattendue lors de la mise à jour du rôle:', error);
+      console.error('❌ [updateUserRole] Erreur inattendue:', error);
       return false;
     }
   },
