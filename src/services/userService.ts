@@ -504,8 +504,6 @@ export const userService = {
           .select('id', { count: 'exact' })
           .eq('user_id', userId);
           
-
-        
         // Ensuite supprimer
         const { error: ordersError } = await supabase
           .from('orders')
@@ -514,8 +512,6 @@ export const userService = {
 
         if (ordersError) {
           console.error('Erreur lors de la suppression des commandes:', ordersError);
-        } else {
-
         }
       } catch (err) {
         console.warn('Erreur lors de la tentative de suppression des commandes:', err);
@@ -535,16 +531,10 @@ export const userService = {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId);
         
-
-        
         // Essayer d'abord le soft delete (plus fiable avec les contraintes FK)
-
-        
         const timestamp = Date.now();
         const newUsername = `SUPPRIME_${timestamp}_${userId.substring(0, 8)}`;
         const newEmail = `supprime_${timestamp}@deleted.user`;
-        
-
         
         const { data: updateData, error: updateError } = await supabase
           .from('profiles')
@@ -561,8 +551,6 @@ export const userService = {
           console.error('Détails:', JSON.stringify(updateError));
           
           // Si le soft delete échoue, on essaie la suppression physique
-
-          
           // Force la suppression en cascade si possible
           const { error: deleteError } = await supabase
             .from('profiles')
@@ -574,8 +562,6 @@ export const userService = {
             console.error('Détails:', JSON.stringify(deleteError));
             return false;
           } else {
-
-            
             // Double vérification pour s'assurer que l'utilisateur a bien été supprimé
             await new Promise(resolve => setTimeout(resolve, 500)); // Attendre un peu pour la propagation
             
@@ -586,16 +572,12 @@ export const userService = {
               .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur
             
             if (checkUser) {
-
               return false;
             } else {
-
               return true;
             }
           }
         } else {
-
-          
           // Vérifier que la mise à jour a bien été appliquée
           const { data: checkUser, error: checkError } = await supabase
             .from('profiles')
@@ -604,9 +586,8 @@ export const userService = {
             .maybeSingle();
           
           if (checkError) {
-
+            // Erreur lors de la vérification
           } else if (checkUser) {
-
             if (!checkUser.username.includes('SUPPRIME_') || 
                 !checkUser.email.includes('supprime_')) {
               return false;

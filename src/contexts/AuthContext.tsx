@@ -94,14 +94,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // PAS DE checkSession() initial - on fait confiance à onAuthStateChange
     // Juste initialiser en mode loading
-    console.log('🔄 État initial: loading=true, attente des événements Supabase')
 
     // Timeout de sécurité pour éviter le loading infini
     const timeoutId = setTimeout(() => {
       if (isMounted && loading) {
-        console.log('⏱️ Délai de chargement dépassé - Intervention forcée (nouvelle logique)')
         if (!loading) {
-          console.log('⏭️ Timeout ignoré car loading=false')
           return
         }
         // Ne pas forcer la déconnexion si loading déjà passé à false
@@ -109,40 +106,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null)
         setIsUserAdmin(false)
         setLoading(false)
-      } else {
-        console.log('⏭️ Timeout ignoré car isMounted=false ou loading=false')
       }
     }, 4000) // 4 secondes maximum (plus tolérant)
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: string, session: any) => {
-        console.log(`🔔 Événement d'authentification détecté: ${event}`);
-        
         if (!isMounted) {
-          console.log('⚠️ Composant démonté, événement ignoré');
           return;
         }
         
         // Gérer les différents événements d'authentification
         switch (event) {
           case 'SIGNED_IN':
-            console.log('🔓 Utilisateur connecté - MISE À JOUR IMMÉDIATE');
             clearTimeout(timeoutId); // Annuler le timeout
             if (session?.user) {
               // Marquer la session comme traitée AVANT toute mise à jour du state React
               isSessionAlreadyProcessed = true;
-              console.log('🔐 Flag global de session activé: isSessionAlreadyProcessed = true');
               
               // Vérifier si l'utilisateur est déjà défini pour éviter les doubles chargements
               if (user?.id === session.user.id) {
-                console.log('⚠️ Utilisateur déjà défini, mise à jour légère uniquement');
                 setLoading(false);
               } else {
                 // Mise à jour immédiate de l'utilisateur sans attendre le profil
                 setUser(session.user);
                 setLoading(false);
-                console.log('✅ État utilisateur mis à jour immédiatement');
                 
                 // Mettre à jour le profil en arrière-plan
                 updateUserData(session.user);
@@ -153,7 +141,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             break;
             
           case 'SIGNED_OUT':
-            console.log('🔒 Utilisateur déconnecté');
             setUser(null);
             setProfile(null);
             setIsUserAdmin(false);
@@ -161,7 +148,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             break;
             
           case 'TOKEN_REFRESHED':
-            console.log('🔄 Token rafraîchi');
             if (session?.user) {
               // Mise à jour légère pour éviter les boucles infinies
               setUser(session.user);
@@ -173,19 +159,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('🏁 Session initiale');
             // Éviter la double mise à jour si la session a déjà été traitée
             if (isSessionAlreadyProcessed) {
-              console.log('⚠️ Session déjà traitée par SIGNED_IN, ignorer INITIAL_SESSION pour éviter la double recharge');
               setLoading(false);
               return;
             }
             if (session?.user) {
-              console.log('🔄 Première connexion via INITIAL_SESSION');
               // Marquer la session comme traitée
               isSessionAlreadyProcessed = true;
-              console.log('🔐 Flag global de session activé par INITIAL_SESSION');
               
               // Vérifier si l'utilisateur est déjà défini pour éviter les doubles chargements
               if (user?.id === session.user.id) {
-                console.log('⚠️ Utilisateur déjà défini dans INITIAL_SESSION, éviter la mise à jour');
                 setLoading(false);
               } else {
                 setUser(session.user);
@@ -203,7 +185,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             break;
             
           case 'USER_UPDATED':
-            console.log('🔄 Utilisateur mis à jour');
             if (session?.user) {
               // Mise à jour légère pour éviter les boucles infinies
               setUser(session.user);
@@ -212,13 +193,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             break;
             
           case 'PASSWORD_RECOVERY':
-            console.log('🔑 Récupération de mot de passe');
             break;
             
           default:
-            console.log(`ℹ️ Événement non géré spécifiquement: ${event}`);
             if (session?.user) {
-              console.log('🔄 Mise à jour des données utilisateur par défaut');
               await updateUserData(session.user);
             } else {
               setUser(null);
@@ -251,7 +229,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const handleSignUp = async (email: string, password: string, username: string, firstName: string = '', lastName: string = '') => {
-    console.log('🔐 Tentative d\'inscription avec:', { email, username, firstName, lastName })
     const { user, error } = await signUp({ 
       email, 
       password, 
@@ -273,8 +250,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSignOut = async () => {
     try {
-      console.log('🔒 Début de la déconnexion dans AuthContext...');
-      
       // Déconnexion via la fonction auth
       const { error } = await authSignOut();
       
@@ -291,7 +266,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Forcer un rechargement de la page pour garantir un état propre
       // Cela garantit que toutes les données en mémoire sont effacées
-      console.log('🔄 Rechargement de la page pour garantir un état propre...');
       setTimeout(() => {
         window.location.href = '/';
       }, 300);
@@ -306,8 +280,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: new Error('Utilisateur non connecté') }
       }
       
-      console.log('Mise à jour du profil pour l\'utilisateur:', user.id, 'avec les données:', profileData)
-      
       // Extraire les données pour les métadonnées utilisateur
       const userMetadata = {
         username: profileData.username,
@@ -315,7 +287,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // 1. Mettre à jour les métadonnées utilisateur
-      console.log('Mise à jour des métadonnées utilisateur...')
       const { error: metadataError } = await supabase.auth.updateUser({
         data: userMetadata
       })
@@ -326,7 +297,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // 2. Mettre à jour secure_profiles (table principale)
-      console.log('Tentative de mise à jour du profil dans secure_profiles...')
       let secureData = null;
       let secureError = null;
       
@@ -348,8 +318,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (secureError) {
           console.warn('Erreur lors de la mise à jour du profil dans secure_profiles:', secureError);
-        } else {
-          console.log('Profil mis à jour avec succès dans secure_profiles:', secureData);
         }
       } catch (error) {
         console.warn('Exception lors de la mise à jour de secure_profiles:', error);
@@ -360,7 +328,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let userError = null;
       
       // 4. Mettre à jour profiles (table originale)
-      console.log('Tentative de mise à jour du profil dans profiles...');
       let profilesData = null;
       let profilesError = null;
       
@@ -401,15 +368,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (insertResult.error) {
               console.warn('Erreur lors de l\'insertion du profil dans profiles:', insertResult.error);
             } else {
-              console.log('Profil créé avec succès dans profiles:', insertResult.data);
               profilesData = insertResult.data;
               profilesError = null;
             }
           } catch (insertCatchError) {
             console.error('Exception lors de l\'insertion du profil:', insertCatchError);
           }
-        } else {
-          console.log('Profil mis à jour avec succès dans profiles:', profilesData);
         }
       } catch (error) {
         console.warn('Exception lors de la mise à jour de profiles:', error);
