@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+// Ce fichier a été supprimé car la logique de rafraîchissement manuel est obsolète.
+// Toute la synchronisation des données doit désormais passer par les abonnements temps réel Supabase et la fusion locale/serveur.
+// Si vous voyez cette importation, supprimez le hook useDataRefresh dans les composants concernés.
 
 /**
  * Hook personnalisé pour détecter et traiter les demandes de rechargement des données

@@ -55,7 +55,8 @@ export const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // Chargement initial et mise à jour automatique via abonnements temps réel Supabase
+useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);

@@ -189,10 +189,7 @@ export function Dettes() {
       const unsubscribeOrders = orderService.subscribeToOrderUpdates(user.id, (payload: any) => {
         console.log('💬 Mise à jour de commande détectée:', payload);
         
-        // Rafraîchir les données après une mise à jour seulement si le composant est monté
-        if (isMounted) {
-          fetchAllDebtsAndOrders();
-        }
+        // Suppression du rafraîchissement manuel : la synchronisation est désormais assurée par les abonnements temps réel Supabase.
       });
       
       // Nettoyage des abonnements lors du démontage du composant

@@ -11,7 +11,7 @@ import {
 } from '../services/settingsService';
 import { DebtSummaryPanel } from '../components/DebtSummaryPanel';
 import { PendingDebtSummaryPanel } from '../components/PendingDebtSummaryPanel';
-import { useDataRefresh } from '../hooks/useDataRefresh';
+// importation supprimée : la logique de rafraîchissement manuel est désormais obsolète.
 import '../styles/cards.css';
 
 interface OrderStats {
@@ -92,7 +92,7 @@ const Settings = () => {
   };
 
   // Utiliser le hook de rafraîchissement des données
-  useDataRefresh(loadUserData);
+  // Appel supprimé : la logique de rafraîchissement manuel est désormais obsolète.
   
   // Chargement initial des données
   useEffect(() => {
