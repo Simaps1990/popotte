@@ -200,41 +200,28 @@ const Products = () => {
   
   // Fonction pour tester directement la disponibilité d'un produit
   const toggleProductAvailability = async (product: Product) => {
-    const newAvailability = !product.is_available;
-    
-    console.log('🔄 [toggleProductAvailability] Début - Produit:', product.name, 'Ancien statut:', product.is_available, 'Nouveau statut:', newAvailability);
+    // Récupérer le produit le plus à jour directement depuis l'état
+    const currentProduct = products.find(p => p.id === product.id) || product;
+    const newAvailability = !currentProduct.is_available;
     
     // Optimistic update - mise à jour immédiate de l'UI
-    const optimisticProduct = { ...product, is_available: newAvailability };
+    const optimisticProduct = { ...currentProduct, is_available: newAvailability };
     setProducts(prevProducts => {
-      const updated = prevProducts.map(p => p.id === product.id ? optimisticProduct : p);
-      console.log('✨ [toggleProductAvailability] Optimistic update appliqué');
-      return updated;
+      return prevProducts.map(p => p.id === currentProduct.id ? optimisticProduct : p);
     });
     
     try {
-      const updatedProduct = await productService.updateProduct(product.id, {
+      // Appel API pour mettre à jour le backend
+      const updatedProduct = await productService.updateProduct(currentProduct.id, {
         is_available: newAvailability
       });
       
-      console.log('✅ [toggleProductAvailability] Backend mis à jour - Nouveau statut:', updatedProduct.is_available);
-      
-      // Mettre à jour avec les données du backend (au cas où il y aurait d'autres changements)
-      setProducts(prevProducts => {
-        const updated = prevProducts.map(p => p.id === product.id ? updatedProduct : p);
-        console.log('🔄 [toggleProductAvailability] State synchronisé avec backend');
-        return updated;
-      });
-      
-      toast.success(`Produit ${updatedProduct.name} ${updatedProduct.is_available ? 'disponible' : 'indisponible'}`);
+      // Notification de succès
+      toast.success(`Produit ${updatedProduct.name} ${newAvailability ? 'disponible' : 'indisponible'}`);
     } catch (error) {
-      console.error('❌ [toggleProductAvailability] Erreur backend:', error);
-      
       // Rollback de l'optimistic update en cas d'erreur
       setProducts(prevProducts => {
-        const rollback = prevProducts.map(p => p.id === product.id ? product : p);
-        console.log('🔄 [toggleProductAvailability] Rollback de l\'optimistic update');
-        return rollback;
+        return prevProducts.map(p => p.id === currentProduct.id ? currentProduct : p);
       });
       
       toast.error('Une erreur est survenue lors de la mise à jour de la disponibilité');
@@ -743,9 +730,7 @@ const Products = () => {
                               <Trash2 size={18} />
                             </button>
                           </div>
-                          <span className="px-2 py-1 text-xs bg-white border border-gray-200 text-gray-600 rounded-full">
-                            {category.products.length} produit{category.products.length !== 1 ? 's' : ''}
-                          </span>
+
                         </>
                       )}
                     </div>

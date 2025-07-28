@@ -820,14 +820,20 @@ const DebtSection: React.FC<DebtSectionProps> = ({
         <CreditCard className="h-4 w-4 mr-1" />
         <span>{processingBulkPayment ? 'Traitement...' : 'Régler mes dettes'}</span>
       </button>
-      <button
-  onClick={handleNotifyBulkPayment}
-  disabled={notifying}
-  className="w-full btn-primary flex items-center justify-center space-x-2 mt-2"
->
-  <Bell className="h-4 w-4 mr-1" />
-  <span>{notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}</span>
-</button>
+      {paymentInitiated && (
+        <button
+          onClick={() => {
+            if (window.confirm('Voulez-vous vraiment notifier votre paiement aux popottiers ?')) {
+              handleNotifyBulkPayment();
+            }
+          }}
+          disabled={notifying}
+          className="w-full btn-primary flex items-center justify-center space-x-2 mt-2"
+        >
+          <Bell className="h-4 w-4 mr-1" />
+          <span>{notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}</span>
+        </button>
+      )}
     </div>
   </div>
 )}
