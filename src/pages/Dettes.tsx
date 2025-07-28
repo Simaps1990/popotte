@@ -74,11 +74,9 @@ interface PaymentNotification {
 }
 
 export function Dettes() {
-  // Ajout pour la notification de paiement groupé
-  // Utiliser localStorage pour persister l'état du bouton de notification
-  const [showNotifyButton, setShowNotifyButton] = useState(() => {
-    return localStorage.getItem('showNotifyButton') === 'true';
-  });
+  // État pour contrôler l'affichage du bouton de notification
+  // Ne plus utiliser localStorage pour éviter l'affichage prématuré
+  const [showNotifyButton, setShowNotifyButton] = useState(false);
   const { user } = useAuth();
   const [debts, setDebts] = useState<UserDebt[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -450,8 +448,8 @@ export function Dettes() {
       // Afficher immédiatement le bouton de notification
       setPaymentInitiated(true);
       localStorage.setItem('paymentInitiated', 'true');
-      setShowNotifyButton(true);
-      localStorage.setItem('showNotifyButton', 'true');
+      setShowNotifyButton(true); // Activer le bouton SEULEMENT après avoir cliqué sur "Régler mes dettes"
+      returnFromPayPalRef.current = true;
       
       // Notification visuelle immédiate
       toast('Redirection vers le paiement PayPal officiel. Merci d\'indiquer le motif dans PayPal !', { icon: '💸' });
@@ -824,7 +822,7 @@ const DebtSection: React.FC<DebtSectionProps> = ({
       <button
         onClick={handlePayAllDebts}
         disabled={processingBulkPayment}
-        className="w-full btn-primary flex items-center justify-center space-x-2"
+        className="w-full bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <CreditCard className="h-4 w-4 mr-1" />
         <span>{processingBulkPayment ? 'Traitement...' : 'Régler mes dettes'}</span>
@@ -837,7 +835,7 @@ const DebtSection: React.FC<DebtSectionProps> = ({
             }
           }}
           disabled={notifying}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-150 flex items-center justify-center space-x-2 mt-2"
+          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CheckCircle className="h-4 w-4 mr-1" />
           <span>{notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}</span>
