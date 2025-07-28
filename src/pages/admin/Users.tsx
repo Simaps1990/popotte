@@ -378,10 +378,14 @@ const Users: React.FC = () => {
     // Chargement initial des données
     const initializeData = async () => {
       try {
-        // Récupérer l'utilisateur sélectionné depuis l'URL ou localStorage
+        // Récupérer l'utilisateur sélectionné UNIQUEMENT depuis l'URL (plus depuis localStorage)
         const userIdFromUrl = searchParams.get('userId');
-        const userIdFromStorage = localStorage.getItem('selectedUserId');
-        const targetUserId = userIdFromUrl || userIdFromStorage;
+        const targetUserId = userIdFromUrl;
+        
+        // Si on arrive sur la page sans userId dans l'URL, supprimer l'ancien selectedUserId du localStorage
+        if (!userIdFromUrl && localStorage.getItem('selectedUserId')) {
+          localStorage.removeItem('selectedUserId');
+        }
         
         console.log('🔍 [initializeData] Récupération initiale des données');
         
