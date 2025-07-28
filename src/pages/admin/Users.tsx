@@ -35,6 +35,13 @@ const Users: React.FC = () => {
   const [isPageActive, setIsPageActive] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
 
+  // Fonction pour calculer le résumé des dettes d'un utilisateur
+  const calculateDebtSummary = (debts: UserDebt[]) => {
+    const unpaidDebts = debts.filter(debt => debt.status === 'unpaid');
+    const totalUnpaid = unpaidDebts.reduce((total, debt) => total + (debt.amount || 0), 0);
+    return { totalUnpaid };
+  };
+
   const fetchUsers = useCallback(async (excludeUserId?: string) => {
     try {
       setLoading(prev => ({ ...prev, users: true }));
@@ -155,27 +162,75 @@ const Users: React.FC = () => {
     }
   }, [mergeDebtData]);
 
-  // Fonction de synchronisation complète des données
-  const syncAllData = useCallback(async (force = false) => {
-    if (!isPageActive && !force) return;
-    
-    try {
-      console.log('🔄 [syncAllData] Synchronisation complète des données utilisateurs');
+  // Fonction centrale pour synchroniser toutes les données
+  // CORRECTION: Retrait de la dépendance à fetchUsers et fetchUserDetails pour éviter les boucles infinies
+  const syncAllData = useCallback(
+    async (force = false) => {
+      console.log('🔄 [syncAllData] Synchronisation des données utilisateurs');
       
-      // Synchroniser la liste des utilisateurs
-      await fetchUsers();
-      
-      // Si un utilisateur est sélectionné, synchroniser ses détails
-      if (selectedUser) {
-        await fetchUserDetails(selectedUser.id);
+      // Vérifier si la page est active ou si on force la synchronisation
+      if (!document.hidden || force) {
+        try {
+          // CORRECTION: Utiliser directement les appels API sans passer par les fonctions callback
+          // pour éviter les dépendances circulaires
+          
+          // Récupérer la liste des utilisateurs
+          console.log('🔍 [syncAllData] Récupération de la liste des utilisateurs');
+          const usersResponse = await supabase
+            .from('profiles')
+            .select('*')
+            .order('username');
+          
+          if (usersResponse.error) throw usersResponse.error;
+          setUsers(usersResponse.data || []);
+          
+          // Si un utilisateur est sélectionné, mettre à jour ses détails
+          const userIdFromUrl = searchParams.get('userId');
+          if (userIdFromUrl) {
+            console.log('🔍 [syncAllData] Récupération des détails de l\'utilisateur:', userIdFromUrl);
+            
+            // Récupérer les détails de l'utilisateur
+            const userResponse = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userIdFromUrl)
+              .single();
+            
+            if (userResponse.error) throw userResponse.error;
+            
+            // Récupérer l'historique des dettes
+            const debtHistoryResponse = await supabase
+              .from('debts')
+              .select('*')
+              .eq('user_id', userIdFromUrl)
+              .order('created_at', { ascending: false });
+            
+            if (debtHistoryResponse.error) throw debtHistoryResponse.error;
+            
+            // Calculer le résumé des dettes
+            const debtHistory = debtHistoryResponse.data || [];
+            const debtSummary = calculateDebtSummary(debtHistory);
+            
+            // Mettre à jour l'utilisateur sélectionné avec toutes ses données
+            setSelectedUser({
+              ...userResponse.data,
+              debtHistory,
+              debtSummary
+            });
+          }
+          
+          // Mettre à jour la dernière synchronisation
+          setLastSyncTime(Date.now());
+          console.log('✅ [syncAllData] Synchronisation réussie');
+        } catch (error) {
+          console.error('❌ [syncAllData] Erreur lors de la synchronisation:', error);
+        }
+      } else {
+        console.log('💤 [syncAllData] Page inactive, synchronisation ignorée');
       }
-      
-      setLastSyncTime(Date.now());
-      console.log('✅ [syncAllData] Synchronisation terminée');
-    } catch (error) {
-      console.error('❌ [syncAllData] Erreur lors de la synchronisation:', error);
-    }
-  }, [isPageActive, fetchUsers, fetchUserDetails, selectedUser]);
+    },
+    [searchParams] // CORRECTION: Retrait des dépendances problématiques
+  );
 
   // Abonnement temps réel aux changements de profils utilisateurs
   const subscribeToProfileUpdates = useCallback(() => {
@@ -240,10 +295,22 @@ const Users: React.FC = () => {
         (payload: any) => {
           console.log('🔔 [subscribeToDebtUpdates] Changement dette détecté:', payload);
           
-          // Synchroniser les données après un changement de dette
-          setTimeout(() => {
-            syncAllData(true);
-          }, 500);
+          // CORRECTION: Éviter la dépendance circulaire avec syncAllData
+          // Utiliser directement fetchUsers et fetchUserDetails si nécessaire
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
+            console.log('💾 [subscribeToDebtUpdates] Mise à jour des données suite à une modification de dette');
+            
+            // Mettre à jour la liste des utilisateurs
+            fetchUsers();
+            
+            // Si un utilisateur est sélectionné, mettre à jour ses détails
+            if (selectedUser) {
+              fetchUserDetails(selectedUser.id);
+            }
+            
+            // Mettre à jour le timestamp de dernière synchronisation
+            setLastSyncTime(Date.now());
+          }
         }
       )
       .subscribe();
@@ -252,7 +319,7 @@ const Users: React.FC = () => {
       console.log('🔌 [subscribeToDebtUpdates] Déconnexion abonnement dettes');
       subscription.unsubscribe();
     };
-  }, [syncAllData]);
+  }, [fetchUsers, fetchUserDetails, selectedUser]);
 
   // Gestionnaire de visibilité de la page
   const handleVisibilityChange = useCallback(() => {
@@ -263,22 +330,46 @@ const Users: React.FC = () => {
       console.log('👁️ [handleVisibilityChange] Page redevenue visible - synchronisation');
       // Synchroniser si la page a été inactive plus de 30 secondes
       if (Date.now() - lastSyncTime > 30000) {
-        syncAllData(true);
+        // CORRECTION: Éviter la dépendance circulaire avec syncAllData
+        console.log('💾 [handleVisibilityChange] Mise à jour des données après retour sur la page');
+        
+        // Mettre à jour la liste des utilisateurs
+        fetchUsers();
+        
+        // Si un utilisateur est sélectionné, mettre à jour ses détails
+        if (selectedUser) {
+          fetchUserDetails(selectedUser.id);
+        }
+        
+        // Mettre à jour le timestamp de dernière synchronisation
+        setLastSyncTime(Date.now());
       }
     } else {
       console.log('👁️ [handleVisibilityChange] Page masquée');
     }
-  }, [lastSyncTime, syncAllData]);
+  }, [lastSyncTime, fetchUsers, fetchUserDetails, selectedUser]);
 
   // Gestionnaire d'événements personnalisés (changements de rôle admin)
   const handleAdminRoleChanged = useCallback((event: CustomEvent) => {
     console.log('🎭 [handleAdminRoleChanged] Changement de rôle admin détecté:', event.detail);
     
-    // Synchroniser les données après un changement de rôle
+    // CORRECTION: Éviter la dépendance circulaire avec syncAllData
+    console.log('💾 [handleAdminRoleChanged] Mise à jour des données après changement de rôle admin');
+    
+    // Utiliser un court délai pour laisser le temps aux mises à jour de se propager
     setTimeout(() => {
-      syncAllData(true);
+      // Mettre à jour la liste des utilisateurs
+      fetchUsers();
+      
+      // Si un utilisateur est sélectionné, mettre à jour ses détails
+      if (selectedUser) {
+        fetchUserDetails(selectedUser.id);
+      }
+      
+      // Mettre à jour le timestamp de dernière synchronisation
+      setLastSyncTime(Date.now());
     }, 200);
-  }, [syncAllData]);
+  }, [fetchUsers, fetchUserDetails, selectedUser]);
 
   // useEffect principal - Initialisation et abonnements
   useEffect(() => {
@@ -286,24 +377,66 @@ const Users: React.FC = () => {
     
     // Chargement initial des données
     const initializeData = async () => {
-      // Récupérer l'utilisateur sélectionné depuis l'URL ou localStorage
-      const userIdFromUrl = searchParams.get('userId');
-      const userIdFromStorage = localStorage.getItem('selectedUserId');
-      const targetUserId = userIdFromUrl || userIdFromStorage;
-      
-      // Charger la liste des utilisateurs
-      await fetchUsers();
-      
-      // Charger les détails de l'utilisateur sélectionné si disponible
-      if (targetUserId) {
-        const userData = await userService.getUserById(targetUserId);
-        if (userData) {
-          setSelectedUser(userData);
-          await fetchUserDetails(targetUserId);
+      try {
+        // Récupérer l'utilisateur sélectionné depuis l'URL ou localStorage
+        const userIdFromUrl = searchParams.get('userId');
+        const userIdFromStorage = localStorage.getItem('selectedUserId');
+        const targetUserId = userIdFromUrl || userIdFromStorage;
+        
+        console.log('🔍 [initializeData] Récupération initiale des données');
+        
+        // Récupérer la liste des utilisateurs directement
+        const usersResponse = await supabase
+          .from('profiles')
+          .select('*')
+          .order('username');
+        
+        if (usersResponse.error) throw usersResponse.error;
+        setUsers(usersResponse.data || []);
+        
+        // Si un utilisateur est sélectionné, récupérer ses détails
+        if (targetUserId) {
+          console.log('🔍 [initializeData] Récupération des détails de l\'utilisateur:', targetUserId);
+          
+          // Récupérer les détails de l'utilisateur
+          const userResponse = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', targetUserId)
+            .single();
+          
+          if (userResponse.error) throw userResponse.error;
+          
+          // Récupérer l'historique des dettes
+          const debtHistoryResponse = await supabase
+            .from('debts')
+            .select('*')
+            .eq('user_id', targetUserId)
+            .order('created_at', { ascending: false });
+          
+          if (debtHistoryResponse.error) throw debtHistoryResponse.error;
+          
+          // Calculer le résumé des dettes
+          const debtHistory = debtHistoryResponse.data || [];
+          const debtSummary = calculateDebtSummary(debtHistory);
+          
+          // Mettre à jour l'utilisateur sélectionné avec toutes ses données
+          setSelectedUser({
+            ...userResponse.data,
+            debtHistory,
+            debtSummary
+          });
         }
+        
+        // Mettre à jour la dernière synchronisation
+        setLastSyncTime(Date.now());
+        console.log('✅ [initializeData] Initialisation réussie');
+      } catch (error) {
+        console.error('❌ [initializeData] Erreur lors de l\'initialisation:', error);
       }
     };
     
+    // Exécuter l'initialisation des données
     initializeData();
     
     // Configurer les abonnements temps réel
@@ -316,9 +449,9 @@ const Users: React.FC = () => {
     
     // Synchronisation périodique (toutes les 2 minutes si la page est active)
     const syncInterval = setInterval(() => {
-      if (isPageActive && Date.now() - lastSyncTime > 120000) {
-        console.log('⏰ [useEffect] Synchronisation périodique');
-        syncAllData();
+      if (!document.hidden && Date.now() - lastSyncTime > 120000) {
+        console.log('⏰ [Interval] Synchronisation périodique');
+        syncAllData(true);
       }
     }, 60000); // Vérifier toutes les minutes
     
@@ -331,17 +464,32 @@ const Users: React.FC = () => {
       window.removeEventListener('adminRoleChanged', handleAdminRoleChanged as EventListener);
       clearInterval(syncInterval);
     };
-  }, []);
+  }, []); // CORRECTION: Aucune dépendance pour éviter les boucles infinies
+  
+  const isFirstNavigationRef = React.useRef(true);
   
   // useEffect pour la synchronisation lors des changements de navigation
   useEffect(() => {
     console.log('🧭 [useEffect] Changement de navigation détecté');
     
     // Synchroniser les données lors du retour sur la page
-    if (location.pathname === '/admin/users') {
-      syncAllData(true);
+    if (location.pathname === '/admin/users' && isFirstNavigationRef.current) {
+      console.log('🔄 [useEffect] Premier rendu de la page - synchronisation initiale');
+      
+      // CORRECTION: Éviter la dépendance circulaire avec syncAllData
+      // Utiliser directement fetchUsers et fetchUserDetails
+      fetchUsers();
+      
+      // Si un utilisateur est sélectionné, mettre à jour ses détails
+      const userIdFromUrl = searchParams.get('userId');
+      if (userIdFromUrl) {
+        fetchUserDetails(userIdFromUrl);
+      }
+      
+      // Marquer comme déjà exécuté
+      isFirstNavigationRef.current = false;
     }
-  }, [location.pathname, syncAllData]);
+  }, [location.pathname, fetchUsers, fetchUserDetails, searchParams]);
   
   // useEffect pour la gestion de l'utilisateur sélectionné via URL
   useEffect(() => {

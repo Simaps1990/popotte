@@ -159,24 +159,31 @@ export const useCacheInvalidation = () => {
     isInvalidatingRef.current = true;
     lastInvalidationRef.current = now;
     
-    // Vider le cache du navigateur pour les données de l'application
+    // Vider UNIQUEMENT les caches liés aux données métier, pas les caches d'authentification
     if ('caches' in window) {
       caches.keys().then(names => {
         names.forEach(name => {
-          caches.delete(name);
+          // Ne pas supprimer les caches liés à l'authentification
+          if (!name.includes('auth') && !name.includes('session') && !name.includes('user')) {
+            caches.delete(name);
+          }
         });
       });
     }
     
-    // Vider le localStorage des données temporaires (si applicable)
+    // Vider le localStorage des données temporaires (si applicable) - SAUF données d'authentification
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
+      // Ne supprimer QUE les clés liées aux données métier, pas les données d'authentification
       if (key && (key.startsWith('debts_') || key.startsWith('orders_') || key.startsWith('news_'))) {
         keysToRemove.push(key);
       }
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Log pour debug
+    console.log(`🧹 Cache invalidé sélectivement (${keysToRemove.length} clés supprimées)`)
     
     // Réinitialiser le flag après un court délai
     setTimeout(() => {
