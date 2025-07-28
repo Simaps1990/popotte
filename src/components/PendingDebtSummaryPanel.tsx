@@ -101,8 +101,6 @@ export function PendingDebtSummaryPanel({ className = '' }: PendingDebtSummaryPa
           )}
         </div>
       </div>
-      {totalPending > 0 && <div className="h-1 w-full bg-orange-200 mt-3"><div className="h-1 bg-orange-500" style={{width: '100%'}}></div></div>}
-      {totalPending === 0 && <div className="h-1 w-full bg-gray-200 mt-3"><div className="h-1 bg-gray-500" style={{width: '100%'}}></div></div>}
     </div>
   );
 }

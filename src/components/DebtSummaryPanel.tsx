@@ -91,8 +91,6 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
           )}
         </div>
       </div>
-      {totalUnpaid > 0 && <div className="h-1 w-full bg-red-200 mt-3"><div className="h-1 bg-red-500" style={{width: '100%'}}></div></div>}
-      {totalUnpaid === 0 && <div className="h-1 w-full bg-green-200 mt-3"><div className="h-1 bg-green-500" style={{width: '100%'}}></div></div>}
     </div>
   );
 }

@@ -8,22 +8,37 @@
     margin: 0;
     padding: 0;
     background: #fff; /* Fond général blanc */
-    /* Fix pour la barre noire sous status bar iOS */
-    padding-top: env(safe-area-inset-top);
   }
   
   body {
     @apply text-gray-900;
     background: #fff; /* Fond général blanc */
-    /* Assurer que le contenu commence sous la status bar */
-    padding-top: 0;
-    margin-top: 0;
+    /* Éliminer tout espace supplémentaire */
+    padding: 0 !important;
+    margin: 0 !important;
   }
   
   /* Fix spécifique pour iOS */
   @supports (-webkit-touch-callout: none) {
+    :root {
+      --sat: env(safe-area-inset-top);
+    }
+    
     body {
-      /* Suppression de tout padding/margin supplémentaire */
+      /* Suppression complète de tout espace sous la status bar */
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    
+    /* Forcer le contenu à commencer au bord supérieur de l'écran */
+    .min-h-screen {
+      min-height: 100vh !important;
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    
+    /* Ajustement spécifique pour le header */
+    header.site-header {
       padding-top: 0 !important;
       margin-top: 0 !important;
     }

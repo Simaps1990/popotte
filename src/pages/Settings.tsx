@@ -247,10 +247,10 @@ const Settings = () => {
 
           <div className="space-y-4">
         {/* Onglets : dashboard (par défaut) ou profil */}
-        {/* Statistiques financières - visible uniquement pour les administrateurs */}
+        {/* Comptabilité - visible uniquement pour les administrateurs */}
         {currentAdminStatus && (
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Statistiques financières</h2>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: '#10182a' }}>Comptabilité</h2>
             <DebtSummaryPanel className="mb-4" />
             <PendingDebtSummaryPanel className="mb-4" />
           </div>

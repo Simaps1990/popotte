@@ -867,22 +867,7 @@ return (
       <h1 className="text-2xl font-bold mb-4">
         Mes dettes
       </h1>
-      {/* Bouton Notifier mon paiement aux popotiers */}
-      {showNotifyButton && paymentInitiated && (
-        <div className="bg-green-50 p-4 rounded mt-4 flex flex-col items-center">
-          <button
-            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-semibold shadow flex items-center justify-center"
-            onClick={handleNotifyBulkPayment}
-            disabled={notifying}
-          >
-            <CheckCircle className="h-5 w-5 mr-2" />
-            {notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}
-          </button>
-          <div className="text-xs text-gray-600 mt-2">
-            Un récapitulatif de vos dettes sera envoyé à l'équipe pour validation.
-          </div>
-        </div>
-      )}
+      {/* Le bouton de notification est maintenant uniquement présent dans la section des dettes */}
       {/* Sections synthèse dettes */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-red-600">🔴 Dettes non réglées</h2>
