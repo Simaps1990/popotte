@@ -5,12 +5,15 @@ import { useAuth } from '../contexts/AuthContext'
 import type { Product, Category } from '../lib/mockData'
 import { supabase } from '../lib/supabaseClient'
 import { toast } from 'react-hot-toast'
+import { usePageReload } from '../hooks/usePageReload'
 
 interface CartItem {
   product: Product
   quantity: number
   selectedVariant?: string
 }
+
+// Le hook personnalisé a été déplacé dans src/hooks/usePageReload.ts
 
 export function Commande() {
   const { user } = useAuth()
@@ -19,6 +22,9 @@ export function Commande() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  
+  // Utiliser le hook pour forcer le rechargement à chaque visite
+  const lastVisit = usePageReload()
 
   // Fonction pour charger toutes les données
   const fetchAllData = async () => {
@@ -32,8 +38,17 @@ export function Commande() {
   useEffect(() => {
     let isMounted = true;
     
-    // Chargement initial
-    fetchAllData();
+    console.log('🔄 [Commande] Chargement des données - Visite de page détectée');
+    setLoading(true);
+    
+    // Chargement initial avec indication visuelle
+    toast.loading('Chargement des produits...', { id: 'loading-products', duration: 1000 });
+    fetchAllData().then(() => {
+      if (isMounted) {
+        toast.success('Produits mis à jour', { id: 'loading-products', duration: 1000 });
+        setLoading(false);
+      }
+    });
     
     // Abonnements temps réel pour les produits et catégories
     const subscriptions = [
@@ -96,7 +111,7 @@ export function Commande() {
         subscription.unsubscribe();
       });
     };
-  }, [])
+  }, [lastVisit]) // Recharger les données à chaque visite de la page
 
   const fetchProducts = async () => {
     try {
