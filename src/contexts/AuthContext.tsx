@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (sessionAge < 24 * 60 * 60 * 1000) {
             console.log('🚨 Tentative de récupération d\'urgence depuis localStorage...');
             // Forcer un rafraîchissement de session
-            supabase.auth.refreshSession().then(({ data }) => {
+            supabase.auth.refreshSession().then(({ data }: { data: { session: any; user: any } }) => {
               if (data.session && data.user) {
                 console.log('✅ Session récupérée avec succès depuis localStorage!');
                 setUser(data.user);
