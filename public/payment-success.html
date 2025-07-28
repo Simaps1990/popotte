@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement effectué</title>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: white;
+      color: #10182a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .message {
+      max-width: 500px;
+      margin-bottom: 30px;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    .button {
+      background: #10182a;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    .button:hover {
+      background: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <div class="message">
+    <h1>Paiement effectué</h1>
+    <p>N'oublies pas de le notifier aux popotiers.</p>
+  </div>
+  <button class="button" onclick="window.close()">Fermer la page</button>
+</body>
+</html>

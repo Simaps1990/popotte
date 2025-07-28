@@ -453,7 +453,14 @@ export function Dettes() {
       returnFromPayPalRef.current = true;
       
       // Ouvrir PayPal dans un nouvel onglet
-      window.open('https://www.paypal.me/popotefor', '_blank');
+      const paypalWindow = window.open('https://www.paypal.me/popotefor', '_blank');
+      
+      // Après un court délai, rediriger vers notre page de succès personnalisée
+      setTimeout(() => {
+        if (paypalWindow) {
+          paypalWindow.location.href = '/payment-success.html';
+        }
+      }, 500);
 
     } catch (error) {
       console.error('Erreur lors du paiement groupé:', error);

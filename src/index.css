@@ -15,9 +15,9 @@
     background: #fff; /* Fond général blanc */
   }
   
-  /* Header bleu foncé presque noir */
+  /* Header bleu foncé avec dégradé plus clair */
   header.site-header {
-    background: #10182a;
+    background: linear-gradient(to bottom, #1e293b, #10182a);
     color: #fff;
     width: 100vw;
     min-height: 80px;
