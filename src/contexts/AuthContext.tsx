@@ -32,8 +32,8 @@ let isSessionAlreadyProcessed = false;
 let lastSessionCheck = 0;
 let sessionCheckInterval: NodeJS.Timeout | null = null;
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const SESSION_CHECK_INTERVAL = 30000; // 30 secondes
+const MAX_RECONNECT_ATTEMPTS = 10; // Augmenté pour plus de tolérance
+const SESSION_CHECK_INTERVAL = 60000; // 60 secondes (moins fréquent pour éviter les déconnexions)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -85,16 +85,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Éviter les vérifications trop fréquentes
         const now = Date.now();
-        if (now - lastSessionCheck < 5000) { // Pas plus d'une fois toutes les 5 secondes
+        if (now - lastSessionCheck < 10000) { // Pas plus d'une fois toutes les 10 secondes
           return;
         }
         lastSessionCheck = now;
+        
+        // Vérifier si l'utilisateur est déjà connecté et valide
+        if (user && user.id && user.email) {
+          // Si nous avons déjà un utilisateur valide, éviter les vérifications inutiles
+          return;
+        }
         
         console.log('🔍 Vérification de la session existante...');
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && isMounted) {
           console.log('✅ Session utilisateur valide trouvée');
+          // Stocker la session dans localStorage pour récupération d'urgence
+          try {
+            localStorage.setItem('lastValidSession', JSON.stringify({
+              timestamp: Date.now(),
+              userId: session.user.id,
+              email: session.user.email
+            }));
+          } catch (e) {
+            console.warn('Impossible de stocker les infos de session:', e);
+          }
+          
           setUser(session.user);
           setLoading(false);
           reconnectAttempts = 0; // Réinitialiser le compteur de tentatives
@@ -117,6 +134,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handleSessionRecovery = async () => {
       if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
         console.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de récupération de session`);
+        // Ne pas déconnecter automatiquement, essayer une dernière approche
+        try {
+          console.log('🚨 Tentative de récupération d\'urgence avec getSession...');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            console.log('✅ Session récupérée avec getSession!');
+            setUser(session.user);
+            reconnectAttempts = 0;
+            await updateUserData(session.user);
+            return;
+          }
+        } catch (e) {
+          console.error('❌ Échec de la récupération d\'urgence:', e);
+        }
+        
+        // Si tout échoue, déconnecter
         setUser(null);
         setProfile(null);
         setIsUserAdmin(false);
@@ -133,14 +166,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.error('❌ Échec du rafraîchissement de session:', error);
-          // Si l'erreur persiste, on déconnecte l'utilisateur après plusieurs tentatives
+          // Attendre un peu avant la prochaine tentative
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Essayer getSession comme alternative
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              console.log('✅ Session récupérée via getSession après échec de refreshSession');
+              setUser(session.user);
+              reconnectAttempts = 0;
+              await updateUserData(session.user);
+              return;
+            }
+          } catch (e) {
+            console.error('❌ Échec de getSession après refreshSession:', e);
+          }
+          
+          // Si l'erreur persiste, on continue les tentatives
           if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            setUser(null);
-            setProfile(null);
-            setIsUserAdmin(false);
+            // Ne pas déconnecter ici, on laissera la fonction principale le faire
           }
         } else if (data.session && data.user) {
-          console.log('✅ Session récupérée avec succès');
+          console.log('✅ Session récupérée avec succès via refreshSession');
           setUser(data.user);
           reconnectAttempts = 0; // Réinitialiser le compteur
           await updateUserData(data.user);
@@ -154,6 +202,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Vérifier la session existante immédiatement
     checkExistingSession();
+    
+    // Système de récupération d'urgence basé sur localStorage
+    if (!user) {
+      try {
+        const savedSession = localStorage.getItem('lastValidSession');
+        if (savedSession) {
+          const sessionData = JSON.parse(savedSession);
+          const sessionAge = Date.now() - sessionData.timestamp;
+          
+          // Si la session sauvegardée est récente (moins de 24h)
+          if (sessionAge < 24 * 60 * 60 * 1000) {
+            console.log('🚨 Tentative de récupération d\'urgence depuis localStorage...');
+            // Forcer un rafraîchissement de session
+            supabase.auth.refreshSession().then(({ data }) => {
+              if (data.session && data.user) {
+                console.log('✅ Session récupérée avec succès depuis localStorage!');
+                setUser(data.user);
+                updateUserData(data.user);
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Erreur lors de la récupération d\'urgence:', e);
+      }
+    }
     
     // PAS DE checkSession() initial - on fait confiance à onAuthStateChange
     // Juste initialiser en mode loading
@@ -178,8 +252,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearInterval(sessionCheckInterval);
     }
     
+    // Vérification périodique moins fréquente pour éviter les déconnexions
     sessionCheckInterval = setInterval(() => {
-      if (isMounted && !loading) {
+      if (isMounted && document.visibilityState === 'visible') {
+        // Vérifier uniquement si la page est visible pour éviter les déconnexions en arrière-plan
         checkExistingSession();
       }
     }, SESSION_CHECK_INTERVAL);
