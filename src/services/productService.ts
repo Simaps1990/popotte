@@ -95,13 +95,11 @@ export const getProductById = async (id: string): Promise<ProductWithRelations |
 };
 
 export const createProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<ProductWithRelations> => {
-  const supabaseClient = supabase;
-  
   try {
-    await supabaseClient.rpc('begin');
+    console.log('🔄 Création d\'un nouveau produit...', productData);
     
     // Création du produit de base
-    const { data: product, error: productError } = await supabaseClient
+    const { data: product, error: productError } = await supabase
       .from('products')
       .insert([{
         name: productData.name,
@@ -119,8 +117,17 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
       .select()
       .single();
     
-    if (productError) throw productError;
-    if (!product) throw new Error('Échec de la création du produit');
+    if (productError) {
+      console.error('❌ Erreur lors de la création du produit de base:', productError);
+      throw productError;
+    }
+    
+    if (!product) {
+      console.error('❌ Produit non créé - données manquantes');
+      throw new Error('Échec de la création du produit');
+    }
+    
+    console.log('✅ Produit de base créé avec succès:', product);
     
     // Gestion des variantes de stock si activé
     if (productData.stock_enabled && productData.stock_variants?.length) {
@@ -131,22 +138,31 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
         price_adjustment: variant.price_adjustment || 0
       }));
       
-      const { error: variantsError } = await supabaseClient
+      console.log('🔄 Ajout des variantes de stock:', variantsToInsert);
+      
+      const { error: variantsError } = await supabase
         .from('product_stock_variants')
         .insert(variantsToInsert);
       
-      if (variantsError) throw variantsError;
+      if (variantsError) {
+        console.error('❌ Erreur lors de l\'ajout des variantes:', variantsError);
+        throw variantsError;
+      }
+      
+      console.log('✅ Variantes de stock ajoutées avec succès');
     }
-    
-    await supabaseClient.rpc('commit');
     
     // Récupérer le produit avec toutes ses relations
     const fullProduct = await fetchProductWithRelations(product.id);
-    if (!fullProduct) throw new Error('Échec de la récupération du produit créé');
     
+    if (!fullProduct) {
+      console.error('❌ Impossible de récupérer le produit créé avec ses relations');
+      throw new Error('Échec de la récupération du produit créé');
+    }
+    
+    console.log('✅ Produit créé avec succès:', fullProduct);
     return fullProduct;
   } catch (error) {
-    await supabaseClient.rpc('rollback');
     console.error('❌ Erreur lors de la création du produit:', error);
     throw error;
   }
