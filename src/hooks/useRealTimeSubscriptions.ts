@@ -78,7 +78,7 @@ export const useRealTimeSubscriptions = ({
   const healthCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Fonction sécurisée pour créer les abonnements
-  const createSubscriptions = useCallback(() => {
+  const createSubscriptions = useCallback(function() {
     try {
       console.log('🔌 Création/recréation des abonnements temps réel...');
       
@@ -185,7 +185,7 @@ export const useRealTimeSubscriptions = ({
         createSubscriptions();
       }, 3000);
     }
-  };
+  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId]);
   
   // Fonction pour vérifier l'état de santé des abonnements
   const checkSubscriptionsHealth = useCallback(() => {
@@ -224,9 +224,14 @@ export const useRealTimeSubscriptions = ({
     }
   }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId]);
   
-  // Fonction pour reconnecter les abonnements de façon sécurisée
+  // Fonction pour reconnecter les abonnements
   const reconnectSubscriptions = useCallback(() => {
     try {
+      // Si aucun abonnement n'est attendu, ne rien faire
+      if (!onPaymentNotificationChange && !onDebtChange && !onOrderChange && !onNewsChange) {
+        return;
+      }
+      
       // Limiter le nombre de tentatives de reconnexion
       if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
         console.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de reconnexion. Attente prolongée avant nouvel essai.`);
@@ -244,9 +249,9 @@ export const useRealTimeSubscriptions = ({
       console.log(`🔄 Tentative de reconnexion #${reconnectAttemptsRef.current}...`);
       
       // Vérifier si les abonnements sont actifs
-      const allActive = subscriptionsRef.current.every(subscription => 
-        subscription.state === 'joined'
-      );
+      const allActive = subscriptionsRef.current.every(function(subscription) {
+        return subscription.state === 'joined';
+      });
       
       if (!allActive || subscriptionsRef.current.length === 0) {
         console.log('🔌 Abonnements inactifs ou manquants, reconnexion...');
@@ -261,14 +266,9 @@ export const useRealTimeSubscriptions = ({
         lastSuccessfulConnectionRef.current = Date.now();
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la vérification des abonnements:', error);
-      
-      // Réessayer après un délai
-      setTimeout(() => {
-        createSubscriptions();
-      }, RECONNECT_DELAY);
+      console.error('❌ Erreur lors de la reconnexion:', error);
     }
-  }, [createSubscriptions]);
+  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange]);
   
   // Configurer une vérification périodique de santé des abonnements
   useEffect(() => {
