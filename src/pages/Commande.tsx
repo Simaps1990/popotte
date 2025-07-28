@@ -239,8 +239,19 @@ export function Commande() {
         items
       })
 
-      // Notification de succès
-      alert('Commande validée avec succès !')
+      // Notification de succès avec message personnalisé selon le montant
+      let successMessage = '';
+      if (totalAmount < 2) {
+        successMessage = "Commande validée, t'aurais pu proposer aux copains...";
+      } else if (totalAmount < 5) {
+        successMessage = "Commande validée, rajoutes au moins un saucisson radin !";
+      } else if (totalAmount < 20) {
+        successMessage = "Commande validée, la main dessus !";
+      } else {
+        successMessage = "Commande validée, voilà ça c'est une vraie tournée !!";
+      }
+      
+      toast.success(successMessage, { duration: 5000 });
     } catch (error) {
       console.error('Error submitting order:', error)
       
@@ -426,29 +437,29 @@ export function Commande() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2 self-start">
+                    <div className="flex items-center space-x-3 self-start">
                       <button
                         onClick={() => removeFromCart(product.id)}
-                        className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
+                        className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
                         disabled={getCartItemCount(product.id) === 0}
                       >
-                        <Minus size={14} />
+                        <Minus size={18} />
                       </button>
                       
-                      <span className="w-6 text-center font-medium text-sm flex items-center justify-center">
+                      <span className="w-8 text-center font-bold text-lg flex items-center justify-center">
                         {getCartItemCount(product.id)}
                       </span>
                       
                       <button
                         onClick={() => addToCart(product)}
-                        className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-50"
+                        className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-50"
                         disabled={
                           product.stock_enabled && 
                           product.stock_quantity !== undefined && 
                           (product.stock_quantity === 0 || getCartItemCount(product.id) >= product.stock_quantity)
                         }
                       >
-                        <Plus size={14} />
+                        <Plus size={18} />
                       </button>
                     </div>
                   </div>
@@ -464,14 +475,14 @@ export function Commande() {
       <div className="pb-8"></div>
 
       {cart.length > 0 && (
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center">
           <button
             onClick={handleSubmit}
             disabled={cart.length === 0 || submitting || !user}
-            className="btn-primary flex items-center space-x-2 shadow-lg disabled:opacity-50 px-4 py-2 rounded-lg text-white font-medium"
+            className="btn-primary flex items-center space-x-3 shadow-xl disabled:opacity-50 px-6 py-3 rounded-lg text-white font-medium text-lg"
             type="button"
           >
-            <ShoppingCart size={20} />
+            <ShoppingCart size={24} />
             <span>
               {!user 
                 ? 'Connectez-vous pour commander' 

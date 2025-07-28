@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { Product } from '../../services/types';
 
@@ -22,8 +22,7 @@ export const ProductForm = ({ initialData, categories, onCancel, onSubmit }: Pro
     image_url: initialData?.image_url || '',
     display_order: initialData?.display_order || 0,
   });
-  const [imageUploading, setImageUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Fonctionnalité d'upload d'image supprimée comme demandé
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,77 +125,7 @@ export const ProductForm = ({ initialData, categories, onCancel, onSubmit }: Pro
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Image du produit
-          </label>
-          <div className="space-y-2">
-            <div
-              className="border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer border-gray-300 hover:border-gray-400"
-              onClick={() => fileInputRef.current?.click()}
-              style={{ position: 'relative' }}
-            >
-              {formData.image_url && (
-                <img
-                  src={formData.image_url}
-                  alt="Aperçu du produit"
-                  className="mx-auto mb-2 rounded object-contain"
-                  style={{ maxHeight: 120, maxWidth: '100%' }}
-                />
-              )}
-              {imageUploading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-60">
-                  <span className="text-primary-600">Upload en cours...</span>
-                </div>
-              )}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mx-auto mb-2 text-gray-400"
-              >
-                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                <circle cx="9" cy="9" r="2"></circle>
-                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-              </svg>
-              <p className="text-sm text-gray-600 mb-2">Ajouter une image du produit</p>
-              <p className="text-xs text-gray-500">
-                Glissez-déposez une image ou cliquez pour sélectionner
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Formats acceptés: JPG, PNG, GIF (max 5MB)
-              </p>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setImageUploading(true);
-                    try {
-                      const { uploadProductImage } = await import('../../services/imageService');
-                      const url = await uploadProductImage(file);
-                      setFormData(prev => ({ ...prev, image_url: url }));
-                    } catch (err) {
-                      alert('Erreur lors de l\'upload de l\'image');
-                      console.error(err);
-                    } finally {
-                      setImageUploading(false);
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        {/* Section d'upload d'image supprimée comme demandé */}
 
         <div className="flex items-center">
           <input
