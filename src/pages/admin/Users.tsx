@@ -936,7 +936,7 @@ const Users: React.FC = () => {
   };
 
   // Fonction pour gérer le retour à la liste des utilisateurs
-  const handleBackToUserList = async () => {
+  const handleBackToUserList = () => {
     try {
       // Supprimer l'utilisateur sélectionné du localStorage
       localStorage.removeItem('selectedUserId');
@@ -944,31 +944,17 @@ const Users: React.FC = () => {
       // Supprimer les paramètres d'URL
       setSearchParams({});
       
-      // Attendre un délai suffisant pour s'assurer que les changements sont propagés dans Supabase
-      console.log('Attente de la propagation des changements...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Recharger la liste des utilisateurs pour avoir les totaux à jour
-      console.log('Rechargement de la liste des utilisateurs avant retour...');
-      await fetchUsers();
-      
-      // Vérification : si l'utilisateur modifié n'a pas le bon total, réessayer
-      if (selectedUser) {
-        const updatedUser = users.find(u => u.id === selectedUser.id);
-        if (updatedUser) {
-          console.log(`Vérification du total pour ${updatedUser.username}: ${updatedUser.debt}€`);
-          
-          // Si le total semble incorrect, forcer un second rechargement
-          if (updatedUser.debt === 0 || !updatedUser.debt) {
-            console.log('Total semble incorrect, second rechargement...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await fetchUsers();
-          }
-        }
-      }
-      
-      // Revenir à la liste des utilisateurs
+      // Revenir immédiatement à la liste des utilisateurs
       setSelectedUser(null);
+      
+      // Déclencher un rechargement asynchrone des utilisateurs en arrière-plan
+      // sans bloquer l'interface utilisateur
+      setTimeout(() => {
+        fetchUsers().catch(err => {
+          console.error('Erreur lors du rechargement en arrière-plan:', err);
+        });
+      }, 100);
+      
     } catch (error) {
       console.error('Erreur lors du retour à la liste:', error);
       // En cas d'erreur, revenir quand même à la liste
