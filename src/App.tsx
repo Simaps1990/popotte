@@ -23,7 +23,7 @@ const Profile = React.lazy(() => import('./pages/Profile').then(m => ({ default:
 const Users = React.lazy(() => import('./pages/admin/Users'));
 const Orders = React.lazy(() => import('./pages/admin/Orders').then(m => ({ default: m.Orders })));
 const News = React.lazy(() => import('./pages/admin/News').then(m => ({ default: m.News })));
-const Products = React.lazy(() => import('./pages/admin/Products'));
+const Products = React.lazy(() => import('./pages/admin/Products').then(m => ({ default: m.default })));
 const OrdersList = React.lazy(() => import('./pages/admin/OrdersList').then(m => ({ default: m.OrdersList })));
 const NewsList = React.lazy(() => import('./pages/admin/NewsList').then(m => ({ default: m.NewsList })));
 const OrderDetail = React.lazy(() => import('./pages/admin/OrderDetail').then(m => ({ default: m.OrderDetail })));
