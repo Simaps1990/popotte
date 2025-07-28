@@ -16,12 +16,10 @@ const Users: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [debtHistory, setDebtHistory] = useState<UserDebt[]>([]);
-  const [userOrders, setUserOrders] = useState<UserOrder[]>([]);
   const [debtSummary, setDebtSummary] = useState<{ totalUnpaid: number } | null>(null);
   const [loading, setLoading] = useState({
     users: true,
-    userDetails: false,
-    orders: false
+    userDetails: false
   });
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,12 +145,16 @@ const Users: React.FC = () => {
         
         // Récupérer l'historique des dettes avec fusion des optimistic updates
         const backendDebts = await userService.getUserDebtHistory(userId);
-        const mergedDebts = mergeDebtData(backendDebts);
-        setDebtHistory(mergedDebts);
         
-        // Récupérer les commandes de l'utilisateur
-        const orders = await userService.getUserOrders(userId);
-        setUserOrders(orders);
+        // Filtrer pour ne garder que les dettes non payées ajoutées par les administrateurs
+        // Une dette est considérée comme ajoutée par un admin quand created_by est différent de user_id
+        const filteredDebts = backendDebts.filter(debt => 
+          debt.status === 'unpaid' && 
+          debt.created_by !== debt.user_id
+        );
+        
+        const mergedDebts = mergeDebtData(filteredDebts);
+        setDebtHistory(mergedDebts);
       }
     } catch (err) {
       console.error('Erreur lors du chargement des détails de l\'utilisateur:', err);
@@ -1340,9 +1342,9 @@ const Users: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Section d'historique des dettes manuelles */}
+                {/* Section d'historique des dettes manuelles non payées ajoutées par les administrateurs */}
                 <div className="mt-6 border-t pt-4">
-                  <h4 className="font-medium mb-3">Historique des dettes manuelles</h4>
+                  <h4 className="font-medium mb-3">Dettes manuelles non payées</h4>
                   <div className="bg-white shadow rounded-lg overflow-hidden">
                     {loading.userDetails ? (
                       <div className="p-4 flex justify-center">
@@ -1440,65 +1442,7 @@ const Users: React.FC = () => {
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-500">
-                        Aucune dette manuelle pour cet utilisateur
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Section d'historique des commandes utilisateur */}
-                <div className="mt-6 border-t pt-4">
-                  <h4 className="font-medium mb-3">Historique des commandes</h4>
-                  <div className="bg-white shadow rounded-lg overflow-hidden">
-                    {loading.orders ? (
-                      <div className="p-4 flex justify-center">
-                        <Loader2 className="animate-spin h-6 w-6 text-primary-500" />
-                      </div>
-                    ) : userOrders.length > 0 ? (
-                      <div className="grid gap-3 p-4">
-                        {/* Filtrer pour n'afficher que les commandes en attente de paiement ou ajoutées par un admin */}
-                        {userOrders
-                          .filter(order => 
-                            // Commandes en attente de paiement
-                            order.status === 'pending' || 
-                            // Ou commandes non confirmées (qui peuvent être des ajouts manuels par admin)
-                            (order.status !== 'confirmed' && order.status !== 'delivered' && order.status !== 'cancelled')
-                          )
-                          .map((order) => (
-                            <div key={order.id} className="bg-white border rounded-lg p-3 shadow-sm">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                                <div className="flex-1 mb-2 sm:mb-0">
-                                  <div className="text-sm font-medium">Commande #{order.id?.substring(0, 8)}</div>
-                                  <div className="text-xs text-gray-500 mt-1">{formatDate(order.created_at || '')}</div>
-                                  {order.items && order.items.length > 0 && (
-                                    <div className="mt-2">
-                                      <div className="text-xs font-medium text-gray-700">Articles:</div>
-                                      <ul className="text-xs text-gray-600 mt-1 list-disc list-inside">
-                                        {order.items.map((item, index) => (
-                                          <li key={index}>
-                                            {item.quantity}x {item.name} ({(item.price || 0).toFixed(2)} €)
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    {order.status}
-                                  
-                                  </span>
-                                  
-                                  <span className="font-medium text-primary-600">{(order.total || 0).toFixed(2)} €</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-gray-500">
-                        Aucune commande en attente pour cet utilisateur
+                        Aucune dette manuelle non payée ajoutée par un administrateur
                       </div>
                     )}
                   </div>
