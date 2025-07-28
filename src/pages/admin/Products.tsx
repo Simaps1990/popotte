@@ -124,7 +124,7 @@ const Products = () => {
       <div className="flex items-center space-x-1">
         <button
           onClick={() => toggleProductAvailability(product)}
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           title={product.is_available ? "Rendre indisponible" : "Rendre disponible"}
         >
           {product.is_available ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -132,7 +132,7 @@ const Products = () => {
         <button
           onClick={() => handleMoveProduct(product.id, 'up')}
           disabled={index === 0}
-          className={`p-2 rounded-lg transition-colors ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-white'}`}
+          className={`p-2 rounded-lg transition-colors ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
           title="Monter le produit"
         >
           <ChevronUp size={18} />
@@ -140,21 +140,21 @@ const Products = () => {
         <button
           onClick={() => handleMoveProduct(product.id, 'down')}
           disabled={index === productsInCategory.length - 1}
-          className={`p-2 rounded-lg transition-colors ${index === productsInCategory.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600 hover:bg-white'}`}
+          className={`p-2 rounded-lg transition-colors ${index === productsInCategory.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
           title="Descendre le produit"
         >
           <ChevronDown size={18} />
         </button>
         <button
           onClick={() => handleEditProduct(product)}
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           title="Modifier le produit"
         >
           <PenSquare size={18} />
         </button>
         <button
           onClick={() => handleDeleteProduct(product.id)}
-          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           title="Supprimer le produit"
         >
           <Trash2 size={18} />
@@ -198,7 +198,7 @@ const Products = () => {
     }, 50);
   };
   
-  // Fonction pour tester directement la disponibilité d'un produit
+  // Fonction pour modifier la disponibilité d'un produit
   const toggleProductAvailability = async (product: Product) => {
     // Récupérer le produit le plus à jour directement depuis l'état
     const currentProduct = products.find(p => p.id === product.id) || product;
@@ -206,25 +206,36 @@ const Products = () => {
     
     // Optimistic update - mise à jour immédiate de l'UI
     const optimisticProduct = { ...currentProduct, is_available: newAvailability };
+    
+    // Appliquer la mise à jour optimiste immédiatement
     setProducts(prevProducts => {
       return prevProducts.map(p => p.id === currentProduct.id ? optimisticProduct : p);
     });
     
     try {
       // Appel API pour mettre à jour le backend
-      const updatedProduct = await productService.updateProduct(currentProduct.id, {
+      await productService.updateProduct(currentProduct.id, {
         is_available: newAvailability
       });
       
-      // Notification de succès
-      toast.success(`Produit ${updatedProduct.name} ${newAvailability ? 'disponible' : 'indisponible'}`);
+      // Notification de succès discrète
+      toast.success(
+        `Produit ${currentProduct.name} ${newAvailability ? 'visible' : 'masqué'}`,
+        { duration: 2000 }
+      );
+      
+      // Forcer un rechargement des données après un court délai
+      // pour s'assurer que l'état local est synchronisé avec le backend
+      setTimeout(() => {
+        fetchData();
+      }, 500);
     } catch (error) {
       // Rollback de l'optimistic update en cas d'erreur
       setProducts(prevProducts => {
         return prevProducts.map(p => p.id === currentProduct.id ? currentProduct : p);
       });
       
-      toast.error('Une erreur est survenue lors de la mise à jour de la disponibilité');
+      toast.error('Une erreur est survenue lors de la mise à jour de la visibilité');
     }
   };
 
