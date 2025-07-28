@@ -185,9 +185,7 @@ function App() {
           <ScrollToTop />
           <Routes>
             {/* Routes publiques */}
-            <Route path="/" element={<MemoizedPublicPage />}>
-              <Route index element={<Home />} />
-            </Route>
+            <Route path="/" element={<MemoizedPublicPage />} />
             <Route path="/auth" element={<MemoizedAuthPage />} />
             <Route path="/auth/callback" element={<MemoizedAuthCallback />} />
             {/* Routes protégées */}
