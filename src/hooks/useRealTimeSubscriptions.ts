@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -22,13 +22,61 @@ export const useRealTimeSubscriptions = ({
   userId
 }: UseRealTimeSubscriptionsProps) => {
   const subscriptionsRef = useRef<RealtimeChannel[]>([]);
-
+  const [isConnected, setIsConnected] = useState(true);
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Surveiller la connectivité du navigateur
   useEffect(() => {
-    // Nettoyer les abonnements existants
-    subscriptionsRef.current.forEach(subscription => {
-      supabase.removeChannel(subscription);
-    });
-    subscriptionsRef.current = [];
+    const handleOnline = () => {
+      console.log('🌐 Navigateur en ligne, reconnexion des abonnements...');
+      setIsConnected(true);
+      reconnectSubscriptions();
+    };
+    
+    const handleOffline = () => {
+      console.log('⚠️ Navigateur hors ligne, abonnements suspendus');
+      setIsConnected(false);
+    };
+    
+    // Surveiller les changements de visibilité de la page
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Page visible, vérification des abonnements...');
+        // Vérifier l'état des abonnements après un court délai
+        setTimeout(() => {
+          reconnectSubscriptions();
+        }, 500);
+      }
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Fonction sécurisée pour créer les abonnements
+  const createSubscriptions = () => {
+    try {
+      // Nettoyer les abonnements existants
+      subscriptionsRef.current.forEach(subscription => {
+        try {
+          supabase.removeChannel(subscription);
+        } catch (error) {
+          console.warn('⚠️ Erreur lors du nettoyage d\'un abonnement:', error);
+        }
+      });
+      subscriptionsRef.current = [];
 
     // Abonnement aux notifications de paiement (global pour les admins)
     if (onPaymentNotificationChange) {
@@ -112,26 +160,73 @@ export const useRealTimeSubscriptions = ({
       subscriptionsRef.current.push(newsChannel);
     }
 
+    } catch (error) {
+      console.error('❌ Erreur lors de la création des abonnements:', error);
+      // Planifier une nouvelle tentative
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+      reconnectTimerRef.current = setTimeout(() => {
+        console.log('🔄 Nouvelle tentative de création des abonnements...');
+        createSubscriptions();
+      }, 3000);
+    }
+  };
+  
+  // Fonction pour reconnecter les abonnements de façon sécurisée
+  const reconnectSubscriptions = () => {
+    try {
+      // Vérifier si les abonnements sont actifs
+      const allActive = subscriptionsRef.current.every(subscription => {
+        return subscription.state === 'joined';
+      });
+      
+      if (!allActive || subscriptionsRef.current.length === 0) {
+        console.log('🔌 Abonnements inactifs ou manquants, reconnexion...');
+        createSubscriptions();
+      } else {
+        console.log('✅ Tous les abonnements sont actifs');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification des abonnements:', error);
+      createSubscriptions();
+    }
+  };
+  
+  // Effet pour créer les abonnements
+  useEffect(() => {
+    if (isConnected) {
+      createSubscriptions();
+    }
+    
     // Nettoyage lors du démontage
     return () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      
       subscriptionsRef.current.forEach(subscription => {
-        supabase.removeChannel(subscription);
+        try {
+          supabase.removeChannel(subscription);
+        } catch (error) {
+          console.warn('⚠️ Erreur lors du nettoyage d\'un abonnement:', error);
+        }
       });
       subscriptionsRef.current = [];
     };
-  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId]);
+  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId, isConnected]);
 
   return {
     // Fonction pour forcer la reconnexion des abonnements
     reconnect: () => {
-      subscriptionsRef.current.forEach(subscription => {
-        supabase.removeChannel(subscription);
-      });
-      subscriptionsRef.current = [];
-      
-      // Les abonnements seront recréés automatiquement par l'effet
-    }
+      console.log('🔄 Reconnexion forcée des abonnements...');
+      reconnectSubscriptions();
+    },
+    // Exposer l'état de connexion
+    isConnected
   };
+
 };
 
 /**
@@ -152,12 +247,15 @@ export const useCacheInvalidation = () => {
     
     // Si une invalidation est déjà en cours ou si la dernière invalidation est trop récente, on ignore
     if (isInvalidatingRef.current || (now - lastInvalidationRef.current < DEBOUNCE_DELAY)) {
+      console.log('🔄 Invalidation du cache ignorée (trop récente ou déjà en cours)');
       return;
     }
     
     // Marquer le début de l'invalidation
     isInvalidatingRef.current = true;
     lastInvalidationRef.current = now;
+    console.log('🧹 Début de l\'invalidation du cache...');
+    
     
     // Vider UNIQUEMENT les caches liés aux données métier, pas les caches d'authentification
     if ('caches' in window) {

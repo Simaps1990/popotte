@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, ExternalLink, Bell, CheckCircle, ShoppingBag, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -92,6 +92,11 @@ export function Dettes() {
   const [notifying, setNotifying] = useState(false);
   const [pendingNotifications, setPendingNotifications] = useState<PaymentNotification[]>([]);
   
+  // Référence pour suivre si on revient de PayPal
+  const returnFromPayPalRef = useRef<boolean>(false);
+  // Référence pour suivre si la page est visible
+  const isPageVisibleRef = useRef<boolean>(true);
+  
   // Note: unpaidDebts et unpaidTotal sont définis plus bas dans le code
 
   // Hook pour l'invalidation du cache - avec référence pour éviter les appels multiples
@@ -137,6 +142,42 @@ export function Dettes() {
     return price.toFixed(2).replace('.', ',');
   };
 
+  // Gestionnaire de visibilité de la page pour éviter les crashs après retour de PayPal
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = document.visibilityState === 'visible';
+      isPageVisibleRef.current = isVisible;
+      
+      // Si la page redevient visible et qu'on revient potentiellement de PayPal
+      if (isVisible && returnFromPayPalRef.current) {
+        console.log('🔄 Retour de PayPal détecté, rechargement sécurisé des données...');
+        // Réinitialiser le flag
+        returnFromPayPalRef.current = false;
+        
+        // Recharger les données de façon sécurisée
+        try {
+          // Timeout pour laisser le temps aux connexions de se rétablir
+          setTimeout(() => {
+            if (user?.id) {
+              fetchAllDebtsAndOrders();
+              fetchNotifications();
+              toast.success('Données synchronisées après paiement');
+            }
+          }, 1000);
+        } catch (error) {
+          console.error('Erreur lors du rechargement après PayPal:', error);
+        }
+      }
+    };
+    
+    // Ajouter l'écouteur d'événement de visibilité
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id]);
+
   useEffect(() => {
     // Utiliser un flag pour suivre si le composant est monté
     let isMounted = true;
@@ -178,9 +219,11 @@ export function Dettes() {
       // Abonnement aux mises à jour en temps réel des commandes uniquement
       // L'abonnement aux dettes est maintenant géré par useDebtSubscription
       const unsubscribeOrders = orderService.subscribeToOrderUpdates(user.id, (payload: any) => {
-        console.log('💬 Mise à jour de commande détectée:', payload);
-        
-        // Suppression du rafraîchissement manuel : la synchronisation est désormais assurée par les abonnements temps réel Supabase.
+        // Vérifier si la page est visible avant de traiter les mises à jour
+        if (isPageVisibleRef.current) {
+          console.log('💬 Mise à jour de commande détectée:', payload);
+          // La synchronisation est assurée par les abonnements temps réel Supabase
+        }
       });
       
       // Nettoyage des abonnements lors du démontage du composant
@@ -406,6 +449,9 @@ export function Dettes() {
       // Notification visuelle immédiate
       toast('Redirection vers le paiement PayPal officiel. Merci d\'indiquer le motif dans PayPal !', { icon: '💸' });
       
+      // Marquer qu'on va vers PayPal pour gérer le retour correctement
+      returnFromPayPalRef.current = true;
+      
       // Ouvrir PayPal dans un nouvel onglet
       window.open('https://www.paypal.me/popotefor', '_blank');
 
@@ -416,6 +462,7 @@ export function Dettes() {
       // Réinitialiser l'interface en cas d'erreur
       setPaymentInitiated(false);
       setShowNotifyButton(false);
+      returnFromPayPalRef.current = false;
     } finally {
       setProcessingBulkPayment(false);
     }
