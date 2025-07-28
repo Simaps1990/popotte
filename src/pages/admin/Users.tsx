@@ -55,14 +55,22 @@ const Users: React.FC = () => {
         ? users.filter(user => user.id !== excludeUserId)
         : users;
       
+      // Tri alphabétique par nom d'utilisateur
+      const sortedUsers = [...filteredUsers].sort((a, b) => {
+        const nameA = (a.username || a.email || '').toLowerCase();
+        const nameB = (b.username || b.email || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      
       // Optimisation : traitement par lots pour éviter de surcharger l'API
       const batchSize = 10;
       const userBatches = [];
       
-      for (let i = 0; i < filteredUsers.length; i += batchSize) {
-        userBatches.push(filteredUsers.slice(i, i + batchSize));
+      for (let i = 0; i < sortedUsers.length; i += batchSize) {
+        userBatches.push(sortedUsers.slice(i, i + batchSize));
       }
       
+      // Utiliser un tableau temporaire pour collecter tous les utilisateurs traités
       let processedUsers: UserProfile[] = [];
       
       for (const batch of userBatches) {
@@ -79,9 +87,10 @@ const Users: React.FC = () => {
         }));
         
         processedUsers = [...processedUsers, ...batchResults];
-        // Mise à jour progressive de l'interface utilisateur
-        setUsers(currentUsers => [...currentUsers, ...batchResults]);
       }
+      
+      // Mettre à jour l'état une seule fois avec tous les utilisateurs traités
+      setUsers(processedUsers);
       
       console.log(`Traitement terminé pour ${processedUsers.length} utilisateurs`);
     } catch (err) {
@@ -353,21 +362,26 @@ const Users: React.FC = () => {
     }
   }, [searchParams, selectedUser, fetchUserDetails]);
   
-  useEffect(() => {
-    if (!selectedUser) return;
-    
-    const unsubscribeDebts = userService.subscribeToUserDebts(selectedUser.id, (payload) => {
-      console.log('Mise à jour des dettes:', payload);
-      if (selectedUser) {
-        fetchUserDetails(selectedUser.id);
-      }
-    });
-    
-    return unsubscribeDebts;
-  }, [selectedUser, fetchUserDetails]);
+  // Suppression de l'abonnement redondant qui cause une boucle infinie
+  // Cet abonnement est déjà géré par subscribeToUserDebtUpdates plus bas
+  // useEffect(() => {
+  //   if (!selectedUser) return;
+  //   
+  //   const unsubscribeDebts = userService.subscribeToUserDebts(selectedUser.id, (payload) => {
+  //     console.log('Mise à jour des dettes:', payload);
+  //     if (selectedUser) {
+  //       fetchUserDetails(selectedUser.id);
+  //     }
+  //   });
+  //   
+  //   return unsubscribeDebts;
+  // }, [selectedUser, fetchUserDetails]);
 
   const subscribeToUserDebtUpdates = useCallback((userId: string) => {
     console.log(`🔔 Abonnement aux mises à jour des dettes pour l'utilisateur ${userId}`);
+    
+    // Utiliser un debounce pour éviter les rechargements trop fréquents
+    let debounceTimer: NodeJS.Timeout | null = null;
     
     const unsubscribe = userService.subscribeToUserDebts(userId, (payload) => {
       console.log('📡 Mise à jour de dette reçue dans Users.tsx:', payload);
@@ -378,12 +392,25 @@ const Users: React.FC = () => {
         return;
       }
       
-      // Rafraîchir les détails de l'utilisateur pour mettre à jour les dettes
-      fetchUserDetails(userId);
+      // Annuler tout timer existant
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      
+      // Utiliser un délai pour éviter les rechargements multiples rapprochés
+      debounceTimer = setTimeout(() => {
+        console.log('⏱️ [subscribeToUserDebtUpdates] Rechargement après debounce');
+        fetchUserDetails(userId);
+      }, 300);
     });
     
-    return unsubscribe;
-  }, [fetchUserDetails]);
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      unsubscribe();
+    };
+  }, [fetchUserDetails, blockAutoReload]);
 
   useEffect(() => {
     if (selectedUser) {
@@ -397,9 +424,26 @@ const Users: React.FC = () => {
   }, [selectedUser?.id, fetchUserDetails, subscribeToUserDebtUpdates]);
 
   const handleSelectUser = (user: UserProfile) => {
-    setSelectedUser(user);
+    // Vérifier si l'utilisateur est déjà sélectionné pour éviter les rechargements inutiles
+    if (selectedUser && selectedUser.id === user.id) {
+      console.log('📋 [handleSelectUser] Utilisateur déjà sélectionné, pas de rechargement');
+      return;
+    }
+    
+    console.log('👤 [handleSelectUser] Sélection de l\'utilisateur:', user.username || user.email);
+    
     // Sauvegarder l'ID de l'utilisateur sélectionné dans localStorage
     localStorage.setItem('selectedUserId', user.id);
+    
+    // Mettre à jour l'URL avec l'ID de l'utilisateur sélectionné
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('userId', user.id);
+    setSearchParams(newSearchParams);
+    
+    // Mettre à jour l'utilisateur sélectionné dans l'état local
+    setSelectedUser(user);
+    
+    // Charger les détails de l'utilisateur
     fetchUserDetails(user.id);
   };
 
