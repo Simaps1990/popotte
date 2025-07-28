@@ -8,11 +8,25 @@
     margin: 0;
     padding: 0;
     background: #fff; /* Fond général blanc */
+    /* Fix pour la barre noire sous status bar iOS */
+    padding-top: env(safe-area-inset-top);
   }
   
   body {
     @apply text-gray-900;
     background: #fff; /* Fond général blanc */
+    /* Assurer que le contenu commence sous la status bar */
+    padding-top: 0;
+    margin-top: 0;
+  }
+  
+  /* Fix spécifique pour iOS */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      /* Suppression de tout padding/margin supplémentaire */
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
   }
   
   /* Header bleu foncé avec dégradé plus clair */

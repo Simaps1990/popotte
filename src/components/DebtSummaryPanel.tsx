@@ -65,17 +65,19 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
   }
 
   return (
-    <div className={`card border-l-4 ${totalUnpaid > 0 ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'} ${className} cursor-default shadow-none`}>
-      <div className="flex items-center space-x-4 p-4">
-        <div className={`w-12 h-12 ${totalUnpaid > 0 ? 'bg-red-100' : 'bg-green-100'} rounded-full flex items-center justify-center`}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
-            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-            <line x1="2" x2="22" y1="10" y2="10"></line>
-          </svg>
-        </div>
-        <div className="flex-1">
-          <h3 className={`font-semibold ${totalUnpaid > 0 ? 'text-red-900' : 'text-green-900'}`}>Dettes en cours</h3>
-          <p className={`text-sm ${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>Total à régler par les membres</p>
+    <div className={`${className} bg-gray-50 rounded-lg p-3 mb-4`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className={`mr-3 p-2 ${totalUnpaid > 0 ? 'bg-red-100' : 'bg-green-100'} rounded-lg`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+              <line x1="2" x2="22" y1="10" y2="10"></line>
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-gray-800 font-medium text-sm">DETTES EN COURS</h3>
+            <p className="text-xs text-gray-500">Total à régler par les membres</p>
+          </div>
         </div>
         <div className="text-right">
           {loading ? (
@@ -83,13 +85,14 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
           ) : error ? (
             <div className="text-sm text-red-500">{error}</div>
           ) : (
-            <div className={`text-2xl font-bold ${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            <div className={`text-xl font-bold ${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>
               {totalUnpaid.toFixed(2)} €
             </div>
           )}
-
         </div>
       </div>
+      {totalUnpaid > 0 && <div className="h-1 w-full bg-red-200 mt-3"><div className="h-1 bg-red-500" style={{width: '100%'}}></div></div>}
+      {totalUnpaid === 0 && <div className="h-1 w-full bg-green-200 mt-3"><div className="h-1 bg-green-500" style={{width: '100%'}}></div></div>}
     </div>
   );
 }

@@ -73,14 +73,16 @@ export function PendingDebtSummaryPanel({ className = '' }: PendingDebtSummaryPa
   }
 
   return (
-    <div className={`card border-l-4 !bg-white ${totalPending > 0 ? 'border-orange-500' : 'border-gray-500'} ${className} cursor-default shadow-none`}>
-      <div className="flex items-center space-x-4 p-4">
-        <div className={`w-12 h-12 ${totalPending > 0 ? 'bg-orange-100' : 'bg-white border border-gray-200'} rounded-full flex items-center justify-center`}>
-          <Clock className={`h-6 w-6 ${totalPending > 0 ? 'text-orange-600' : 'text-gray-600'}`} />
-        </div>
-        <div className="flex-1">
-          <h3 className={`font-semibold ${totalPending > 0 ? 'text-orange-900' : 'text-gray-900'}`}>Dettes à vérifier</h3>
-          <p className={`text-sm ${totalPending > 0 ? 'text-orange-600' : 'text-gray-600'}`}>En attente de validation</p>
+    <div className={`${className} bg-gray-50 rounded-lg p-3 mb-4`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className={`mr-3 p-2 ${totalPending > 0 ? 'bg-orange-100' : 'bg-gray-100'} rounded-lg`}>
+            <Clock className={`h-5 w-5 ${totalPending > 0 ? 'text-orange-600' : 'text-gray-600'}`} />
+          </div>
+          <div>
+            <h3 className="text-gray-800 font-medium text-sm">DETTES À VÉRIFIER</h3>
+            <p className="text-xs text-gray-500">En attente de validation</p>
+          </div>
         </div>
         <div className="text-right">
           {loading ? (
@@ -88,7 +90,7 @@ export function PendingDebtSummaryPanel({ className = '' }: PendingDebtSummaryPa
           ) : error ? (
             <div className="text-sm text-red-500">{error}</div>
           ) : (
-            <div className={`text-2xl font-bold ${totalPending > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+            <div className={`text-xl font-bold ${totalPending > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
               {totalPending.toFixed(2)} €
             </div>
           )}
@@ -99,6 +101,8 @@ export function PendingDebtSummaryPanel({ className = '' }: PendingDebtSummaryPa
           )}
         </div>
       </div>
+      {totalPending > 0 && <div className="h-1 w-full bg-orange-200 mt-3"><div className="h-1 bg-orange-500" style={{width: '100%'}}></div></div>}
+      {totalPending === 0 && <div className="h-1 w-full bg-gray-200 mt-3"><div className="h-1 bg-gray-500" style={{width: '100%'}}></div></div>}
     </div>
   );
 }

@@ -74,19 +74,20 @@ interface PaymentNotification {
 }
 
 export function Dettes() {
-  // Ajout pour la notification de paiement groupé
-  // Utiliser localStorage pour persister l'état du bouton de notification
-  const [showNotifyButton, setShowNotifyButton] = useState(() => {
-    return localStorage.getItem('showNotifyButton') === 'true';
-  });
   const { user } = useAuth();
+  // Ajout pour la notification de paiement groupé
+  const [showNotifyButton, setShowNotifyButton] = useState(() => {
+    // Récupérer l'état depuis localStorage au chargement initial
+    return user?.id ? localStorage.getItem(`show_notify_button_${user.id}`) === 'true' : false;
+  });
   const [debts, setDebts] = useState<UserDebt[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentInitiated, setPaymentInitiated] = useState<boolean>(() => {
-    return localStorage.getItem('paymentInitiated') === 'true';
+    // Récupérer l'état depuis localStorage au chargement initial
+    return user?.id ? localStorage.getItem(`payment_initiated_${user.id}`) === 'true' : false;
   });
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [payingOrder, setPayingOrder] = useState<Order | null>(null);
@@ -158,6 +159,18 @@ export function Dettes() {
         console.log('🔄 Retour de PayPal détecté, rechargement sécurisé des données...');
         // Réinitialiser le flag
         returnFromPayPalRef.current = false;
+        
+        // S'assurer que les états de notification sont persistés
+        if (user?.id) {
+          // Restaurer les états depuis localStorage
+          setPaymentInitiated(true);
+          setShowNotifyButton(true);
+          
+          // Persister dans localStorage
+          localStorage.setItem(`payment_initiated_${user.id}`, 'true');
+          localStorage.setItem(`show_notify_button_${user.id}`, 'true');
+          console.log('💾 États de paiement restaurés après retour de PayPal');
+        }
         
         // Recharger les données de façon sécurisée
         try {
@@ -312,126 +325,85 @@ export function Dettes() {
       console.error('Erreur lors du chargement des dettes et commandes:', error);
     }
   };
-
-// Fonction pour notifier le paiement groupé après PayPal
-  const handleNotifyBulkPayment = async () => {
   // Éviter les clics multiples
   if (notifying) {
     return;
   }
-  
+
   if (!user) {
     toast.error("Vous devez être connecté.");
     return;
   }
-    try {
-      // Activer l'état de notification en cours
-      setNotifying(true);
-      
-      const unpaidDebts = debts.filter(d => d.status === 'unpaid');
-      if (unpaidDebts.length === 0) {
-        toast.error('Aucune dette impayée à notifier.');
-        setNotifying(false);
-        return;
-      }
-      
-      // Sauvegarde des états actuels pour restauration en cas d'erreur
-      const previousDebts = [...debts];
-      
-      const debtIds = unpaidDebts.map(d => d.id);
-      const total = unpaidDebts.reduce((sum, d) => sum + d.amount, 0);
-      
-      // Mise à jour optimiste de l'interface utilisateur
-      // 1. Mettre à jour le statut des dettes en local
-      setDebts(currentDebts => 
-        currentDebts.map(debt => 
-          debtIds.includes(debt.id) 
-            ? { ...debt, status: 'payment_pending' as OrderStatus, updated_at: new Date().toISOString() } 
-            : debt
-        )
-      );
-      
-      // 2. Créer une notification locale temporaire
-      const tempNotification = {
-        id: `temp-${Date.now()}`,
-        user_id: user.id,
-        debt_ids: debtIds,
-        total_amount: total.toString(),
-        status: 'pending',
-        notified_at: new Date().toISOString()
-      };
-      
-      // Ajouter la notification temporaire à l'interface
-      setPendingNotifications(prev => [...prev, tempNotification]);
-      
-      // 3. Notification de succès immédiate
-      toast.success('Notification envoyée aux popotiers !');
-      
-      // Désactiver les boutons de notification
-      setShowNotifyButton(false);
-      setPaymentInitiated(false); // S'assurer que l'autre bouton est également masqué
-      
-      // Appels aux services en arrière-plan
-      // 1. Insérer dans la table payment_notifications
-      const { data: notifData, error } = await supabase
-        .from('payment_notifications')
-        .insert([{
-          ...(user ? { user_id: user.id } : {}),
-          debt_ids: debtIds,
-          total_amount: total,
-          status: 'pending',
-          notified_at: new Date().toISOString()
-        }])
-        .select();
-      if (error) throw error;
 
-      // 2. Mettre à jour le statut des dettes concernées
-      const { error: updateError } = await supabase
-        .from('debts')
-        .update({ status: 'payment_pending' })
-        .in('id', debtIds);
-      if (updateError) throw updateError;
+  try {
+    // Activer l'état de notification en cours
+    setNotifying(true);
 
-      // Remplacer la notification temporaire par la vraie notification
-      if (notifData && notifData.length > 0) {
-        setPendingNotifications(prev => 
-          prev.map(notif => 
-            notif.id === tempNotification.id 
-              ? { ...notifData[0], id: notifData[0].id }
-              : notif
-          )
-        );
-      }
-      
-      // NE PAS rafraîchir les données pour éviter d'écraser l'optimistic update
-      // L'abonnement temps réel se chargera de synchroniser les données plus tard
-    } catch (err) {
-      console.error('Erreur lors de la notification du paiement:', err);
-      
-      // Restaurer l'état précédent en cas d'erreur
-      // Recharger les dettes depuis la base pour s'assurer de la cohérence
-      await fetchAllDebtsAndOrders();
-      
-      // Supprimer la notification temporaire
-      setPendingNotifications(prev => prev.filter(n => !n.id.startsWith('temp-')));
-      
-      toast.error('Erreur lors de la notification du paiement');
-    } finally {
-      // Désactiver l'état de notification en cours
-      setNotifying(false);
+    // Récupérer les dettes impayées
+    const unpaidDebts = debts.filter(debt => debt.status === 'unpaid');
+    const unpaidDebtIds = unpaidDebts.map(debt => debt.id);
+
+    if (unpaidDebtIds.length === 0) {
+      toast.error('Aucune dette impayée à notifier');
+      return;
     }
-  };
+
+    // Calculer le montant total
+    const totalAmount = unpaidDebts.reduce((sum, debt) => sum + debt.amount, 0);
+
+    // Créer une notification de paiement
+    const { data, error } = await supabase
+      .from('payment_notifications')
+      .insert([
+        {
+          user_id: user.id,
+          debt_ids: unpaidDebtIds,
+          total_amount: totalAmount.toFixed(2),
+          status: 'pending',
+          notified_at: new Date().toISOString(),
+        },
+      ])
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    // Notification réussie
+    toast.success('Paiement notifié avec succès');
+
+    // Recharger les données
+    await fetchNotifications();
+
+    // Réinitialiser les états
+    setPaymentInitiated(false);
+    setShowNotifyButton(false);
+
+    // Nettoyer localStorage
+    if (user?.id) {
+      localStorage.removeItem(`payment_initiated_${user.id}`);
+      localStorage.removeItem(`show_notify_button_${user.id}`);
+      console.log('États de paiement supprimés de localStorage après notification');
+    }
+
+  } catch (error) {
+    console.error('Erreur lors de la notification:', error);
+    toast.error('Erreur lors de la notification du paiement');
+  } finally {
+    setNotifying(false);
+  }
+};
 
 // Fonction pour payer toutes les dettes en une seule fois
-  const handlePayAllDebts = async () => {
-    if (!user) {
-      toast.error("Vous devez être connecté.");
-      return;
-    }
-    if (debts.length === 0) {
-      toast.error('Aucune dette à payer');
-      return;
-    }
+const handlePayAllDebts = async () => {
+  if (!user) {
+    toast.error("Vous devez être connecté.");
+    return;
+  }
+  if (debts.length === 0) {
+    toast.error('Aucune dette à payer');
+    return;
+  }
 
     try {
       // Mise à jour immédiate de l'interface utilisateur
@@ -449,9 +421,21 @@ export function Dettes() {
       // Mise à jour instantanée de l'interface utilisateur
       // Afficher immédiatement le bouton de notification
       setPaymentInitiated(true);
-      localStorage.setItem('paymentInitiated', 'true');
       setShowNotifyButton(true);
-      localStorage.setItem('showNotifyButton', 'true');
+      
+      // Persister les états dans localStorage
+      if (user?.id) {
+        localStorage.setItem(`payment_initiated_${user?.id}`, 'true');
+        localStorage.setItem(`show_notify_button_${user?.id}`, 'true');
+        console.log('💾 États de paiement persistés dans localStorage');
+      }
+      
+      // Persister les états dans localStorage
+      if (user?.id) {
+        localStorage.setItem(`payment_initiated_${user?.id}`, 'true');
+        localStorage.setItem(`show_notify_button_${user?.id}`, 'true');
+        console.log('💾 États de paiement persistés dans localStorage');
+      }
       
       // Notification visuelle immédiate
       toast('Redirection vers le paiement PayPal officiel. Merci d\'indiquer le motif dans PayPal !', { icon: '💸' });
@@ -473,11 +457,9 @@ export function Dettes() {
       console.error('Erreur lors du paiement groupé:', error);
       toast.error('Une erreur est survenue lors du paiement groupé');
       
-      // Réinitialiser les états après notification réussie
+      // Réinitialiser l'interface en cas d'erreur
       setPaymentInitiated(false);
-      localStorage.removeItem('paymentInitiated');
       setShowNotifyButton(false);
-      localStorage.removeItem('showNotifyButton');
       returnFromPayPalRef.current = false;
     } finally {
       setProcessingBulkPayment(false);
