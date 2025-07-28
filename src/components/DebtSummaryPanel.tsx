@@ -65,7 +65,7 @@ export function DebtSummaryPanel({ className = '' }: DebtSummaryPanelProps) {
   }
 
   return (
-    <div className={`card border-l-4 ${totalUnpaid > 0 ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'} ${className}`}>
+    <div className={`card border-l-4 ${totalUnpaid > 0 ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'} ${className} cursor-default shadow-none`}>
       <div className="flex items-center space-x-4 p-4">
         <div className={`w-12 h-12 ${totalUnpaid > 0 ? 'bg-red-100' : 'bg-green-100'} rounded-full flex items-center justify-center`}>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${totalUnpaid > 0 ? 'text-red-600' : 'text-green-600'}`}>

@@ -828,9 +828,9 @@ const DebtSection: React.FC<DebtSectionProps> = ({
             }
           }}
           disabled={notifying}
-          className="w-full btn-primary flex items-center justify-center space-x-2 mt-2"
+          className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-150 flex items-center justify-center space-x-2 mt-2"
         >
-          <Bell className="h-4 w-4 mr-1" />
+          <CheckCircle className="h-4 w-4 mr-1" />
           <span>{notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}</span>
         </button>
       )}
@@ -860,16 +860,17 @@ return (
       </h1>
       {/* Bouton Notifier mon paiement aux popotiers */}
       {showNotifyButton && paymentInitiated && (
-        <div className="bg-orange-50 p-4 rounded mt-4 flex flex-col items-center">
+        <div className="bg-green-50 p-4 rounded mt-4 flex flex-col items-center">
           <button
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded font-semibold shadow"
+            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-semibold shadow flex items-center justify-center"
             onClick={handleNotifyBulkPayment}
             disabled={notifying}
           >
+            <CheckCircle className="h-5 w-5 mr-2" />
             {notifying ? 'Notification en cours...' : 'Notifier mon paiement aux popotiers'}
           </button>
           <div className="text-xs text-gray-600 mt-2">
-            Un récapitulatif de vos dettes sera envoyé à l’équipe pour validation.
+            Un récapitulatif de vos dettes sera envoyé à l'équipe pour validation.
           </div>
         </div>
       )}
