@@ -204,7 +204,7 @@ const Products = () => {
     const currentProduct = products.find(p => p.id === product.id) || product;
     const newAvailability = !currentProduct.is_available;
     
-    // Optimistic update - mise à jour immédiate de l'UI
+    // Créer une copie du produit avec la nouvelle visibilité
     const optimisticProduct = { ...currentProduct, is_available: newAvailability };
     
     // Appliquer la mise à jour optimiste immédiatement
@@ -224,12 +224,12 @@ const Products = () => {
         { duration: 2000 }
       );
       
-      // Forcer un rechargement des données après un court délai
-      // pour s'assurer que l'état local est synchronisé avec le backend
-      setTimeout(() => {
-        fetchData();
-      }, 500);
+      // Ne pas recharger les données pour éviter que l'UI ne revienne à l'état précédent
+      // L'optimistic update est suffisant et les changements seront synchronisés 
+      // lors du prochain chargement de la page
     } catch (error) {
+      console.error('Erreur lors de la mise à jour de la visibilité:', error);
+      
       // Rollback de l'optimistic update en cas d'erreur
       setProducts(prevProducts => {
         return prevProducts.map(p => p.id === currentProduct.id ? currentProduct : p);
