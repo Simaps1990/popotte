@@ -41,11 +41,9 @@ export function Commande() {
     console.log('🔄 [Commande] Chargement des données - Visite de page détectée');
     setLoading(true);
     
-    // Chargement initial avec indication visuelle
-    toast.loading('Chargement des produits...', { id: 'loading-products', duration: 1000 });
+    // Chargement initial sans notification
     fetchAllData().then(() => {
       if (isMounted) {
-        toast.success('Produits mis à jour', { id: 'loading-products', duration: 1000 });
         setLoading(false);
       }
     });
