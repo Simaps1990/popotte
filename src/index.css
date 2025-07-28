@@ -18,31 +18,7 @@
     margin: 0 !important;
   }
   
-  /* Fix spécifique pour iOS */
-  @supports (-webkit-touch-callout: none) {
-    :root {
-      --sat: env(safe-area-inset-top);
-    }
-    
-    body {
-      /* Suppression complète de tout espace sous la status bar */
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-    
-    /* Forcer le contenu à commencer au bord supérieur de l'écran */
-    .min-h-screen {
-      min-height: 100vh !important;
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-    }
-    
-    /* Ajustement spécifique pour le header */
-    header.site-header {
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-    }
-  }
+
   
   /* Header bleu foncé avec dégradé plus clair */
   header.site-header {
