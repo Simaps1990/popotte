@@ -27,8 +27,13 @@ export function useAuth() {
   return context
 }
 
-// Variable globale pour éviter la course condition entre les événements
+// Variables globales pour éviter les courses conditions et gérer les reconnexions
 let isSessionAlreadyProcessed = false;
+let lastSessionCheck = 0;
+let sessionCheckInterval: NodeJS.Timeout | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const SESSION_CHECK_INTERVAL = 30000; // 30 secondes
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -75,22 +80,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
     
-    // Vérifier immédiatement si l'utilisateur est déjà connecté
+    // Fonction améliorée pour vérifier la session existante
     const checkExistingSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // Éviter les vérifications trop fréquentes
+        const now = Date.now();
+        if (now - lastSessionCheck < 5000) { // Pas plus d'une fois toutes les 5 secondes
+          return;
+        }
+        lastSessionCheck = now;
+        
+        console.log('🔍 Vérification de la session existante...');
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (session?.user && isMounted) {
-          setUser(session.user)
-          setLoading(false)
+          console.log('✅ Session utilisateur valide trouvée');
+          setUser(session.user);
+          setLoading(false);
+          reconnectAttempts = 0; // Réinitialiser le compteur de tentatives
           // Ne pas appeler updateUserData ici pour éviter le double chargement
+        } else if (!session && user && isMounted) {
+          // Session perdue mais nous avions un utilisateur
+          console.warn('⚠️ Session perdue, tentative de récupération...');
+          handleSessionRecovery();
         }
       } catch (error) {
-        console.error('Erreur lors de la vérification de la session existante:', error)
+        console.error('❌ Erreur lors de la vérification de la session existante:', error);
+        if (user && isMounted) {
+          // Erreur lors de la vérification mais nous avions un utilisateur
+          handleSessionRecovery();
+        }
       }
-    }
+    };
+    
+    // Fonction pour tenter de récupérer une session perdue
+    const handleSessionRecovery = async () => {
+      if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        console.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de récupération de session`);
+        setUser(null);
+        setProfile(null);
+        setIsUserAdmin(false);
+        setLoading(false);
+        return;
+      }
+      
+      reconnectAttempts++;
+      console.log(`🔄 Tentative de récupération de session #${reconnectAttempts}...`);
+      
+      try {
+        // Tenter de rafraîchir la session
+        const { data, error } = await supabase.auth.refreshSession();
+        
+        if (error) {
+          console.error('❌ Échec du rafraîchissement de session:', error);
+          // Si l'erreur persiste, on déconnecte l'utilisateur après plusieurs tentatives
+          if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            setUser(null);
+            setProfile(null);
+            setIsUserAdmin(false);
+          }
+        } else if (data.session && data.user) {
+          console.log('✅ Session récupérée avec succès');
+          setUser(data.user);
+          reconnectAttempts = 0; // Réinitialiser le compteur
+          await updateUserData(data.user);
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la tentative de récupération de session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
     // Vérifier la session existante immédiatement
-    checkExistingSession()
+    checkExistingSession();
     
     // PAS DE checkSession() initial - on fait confiance à onAuthStateChange
     // Juste initialiser en mode loading
@@ -102,12 +165,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
         // Ne pas forcer la déconnexion si loading déjà passé à false
+        console.warn('⚠️ Timeout de chargement atteint, réinitialisation de l\'état');
         setUser(null)
         setProfile(null)
         setIsUserAdmin(false)
         setLoading(false)
       }
-    }, 4000) // 4 secondes maximum (plus tolérant)
+    }, 6000) // 6 secondes maximum (plus tolérant)
+    
+    // Mettre en place une vérification périodique de la session
+    if (sessionCheckInterval) {
+      clearInterval(sessionCheckInterval);
+    }
+    
+    sessionCheckInterval = setInterval(() => {
+      if (isMounted && !loading) {
+        checkExistingSession();
+      }
+    }, SESSION_CHECK_INTERVAL);
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

@@ -1,6 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { RealtimeChannel } from '@supabase/supabase-js';
+
+// Constantes pour la gestion des reconnexions
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 2000; // 2 secondes entre les tentatives
+const HEALTH_CHECK_INTERVAL = 30000; // 30 secondes
 
 interface UseRealTimeSubscriptionsProps {
   onPaymentNotificationChange?: () => void;
@@ -65,9 +70,18 @@ export const useRealTimeSubscriptions = ({
     };
   }, []);
 
+  // Compteur de tentatives de reconnexion
+  const reconnectAttemptsRef = useRef<number>(0);
+  // Timestamp de la dernière reconnexion réussie
+  const lastSuccessfulConnectionRef = useRef<number>(Date.now());
+  // Référence au timer de vérification de santé
+  const healthCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Fonction sécurisée pour créer les abonnements
-  const createSubscriptions = () => {
+  const createSubscriptions = useCallback(() => {
     try {
+      console.log('🔌 Création/recréation des abonnements temps réel...');
+      
       // Nettoyer les abonnements existants
       subscriptionsRef.current.forEach(subscription => {
         try {
@@ -173,25 +187,108 @@ export const useRealTimeSubscriptions = ({
     }
   };
   
-  // Fonction pour reconnecter les abonnements de façon sécurisée
-  const reconnectSubscriptions = () => {
+  // Fonction pour vérifier l'état de santé des abonnements
+  const checkSubscriptionsHealth = useCallback(() => {
     try {
+      // Si aucun abonnement n'est attendu, ne rien faire
+      if (!onPaymentNotificationChange && !onDebtChange && !onOrderChange && !onNewsChange) {
+        return;
+      }
+      
       // Vérifier si les abonnements sont actifs
-      const allActive = subscriptionsRef.current.every(subscription => {
-        return subscription.state === 'joined';
-      });
+      const allActive = subscriptionsRef.current.length > 0 && 
+        subscriptionsRef.current.every(subscription => subscription.state === 'joined');
+      
+      // Vérifier si le nombre d'abonnements correspond à ce qui est attendu
+      const expectedSubscriptions = [
+        onPaymentNotificationChange, 
+        onDebtChange && userId, 
+        onOrderChange && userId, 
+        onNewsChange
+      ].filter(Boolean).length;
+      
+      const hasCorrectSubscriptionCount = subscriptionsRef.current.length === expectedSubscriptions;
+      
+      if (!allActive || !hasCorrectSubscriptionCount) {
+        console.warn(`⚠️ Problème détecté avec les abonnements: ${subscriptionsRef.current.length}/${expectedSubscriptions} actifs`);        
+        reconnectSubscriptions();
+      } else {
+        console.log('✅ Tous les abonnements sont actifs et en bonne santé');
+        // Réinitialiser le compteur de tentatives si tout va bien
+        reconnectAttemptsRef.current = 0;
+        lastSuccessfulConnectionRef.current = Date.now();
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification de santé des abonnements:', error);
+      reconnectSubscriptions();
+    }
+  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId]);
+  
+  // Fonction pour reconnecter les abonnements de façon sécurisée
+  const reconnectSubscriptions = useCallback(() => {
+    try {
+      // Limiter le nombre de tentatives de reconnexion
+      if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        console.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de reconnexion. Attente prolongée avant nouvel essai.`);
+        
+        // Réinitialiser après un délai plus long
+        setTimeout(() => {
+          reconnectAttemptsRef.current = 0;
+          createSubscriptions();
+        }, RECONNECT_DELAY * 5);
+        
+        return;
+      }
+      
+      reconnectAttemptsRef.current++;
+      console.log(`🔄 Tentative de reconnexion #${reconnectAttemptsRef.current}...`);
+      
+      // Vérifier si les abonnements sont actifs
+      const allActive = subscriptionsRef.current.every(subscription => 
+        subscription.state === 'joined'
+      );
       
       if (!allActive || subscriptionsRef.current.length === 0) {
         console.log('🔌 Abonnements inactifs ou manquants, reconnexion...');
-        createSubscriptions();
+        
+        // Ajouter un délai progressif entre les tentatives
+        setTimeout(() => {
+          createSubscriptions();
+        }, RECONNECT_DELAY * Math.min(reconnectAttemptsRef.current, 3));
       } else {
         console.log('✅ Tous les abonnements sont actifs');
+        reconnectAttemptsRef.current = 0;
+        lastSuccessfulConnectionRef.current = Date.now();
       }
     } catch (error) {
       console.error('❌ Erreur lors de la vérification des abonnements:', error);
-      createSubscriptions();
+      
+      // Réessayer après un délai
+      setTimeout(() => {
+        createSubscriptions();
+      }, RECONNECT_DELAY);
     }
-  };
+  }, [createSubscriptions]);
+  
+  // Configurer une vérification périodique de santé des abonnements
+  useEffect(() => {
+    if (healthCheckTimerRef.current) {
+      clearInterval(healthCheckTimerRef.current);
+    }
+    
+    healthCheckTimerRef.current = setInterval(() => {
+      if (isConnected) {
+        checkSubscriptionsHealth();
+      }
+    }, HEALTH_CHECK_INTERVAL);
+    
+    return () => {
+      if (healthCheckTimerRef.current) {
+        clearInterval(healthCheckTimerRef.current);
+        healthCheckTimerRef.current = null;
+      }
+    };
+  }, [checkSubscriptionsHealth, isConnected]);
   
   // Effet pour créer les abonnements
   useEffect(() => {
@@ -206,6 +303,11 @@ export const useRealTimeSubscriptions = ({
         reconnectTimerRef.current = null;
       }
       
+      if (healthCheckTimerRef.current) {
+        clearInterval(healthCheckTimerRef.current);
+        healthCheckTimerRef.current = null;
+      }
+      
       subscriptionsRef.current.forEach(subscription => {
         try {
           supabase.removeChannel(subscription);
@@ -215,14 +317,18 @@ export const useRealTimeSubscriptions = ({
       });
       subscriptionsRef.current = [];
     };
-  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId, isConnected]);
+  }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId, isConnected, createSubscriptions]);
 
   return {
     // Fonction pour forcer la reconnexion des abonnements
     reconnect: () => {
       console.log('🔄 Reconnexion forcée des abonnements...');
+      // Réinitialiser le compteur de tentatives pour une reconnexion forcée
+      reconnectAttemptsRef.current = 0;
       reconnectSubscriptions();
     },
+    // Vérifier l'état de santé des abonnements
+    checkHealth: checkSubscriptionsHealth,
     // Exposer l'état de connexion
     isConnected
   };
