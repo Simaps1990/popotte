@@ -457,15 +457,24 @@ export function Dettes() {
       // Marquer qu'on va vers PayPal pour gérer le retour correctement
       returnFromPayPalRef.current = true;
       
-      // Ouvrir PayPal dans un nouvel onglet
-      const paypalWindow = window.open('https://www.paypal.me/popotefor', '_blank');
+      // Détecter si l'appareil est mobile (Android ou iOS)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      // Après un court délai, rediriger vers notre page de succès personnalisée
-      setTimeout(() => {
-        if (paypalWindow) {
-          paypalWindow.location.href = '/payment-success.html';
-        }
-      }, 500);
+      if (isMobile) {
+        // Sur mobile, utiliser une redirection directe pour éviter les problèmes de popup
+        console.log('📱 Appareil mobile détecté, utilisation de redirection directe vers PayPal');
+        window.location.href = 'https://www.paypal.me/popotefor';
+      } else {
+        // Sur desktop, continuer à utiliser l'ouverture dans un nouvel onglet
+        const paypalWindow = window.open('https://www.paypal.me/popotefor', '_blank');
+        
+        // Après un court délai, rediriger vers notre page de succès personnalisée
+        setTimeout(() => {
+          if (paypalWindow) {
+            paypalWindow.location.href = '/payment-success.html';
+          }
+        }, 500);
+      }
 
     } catch (error) {
       console.error('Erreur lors du paiement groupé:', error);
@@ -672,7 +681,12 @@ export function Dettes() {
 
       const { approvalUrl } = await response.json();
 
+      // Détecter si l'appareil est mobile (Android ou iOS)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
       // Rediriger vers PayPal pour le paiement
+      // Sur mobile comme sur desktop, utiliser une redirection directe pour ce cas
+      console.log(`${isMobile ? '📱 Mobile' : '🖥️ Desktop'}: Redirection vers PayPal pour paiement individuel`);
       window.location.href = approvalUrl;
 
     } catch (error) {
