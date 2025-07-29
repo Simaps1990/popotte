@@ -287,14 +287,14 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
         <div className="flex space-x-2">
           <button
             type="submit"
-            className="btn-primary flex items-center space-x-2"
+            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"
           >
             <Save size={20} />
             <span>{isEditing ? 'Modifier' : 'Publier'}</span>
           </button>
           <button
             type="button"
-            className="btn-secondary"
+            className="flex items-center px-4 py-2 rounded-md bg-gradient-to-r from-gray-300 to-gray-200 text-gray-700 hover:opacity-90 transition-opacity"
             onClick={onCancel}
           >
             Annuler

@@ -148,7 +148,7 @@ export function NewsList() {
         </div>
         <div className="mb-6">
           <button
-            className="btn-primary flex items-center space-x-2"
+            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"
             onClick={handleAddPost}
           >
             <Plus className="w-4 h-4" />

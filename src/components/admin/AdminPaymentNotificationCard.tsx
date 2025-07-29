@@ -71,14 +71,14 @@ export const AdminPaymentNotificationCard: React.FC<AdminPaymentNotificationCard
       )}
       <div className="flex gap-2 mt-2">
         <button
-          className="flex-1 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded shadow disabled:opacity-50"
+          className="flex-1 flex items-center justify-center bg-gradient-to-r from-green-600 to-green-500 text-white font-semibold py-2 rounded shadow hover:opacity-90 transition-opacity disabled:opacity-50"
           onClick={onConfirm}
           disabled={processing}
         >
           <CheckCircle className="mr-2" size={20} /> Confirmer
         </button>
         <button
-          className="flex-1 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded shadow disabled:opacity-50"
+          className="flex-1 flex items-center justify-center bg-gradient-to-r from-red-600 to-red-500 text-white font-semibold py-2 rounded shadow hover:opacity-90 transition-opacity disabled:opacity-50"
           onClick={onDelete}
           disabled={processing}
         >

@@ -620,7 +620,7 @@ const Products = () => {
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <button type="submit" className="btn-primary flex items-center space-x-2">
+                      <button type="submit" className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-save">
                           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                           <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -630,7 +630,7 @@ const Products = () => {
                       </button>
                       <button 
                         type="button" 
-                        className="btn-secondary"
+                        className="flex items-center px-4 py-2 rounded-md bg-gradient-to-r from-gray-300 to-gray-200 text-gray-700 hover:opacity-90 transition-opacity"
                         onClick={() => {
                           setIsCreatingCategory(false);
                           setNewCategoryName('');

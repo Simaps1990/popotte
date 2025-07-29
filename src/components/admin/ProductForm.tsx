@@ -146,7 +146,7 @@ export const ProductForm = ({ initialData, categories, onCancel, onSubmit }: Pro
         <div className="flex space-x-2 pt-4">
           <button
             type="submit"
-            className="btn-primary flex items-center space-x-2"
+            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"
           >
             <Save size={20} />
             <span>{initialData?.id ? 'Mettre à jour' : 'Créer'}</span>
@@ -154,7 +154,7 @@ export const ProductForm = ({ initialData, categories, onCancel, onSubmit }: Pro
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary"
+            className="flex items-center px-4 py-2 rounded-md bg-gradient-to-r from-gray-300 to-gray-200 text-gray-700 hover:opacity-90 transition-opacity"
           >
             Annuler
           </button>
