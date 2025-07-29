@@ -25,8 +25,8 @@ export function BottomNavigation() {
     // Pour la page d'accueil, vérifier l'exactitude
     if (path === '/' && location.pathname === '/') return true
     
-    // Cas spécial pour les pages de paramètres : actif pour /parametres et toutes les sous-pages admin
-    if (path === '/parametres' && (location.pathname.startsWith('/parametres') || location.pathname.startsWith('/admin'))) {
+    // Cas spécial pour les pages de paramètres : actif pour /parametres, /profil et toutes les sous-pages admin
+    if (path === '/parametres' && (location.pathname.startsWith('/parametres') || location.pathname.startsWith('/admin') || location.pathname === '/profil')) {
       return true
     }
     

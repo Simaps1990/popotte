@@ -146,7 +146,7 @@ export function Profile() {
             </div>
           )}
 
-          <div className="card bg-white border-white">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="space-y-4">
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-[#10182a]">
@@ -207,7 +207,7 @@ export function Profile() {
 
       {/* Changement de mot de passe */}
       <div className="space-y-4">
-        <div className="mb-4">
+        <div className="mt-8 mb-4">
           <h2 className="text-lg font-semibold text-[#10182a]">Changer le mot de passe</h2>
         </div>
 
@@ -222,7 +222,7 @@ export function Profile() {
             </div>
           )}
 
-          <div className="card">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="space-y-4">
               <div>
                 <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
