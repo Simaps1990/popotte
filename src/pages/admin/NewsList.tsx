@@ -163,9 +163,7 @@ export function NewsList() {
             
             {showForm && (
               <div className="mb-6">
-                <div className="bg-white border border-blue-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm text-blue-700">💡 Les articles sont maintenant sauvegardés dans Supabase.</p>
-                </div>
+
                 <NewsForm 
                   post={currentPost} 
                   onSave={handleSavePost} 
