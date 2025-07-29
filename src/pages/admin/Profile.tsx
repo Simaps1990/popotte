@@ -420,7 +420,7 @@ const Profile = () => {
             </div>
 
             {/* Changer le mot de passe */}
-            <div className="space-y-4">
+            <div className="mt-8 space-y-4">
               <div className="flex items-center space-x-2">
                 <Lock className="text-blue-600" size={20} />
                 <h2 className="text-lg font-semibold text-gray-800">Changer le mot de passe</h2>
