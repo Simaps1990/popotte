@@ -1138,16 +1138,17 @@ const Users: React.FC = () => {
         {/* Liste des utilisateurs (si aucun utilisateur sélectionné) */}
         {!selectedUser && (
           <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center justify-between mb-8">
+  <h1 className="text-2xl font-bold text-[#10182a]">Gestion des pax</h1>
   <button
     type="button"
     onClick={() => navigate('/parametres')}
-    className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-[#10182a] hover:bg-white hover:text-blue-700 transition-colors"
+    className="flex items-center px-4 py-2 rounded-lg shadow-sm text-white font-semibold transition-colors"
+    style={{ background: 'linear-gradient(to right, #10182a, #2a4365)' }}
   >
-    <ArrowLeft className="h-6 w-6 mr-2" />
-    <span className="font-semibold">Retour</span>
+    <span className="mr-2">Retour</span>
+    <ArrowLeft className="h-5 w-5" />
   </button>
-  <h1 className="text-2xl font-bold text-[#10182a]">Gestion des utilisateurs</h1>
 </div>
             <div className="space-y-4">
 
