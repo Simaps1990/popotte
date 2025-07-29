@@ -1133,24 +1133,24 @@ const Users: React.FC = () => {
   return (
     <div className="w-full min-h-screen pb-20 relative bg-white" style={{ background: '#fff' }}>
       <div className="space-y-6 max-w-2xl mx-auto">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold" style={{ color: '#10182a' }}>Gestion des pax</h1>
-          <button
-            type="button"
-            onClick={() => navigate('/parametres')}
-            className="flex items-center px-4 py-2 rounded-lg shadow-sm text-white font-semibold transition-colors"
-            style={{ background: 'linear-gradient(to right, #10182a, #2a4365)' }}
-          >
-            <span className="mr-2">Retour</span>
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
         {/* Liste des utilisateurs (si aucun utilisateur sélectionné) */}
         {!selectedUser && (
-          <div>
-            <div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold" style={{ color: '#10182a' }}>Gestion des pax</h1>
+              <button
+                type="button"
+                onClick={() => navigate('/parametres')}
+                className="flex items-center px-4 py-2 rounded-lg shadow-sm text-white font-semibold transition-colors"
+                style={{ background: 'linear-gradient(to right, #10182a, #2a4365)' }}
+              >
+                <span className="mr-2">Retour</span>
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+
+              <div>
                 <input
                   type="text"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1216,12 +1216,11 @@ const Users: React.FC = () => {
             </div>
           </div>
         )}
-        
         {/* Détail utilisateur (si un utilisateur est sélectionné) */}
         {selectedUser && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Gestion de {selectedUser?.username || 'utilisateur'}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Gestion de {selectedUser.username}</h1>
               <button
                 onClick={handleBackToUserList}
                 className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
