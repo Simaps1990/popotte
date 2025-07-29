@@ -1220,13 +1220,13 @@ const Users: React.FC = () => {
         {selectedUser && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Gestion de {selectedUser.username}</h1>
+              <h1 className="text-2xl font-bold text-[#10182a]">Gestion de {selectedUser.username}</h1>
               <button
                 onClick={handleBackToUserList}
-                className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"
               >
-                <ArrowLeft className="h-5 w-5" />
                 <span>Retour</span>
+                <ArrowLeft className="h-5 w-5 ml-1" />
               </button>
             </div>
             <div className="space-y-6">

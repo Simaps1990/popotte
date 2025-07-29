@@ -115,24 +115,22 @@ export function Profile() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          type="button"
-          onClick={() => navigate('/parametres')}
-          className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-[#10182a] hover:bg-white hover:text-blue-700 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="font-semibold">Retour</span>
-        </button>
-        <h1 className="text-2xl font-bold text-[#10182a]">Mon profil</h1>
-      </div>
-
-
-      {/* Informations personnelles */}
-      <div className="space-y-4">
+    <div className="container mx-auto px-4 py-6 max-w-2xl">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-[#10182a]">Mon profil</h1>
+          <button
+            type="button"
+            onClick={() => navigate('/parametres')}
+            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"
+          >
+            <span>Retour</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+        
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-[#10182a]">Informations personnelles</h2>
         </div>

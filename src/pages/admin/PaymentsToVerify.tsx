@@ -123,15 +123,15 @@ const PaymentsToVerify: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white pb-16">
-      <main className="container mx-auto px-4 py-6 max-w-md bg-white">
+      <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Paiements à vérifier</h1>
+          <h1 className="text-2xl font-bold text-[#10182a]">Paiements à vérifier</h1>
           <button
-            className="flex items-center space-x-2 text-primary-500 hover:text-primary-600 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"
             onClick={() => window.history.back()}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
             <span>Retour</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
           </button>
         </div>
     <div className="space-y-6">
