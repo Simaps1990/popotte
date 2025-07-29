@@ -340,7 +340,7 @@ const Settings = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-[#10182a]">Mon profil</h3>
-                    <p className="text-sm text-[#10182a]">Modifier mes informations personnelles</p>
+                    <p className="text-sm text-[#10182a]">Modifier mes informations</p>
                   </div>
                   <span className="text-gray-400">→</span>
                 </div>
