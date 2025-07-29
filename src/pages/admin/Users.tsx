@@ -1131,14 +1131,12 @@ const Users: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pb-16">
-  <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
-    <div className="mb-8">
-    </div>
+    <div className="w-full min-h-screen pb-20 relative bg-white" style={{ background: '#fff' }}>
+      <div className="space-y-6 max-w-2xl mx-auto pt-4">
         {/* Liste des utilisateurs (si aucun utilisateur sélectionné) */}
         {!selectedUser && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-8">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
   <h1 className="text-2xl font-bold text-[#10182a]">Gestion des pax</h1>
   <button
     type="button"
@@ -1452,7 +1450,7 @@ const Users: React.FC = () => {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
