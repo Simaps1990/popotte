@@ -271,7 +271,7 @@ const Settings = () => {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold" style={{ color: '#10182a' }}>Gestion des utilisateurs</h3>
+                        <h3 className="font-semibold" style={{ color: '#10182a' }}>Gestion des pax</h3>
                         <p className="text-sm" style={{ color: '#10182a' }}>Gérer les comptes</p>
                       </div>
                       <span className="text-blue-400">→</span>
@@ -304,7 +304,7 @@ const Settings = () => {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold" style={{ color: '#10182a' }}>Gestion des actualités</h3>
+                        <h3 className="font-semibold" style={{ color: '#10182a' }}>Gestion des news</h3>
                         <p className="text-sm" style={{ color: '#10182a' }}>Publier et modifier les articles</p>
                       </div>
                       <span className="text-purple-400">→</span>
