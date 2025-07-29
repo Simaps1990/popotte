@@ -338,7 +338,7 @@ const Profile = () => {
               </div>
               
               <form onSubmit={updateProfile} className="space-y-4">
-                <div className="card p-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -427,7 +427,7 @@ const Profile = () => {
               </div>
               
               <form onSubmit={updatePassword} className="space-y-4">
-                <div className="card p-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
