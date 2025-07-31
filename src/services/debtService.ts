@@ -240,47 +240,75 @@ export const debtService = {
   // Supprimer une dette (admin uniquement)
   async deleteDebt(debtId: string): Promise<boolean> {
     try {
+      console.log('🔥 [deleteDebt] Début de la suppression de la dette ID:', debtId);
+      
       // Vérifier si la dette existe et récupérer ses informations
       const { data: debtCheck, error: checkError } = await supabase
         .from('debts')
-        .select('id, order_id')
+        .select('id, order_id, amount, status')
         .eq('id', debtId);
       
       // Vérifier si des données ont été retournées
       if (checkError) {
-        console.error('Erreur lors de la vérification de la dette:', checkError);
+        console.error('❌ [deleteDebt] Erreur lors de la vérification de la dette:', checkError);
+        console.error('  - Code:', checkError.code);
+        console.error('  - Message:', checkError.message);
+        console.error('  - Details:', checkError.details);
         return false;
       }
       
       // Si aucune dette n'est trouvée ou si le tableau est vide
       if (!debtCheck || debtCheck.length === 0) {
-        console.error('Dette non trouvée avec l\'ID:', debtId);
+        console.error('❌ [deleteDebt] Dette non trouvée avec l\'ID:', debtId);
         return false;
       }
       
       // Utiliser la première dette trouvée
       const debt = debtCheck[0];
+      console.log('🔎 [deleteDebt] Dette trouvée:', debt);
       
       // Permettre la suppression des dettes liées à une commande
       if (debt.order_id) {
-        console.log('Suppression d\'une dette liée à une commande:', debt.order_id);
+        console.log('ℹ️ [deleteDebt] Suppression d\'une dette liée à une commande:', debt.order_id);
       }
       
-      // Supprimer la dette
-      const { error } = await supabase
+      // Supprimer la dette avec force=true pour s'assurer de la suppression
+      console.log('💥 [deleteDebt] Tentative de suppression avec force=true...');
+      const { error, count } = await supabase
         .from('debts')
-        .delete()
+        .delete({ count: 'exact' }) // Demander le nombre d'éléments supprimés
         .eq('id', debtId);
 
       if (error) {
-        console.error('Erreur lors de la suppression de la dette:', error);
+        console.error('❌ [deleteDebt] Erreur lors de la suppression de la dette:', error);
+        console.error('  - Code:', error.code);
+        console.error('  - Message:', error.message);
+        console.error('  - Details:', error.details);
         return false;
       }
       
-
+      // Vérifier que la dette a bien été supprimée
+      console.log('✅ [deleteDebt] Suppression réussie! Nombre d\'éléments supprimés:', count);
+      
+      // Double vérification que la dette n'existe plus
+      const { data: checkAfterDelete, error: checkError2 } = await supabase
+        .from('debts')
+        .select('id')
+        .eq('id', debtId)
+        .maybeSingle();
+        
+      if (checkError2) {
+        console.warn('⚠️ [deleteDebt] Erreur lors de la vérification post-suppression:', checkError2);
+      } else if (checkAfterDelete) {
+        console.error('❌ [deleteDebt] ALERTE: La dette existe toujours après suppression!');
+        return false;
+      } else {
+        console.log('✅ [deleteDebt] Vérification OK: La dette n\'existe plus dans la base');
+      }
+      
       return true;
     } catch (error) {
-      console.error('Erreur inattendue lors de la suppression de la dette:', error);
+      console.error('❌ [deleteDebt] Exception lors de la suppression de la dette:', error);
       return false;
     }
   },

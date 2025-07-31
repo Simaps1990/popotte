@@ -1051,6 +1051,18 @@ const Users: React.FC = () => {
     }
     
     try {
+      console.log('🔥 [handleDeleteDebt] Début de suppression de la dette ID:', debtId);
+      
+      // Trouver la dette à supprimer pour avoir ses informations complètes
+      const debtToRemove = debtHistory.find(debt => debt.id === debtId);
+      if (!debtToRemove) {
+        console.error('❌ [handleDeleteDebt] Dette non trouvée dans l\'historique local:', debtId);
+        alert('Dette introuvable dans l\'historique local.');
+        return;
+      }
+      
+      console.log('🔎 [handleDeleteDebt] Dette à supprimer:', debtToRemove);
+      
       // Optimistic update - Mettre à jour l'UI immédiatement
       // Sauvegarder l'état actuel des dettes pour pouvoir revenir en arrière en cas d'erreur
       const previousDebtHistory = [...debtHistory];
@@ -1059,37 +1071,74 @@ const Users: React.FC = () => {
       setDebtHistory(debtHistory.filter(debt => debt.id !== debtId));
       
       // Mettre à jour également le résumé des dettes si nécessaire
-      if (debtSummary) {
-        const debtToRemove = debtHistory.find(debt => debt.id === debtId);
-        if (debtToRemove && debtToRemove.status === 'unpaid') {
-          setDebtSummary({
-            ...debtSummary,
-            totalUnpaid: Math.max(0, debtSummary.totalUnpaid - (debtToRemove.amount || 0))
-          });
-        }
+      if (debtSummary && debtToRemove.status === 'unpaid') {
+        const newTotalUnpaid = Math.max(0, debtSummary.totalUnpaid - (debtToRemove.amount || 0));
+        console.log('💰 [handleDeleteDebt] Mise à jour du total impayé:', debtSummary.totalUnpaid, '->', newTotalUnpaid);
+        
+        setDebtSummary({
+          ...debtSummary,
+          totalUnpaid: newTotalUnpaid
+        });
       }
       
       // Appeler le service pour supprimer la dette
+      console.log('💥 [handleDeleteDebt] Appel du service de suppression...');
       const result = await debtService.deleteDebt(debtId);
       
-      if (result !== true) {
+      if (result === true) {
+        console.log('✅ [handleDeleteDebt] Suppression réussie!');
+        toast.success('Dette supprimée avec succès');
+        
+        // Mettre à jour la dette totale de l'utilisateur si c'était une dette impayée
+        if (debtToRemove.status === 'unpaid' && selectedUser) {
+          const newDebtAmount = Math.max(0, (selectedUser.debt || 0) - (debtToRemove.amount || 0));
+          console.log('💰 [handleDeleteDebt] Mise à jour de la dette utilisateur:', selectedUser.debt, '->', newDebtAmount);
+          
+          // Mettre à jour l'utilisateur sélectionné
+          setSelectedUser(prev => prev ? {
+            ...prev,
+            debt: newDebtAmount
+          } : null);
+          
+          // Mettre à jour la liste des utilisateurs
+          setUsers(prevUsers => 
+            prevUsers.map(user => 
+              user.id === selectedUser.id 
+                ? { ...user, debt: newDebtAmount }
+                : user
+            )
+          );
+        }
+        
+        // Force refresh des détails utilisateur pour s'assurer que tout est synchronisé
+        if (selectedUser) {
+          setTimeout(() => {
+            fetchUserDetails(selectedUser.id).catch(err => {
+              console.error('❌ [handleDeleteDebt] Erreur lors du rafraîchissement:', err);
+            });
+          }, 500);
+        }
+      } else {
         // La suppression a échoué, restaurer l'état précédent
+        console.error('❌ [handleDeleteDebt] Échec de la suppression!');
         setDebtHistory(previousDebtHistory);
         
         // Restaurer également le résumé des dettes
         if (selectedUser) {
+          console.log('🔄 [handleDeleteDebt] Récupération du résumé des dettes...');
           const summary = await debtService.getDebtSummary(selectedUser.id);
           setDebtSummary(summary);
         }
         
-        alert('Impossible de supprimer cette dette. Elle est peut-être liée à une commande ou a déjà été supprimée.');
+        toast.error('Impossible de supprimer cette dette.');
       }
     } catch (err) {
-      console.error('Erreur lors de la suppression de la dette:', err);
-      alert('Une erreur est survenue lors de la suppression de la dette.');
+      console.error('❌ [handleDeleteDebt] Exception lors de la suppression:', err);
+      toast.error('Une erreur est survenue lors de la suppression de la dette.');
       
       // En cas d'erreur, rafraîchir les détails pour s'assurer que les données sont cohérentes
       if (selectedUser) {
+        console.log('🔄 [handleDeleteDebt] Rafraîchissement forcé après erreur...');
         await fetchUserDetails(selectedUser.id);
       }
     }
