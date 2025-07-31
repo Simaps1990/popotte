@@ -87,24 +87,36 @@ export function NewsList() {
     try {
       setIsLoading(true);
       
-      if (!post.id) {
+      // Vérifier si c'est un nouvel article (ID commençant par 'temp-' ou pas d'ID)
+      const isNewPost = !post.id || post.id.toString().startsWith('temp-');
+      
+      if (isNewPost) {
         // Créer un nouvel article
         console.log('Tentative de création d\'un nouvel article:', post);
-        const newPost = await newsService.createNews({
+        console.log('Type de post.id:', typeof post.id, 'Valeur:', post.id);
+        
+        // Extraire uniquement les données nécessaires sans l'ID temporaire
+        const postData = {
           title: post.title,
           content: post.content,
           excerpt: post.excerpt || null,
           image_url: post.image_url || null,
           published: post.published !== undefined ? post.published : true,
           author_id: post.author_id
-        });
+        };
+        
+        console.log('Données envoyées à createNews:', postData);
+        
+        const newPost = await newsService.createNews(postData);
         
         if (newPost) {
           console.log('Nouvel article créé avec succès:', newPost);
+          console.log('ID généré par Supabase:', newPost.id);
           setPosts([newPost, ...posts]);
           setShowForm(false); // Fermer le formulaire après création réussie
         } else {
           console.error('Échec de création de l\'article: newPost est null');
+          alert('Erreur lors de la création de l\'article. Veuillez réessayer.');
         }
       } else {
         // Mettre à jour un article existant

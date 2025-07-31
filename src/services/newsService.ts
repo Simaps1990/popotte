@@ -44,20 +44,42 @@ export const newsService = {
   // Créer un nouvel article
   async createNews(newsData: Omit<NewsPost, 'id' | 'created_at' | 'updated_at'>): Promise<NewsPost | null> {
     try {
+      console.log('newsService.createNews - Début de la création avec les données:', newsData);
+      
+      // Vérifier les données obligatoires
+      if (!newsData.title) {
+        console.error('newsService.createNews - Titre manquant');
+        return null;
+      }
+      
+      // Préparer les données pour l'insertion
+      const payload = {
+        ...newsData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('newsService.createNews - Payload prêt pour insertion:', payload);
+      
+      // Insérer l'article dans la base de données
       const { data, error } = await supabase
         .from('news')
-        .insert([{
-          ...newsData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .insert([payload])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('newsService.createNews - Erreur Supabase:', error);
+        console.error('  - Code:', error.code);
+        console.error('  - Message:', error.message);
+        console.error('  - Details:', error.details);
+        throw error;
+      }
+      
+      console.log('newsService.createNews - Article créé avec succès:', data);
       return data;
     } catch (error) {
-      console.error('Erreur lors de la création de l\'article:', error);
+      console.error('newsService.createNews - Exception lors de la création:', error);
       return null;
     }
   },
