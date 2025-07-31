@@ -261,10 +261,9 @@ export const debtService = {
       // Utiliser la première dette trouvée
       const debt = debtCheck[0];
       
-      // Si la dette est liée à une commande, ne pas autoriser la suppression
+      // Permettre la suppression des dettes liées à une commande
       if (debt.order_id) {
-        console.error('Impossible de supprimer une dette liée à une commande');
-        return false;
+        console.log('Suppression d\'une dette liée à une commande:', debt.order_id);
       }
       
       // Supprimer la dette
