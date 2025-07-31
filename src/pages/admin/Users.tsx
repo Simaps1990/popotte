@@ -1194,8 +1194,8 @@ const Users: React.FC = () => {
                         </div>
                         <div className="flex items-center">
                           <h3 className="font-medium">{user.username}</h3>
-                          {user.debt > 0 && (
-                            <span className="text-sm font-medium text-red-600 ml-2 flex items-center">Dette: {user.debt.toFixed(2)} €</span>
+                          {(user.debt ?? 0) > 0 && (
+                            <span className="text-sm font-medium text-red-600 ml-2 flex items-center">Dette: {(user.debt ?? 0).toFixed(2)} €</span>
                           )}
                         </div>
                       </div>
