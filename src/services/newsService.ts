@@ -70,7 +70,7 @@ export const newsService = {
         author_id: newsData.author_id
       };
       
-      console.error('newsService.createNews - Payload prêt pour insertion:', payload);
+      console.log('🔍 newsService.createNews - Payload prêt pour insertion:', JSON.stringify(payload, null, 2));
       
       // Insérer l'article dans la base de données
       const { data, error } = await supabase
@@ -80,7 +80,7 @@ export const newsService = {
         .single();
       
       if (error) {
-        console.error('newsService.createNews - Erreur Supabase:', error);
+        console.error('❌ newsService.createNews - Erreur Supabase:', error);
         console.error('  - Code:', error.code);
         console.error('  - Message:', error.message);
         console.error('  - Details:', error.details);
@@ -88,14 +88,14 @@ export const newsService = {
       }
       
       if (!data) {
-        console.error('newsService.createNews - Aucune donnée retournée après insertion');
+        console.error('❌ newsService.createNews - Aucune donnée retournée après insertion');
         throw new Error('Aucune donnée retournée après insertion');
       }
       
-      console.error('newsService.createNews - Article créé avec succès:', data);
+      console.log('✅ newsService.createNews - Article créé avec succès:', data);
       return data;
     } catch (error: any) {
-      console.error('newsService.createNews - Exception lors de la création:', error);
+      console.error('❌ newsService.createNews - Exception lors de la création:', error);
       throw error; // Propager l'erreur pour une meilleure gestion dans le composant
     }
   },

@@ -18,6 +18,20 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Récupérer l'utilisateur connecté
+  const [user, setUser] = useState<any>(null);
+  
+  useEffect(() => {
+    // Récupérer l'utilisateur connecté au chargement du composant
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    };
+    
+    getUser();
+  }, []);
 
   const isEditing = !!post;
 
@@ -122,15 +136,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
     setIsLoading(true);
     
     try {
-      // Récupérer l'utilisateur connecté
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        alert('Vous devez être connecté pour créer ou modifier un article');
-        setIsLoading(false);
-        return;
-      }
-      
       // Vérifier les champs obligatoires
       if (!title.trim()) {
         alert('Le titre est obligatoire');
@@ -144,53 +149,54 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
         return;
       }
       
-      let finalImageUrl = post?.image_url || null;
+      // Vérifier que l'utilisateur est connecté
+      if (!user?.id) {
+        alert('Vous devez être connecté pour créer ou modifier un article');
+        setIsLoading(false);
+        return;
+      }
+      
+      let finalImageUrl = post?.image_url || '';
       
       // Si une nouvelle image a été sélectionnée, la télécharger
       if (imageFile) {
         try {
-          const fileName = `${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-          console.error('Tentative d\'upload de l\'image:', fileName);
+          console.log('📷 Début du téléchargement de l\'image...');
+          
+          // Générer un nom de fichier unique
+          const fileExt = imageFile.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
           
           // Essayer d'abord avec le bucket 'news'
           let { data: uploadData, error: uploadError } = await supabase.storage
             .from('news')
-            .upload(fileName, imageFile, { upsert: true });
+            .upload(fileName, imageFile);
           
-          // Si échec, essayer avec le bucket 'public'
+          // Si échec avec le bucket 'news', essayer avec 'public'
           if (uploadError) {
-            console.error('Erreur upload dans bucket news:', uploadError);
+            console.error('⚠️ Erreur lors du téléchargement dans le bucket "news":', uploadError);
+            console.log('🔄 Tentative avec le bucket "public"...');
             
             const { data: publicUploadData, error: publicUploadError } = await supabase.storage
               .from('public')
-              .upload(fileName, imageFile, { upsert: true });
+              .upload(fileName, imageFile);
             
             if (publicUploadError) {
-              console.error('Erreur upload dans bucket public:', publicUploadError);
+              console.error('❌ Erreur lors du téléchargement dans le bucket "public":', publicUploadError);
               throw new Error(`Erreur lors du téléchargement de l'image: ${publicUploadError.message}`);
-            } else {
-              // Succès avec le bucket 'public'
-              console.error('Upload réussi dans bucket public:', publicUploadData);
-              const { data: publicUrl } = supabase.storage
-                .from('public')
-                .getPublicUrl(fileName);
-              
-              finalImageUrl = publicUrl?.publicUrl || null;
-              console.error('URL publique générée (public):', finalImageUrl);
             }
-          } else {
-            // Succès avec le bucket 'news'
-            console.error('Upload réussi dans bucket news:', uploadData);
-            const { data: newsUrl } = supabase.storage
-              .from('news')
-              .getPublicUrl(fileName);
             
-            finalImageUrl = newsUrl?.publicUrl || null;
-            console.error('URL publique générée (news):', finalImageUrl);
+            uploadData = publicUploadData;
+            finalImageUrl = supabase.storage.from('public').getPublicUrl(fileName).data.publicUrl;
+            console.log('✅ Image téléchargée dans le bucket "public":', finalImageUrl);
+          } else {
+            finalImageUrl = supabase.storage.from('news').getPublicUrl(fileName).data.publicUrl;
+            console.log('✅ Image téléchargée dans le bucket "news":', finalImageUrl);
           }
-        } catch (uploadError) {
-          console.error('Exception lors de l\'upload de l\'image:', uploadError);
-          alert(`Erreur lors du téléchargement de l'image: ${uploadError instanceof Error ? uploadError.message : 'Erreur inconnue'}`);
+          
+        } catch (imageError: any) {
+          console.error('❌ Erreur lors du téléchargement de l\'image:', imageError);
+          alert(`Erreur lors du téléchargement de l'image: ${imageError.message}`);
           setIsLoading(false);
           return;
         }
@@ -199,26 +205,41 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
       // Préparer les données du post
       const postData: NewsPost = {
         id: post?.id || `temp-${Date.now()}`, // ID temporaire pour les nouveaux posts
-        title: title.trim(),
-        content: content.trim(),
-        excerpt: excerpt?.trim() || null,
+        title,
+        content,
+        excerpt,
         image_url: finalImageUrl,
         published,
-        author_id: user.id,
+        author_id: user.id, // Utiliser l'ID de l'utilisateur connecté
         created_at: post?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
       
-      console.error('Données du post prêtes à être envoyées:', postData);
+      console.log('📦 Données du post prêtes à être envoyées:', JSON.stringify(postData, null, 2));
       
-      // Appeler la fonction onSave avec les données du post
-      onSave(postData);
-    } catch (error) {
-      console.error('Erreur lors de la soumission du formulaire:', error);
-      alert(`Une erreur est survenue lors de la sauvegarde de l'article: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      // Appeler la fonction onSave pour sauvegarder le post
+      await onSave(postData);
+      
+      // Réinitialiser le formulaire après succès
+      resetForm();
+      console.log('✅ Formulaire soumis avec succès');
+    } catch (submitError: any) {
+      console.error('❌ Erreur lors de la soumission du formulaire:', submitError);
+      setError(`Erreur lors de la sauvegarde: ${submitError.message}`);
+      alert(`Erreur lors de la sauvegarde: ${submitError.message}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setExcerpt('');
+    setContent('');
+    setImageUrl('');
+    setPublished(true);
+    setImageFile(null);
+    setPreviewUrl(null);
   };
 
   return (

@@ -93,7 +93,7 @@ export function NewsList() {
       
       if (isNewPost) {
         // Créer un nouvel article
-        console.error('Tentative de création d\'un nouvel article:', post);
+        console.log('📣 Tentative de création d\'un nouvel article:', post);
         
         // Optimistic update - ajouter l'article temporairement à l'UI
         const tempPost = {
@@ -105,6 +105,7 @@ export function NewsList() {
         setPosts([tempPost, ...posts]);
         
         // Extraire uniquement les données nécessaires sans l'ID temporaire
+        // CORRECTION: Ne pas inclure l'ID temporaire dans les données envoyées à Supabase
         const postData = {
           title: post.title,
           content: post.content,
@@ -114,7 +115,7 @@ export function NewsList() {
           author_id: post.author_id
         };
         
-        console.error('Données envoyées à createNews:', postData);
+        console.log('📦 Données envoyées à createNews:', JSON.stringify(postData, null, 2));
         
         try {
           // Appel au service pour créer l'article
@@ -124,8 +125,8 @@ export function NewsList() {
             throw new Error('Aucun article retourné par le serveur');
           }
           
-          console.error('Nouvel article créé avec succès:', newPost);
-          console.error('ID généré par Supabase:', newPost.id);
+          console.log('✅ Nouvel article créé avec succès:', newPost);
+          console.log('🔑 ID généré par Supabase:', newPost.id);
           
           // Remplacer l'article temporaire par celui retourné par le serveur
           setPosts((currentPosts: NewsPost[]) => {
@@ -136,14 +137,19 @@ export function NewsList() {
           
           // Fermer le formulaire après création réussie
           setShowForm(false);
+          setCurrentPost(undefined); // Réinitialiser le post courant
+          
+          // Afficher un message de succès
+          alert('Article créé avec succès!');
         } catch (createError: any) {
           // Rollback de l'optimistic update en cas d'erreur
           setPosts((currentPosts: NewsPost[]) => currentPosts.filter(p => p.id !== tempPost.id));
           
-          console.error('Erreur lors de la création de l\'article:', createError);
+          console.error('❌ Erreur lors de la création de l\'article:', createError);
           setError(`Erreur lors de la création de l'article: ${createError.message || 'Erreur inconnue'}`);
           // Ne pas fermer le formulaire pour permettre à l'utilisateur de corriger
           setShowForm(true);
+          alert(`Erreur lors de la création de l'article: ${createError.message || 'Erreur inconnue'}`);
           return;
         }
       } else {
