@@ -1192,15 +1192,11 @@ const Users: React.FC = () => {
                         <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                           <span className="text-primary-600 font-semibold">{user.username.charAt(0).toUpperCase()}</span>
                         </div>
-                        <div>
+                        <div className="flex items-center">
                           <h3 className="font-medium">{user.username}</h3>
-                          <div className="flex items-center space-x-2">
-                            {user.debt && user.debt > 0 ? (
-                              <span className="text-sm font-medium text-red-600">Dette: {user.debt.toFixed(2)} €</span>
-                            ) : (
-                              <span className="text-sm text-green-600">Compte à jour</span>
-                            )}
-                          </div>
+                          {user.debt && user.debt > 0 && (
+                            <span className="text-sm font-medium text-red-600 ml-2">Dette: {user.debt.toFixed(2)} €</span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -1341,10 +1337,10 @@ const Users: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Section d'historique des dettes manuelles non payées ajoutées par les administrateurs */}
+                {/* Section d'historique des dettes en cours */}
                 <div className="mt-6 border-t pt-4">
-                  <h4 className="font-medium mb-3">Dettes manuelles non payées</h4>
-                  <div className="bg-white shadow rounded-lg overflow-hidden">
+                  <h4 className="font-medium mb-3">Dettes en cours</h4>
+                  <div className="rounded-lg overflow-hidden">
                     {loading.userDetails ? (
                       <div className="p-4 flex justify-center">
                         <Loader2 className="animate-spin h-6 w-6 text-primary-500" />
@@ -1352,7 +1348,7 @@ const Users: React.FC = () => {
                     ) : debtHistory.length > 0 ? (
                       <div className="grid gap-3 p-4">
                         {debtHistory.map((debt) => (
-                          <div key={debt.id} className="bg-white border rounded-lg p-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between">
+                          <div key={debt.id} className="bg-white border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between w-full">
                             {editingDebt && editingDebt.id === debt.id ? (
                               // Mode édition
                               <div className="w-full">
@@ -1397,7 +1393,7 @@ const Users: React.FC = () => {
                               // Mode affichage
                               <>
                                 <div className="flex-1 mb-2 sm:mb-0">
-                                  <div className="text-sm font-medium">{debt.description}</div>
+                                  <div className="text-sm font-medium">{debt.description.includes('Commande #') ? 'Commande utilisateur' : debt.description}</div>
                                   <div className="text-xs text-gray-500 mt-1">{formatDate(debt.created_at || '')}</div>
                                 </div>
                                 
@@ -1441,7 +1437,7 @@ const Users: React.FC = () => {
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-500">
-                        Aucune dette manuelle non payée ajoutée par un administrateur
+                        Aucune dette en cours
                       </div>
                     )}
                   </div>
