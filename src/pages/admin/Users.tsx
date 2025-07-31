@@ -1194,8 +1194,8 @@ const Users: React.FC = () => {
                         </div>
                         <div className="flex items-center">
                           <h3 className="font-medium">{user.username}</h3>
-                          {user.debt && user.debt > 0 && (
-                            <span className="text-sm font-medium text-red-600 ml-2">Dette: {user.debt.toFixed(2)} €</span>
+                          {user.debt > 0 && (
+                            <span className="text-sm font-medium text-red-600 ml-2 flex items-center">Dette: {user.debt.toFixed(2)} €</span>
                           )}
                         </div>
                       </div>
@@ -1346,9 +1346,9 @@ const Users: React.FC = () => {
                         <Loader2 className="animate-spin h-6 w-6 text-primary-500" />
                       </div>
                     ) : debtHistory.length > 0 ? (
-                      <div className="grid gap-3 p-4">
+                      <div className="grid gap-3 p-4 w-full">
                         {debtHistory.map((debt) => (
-                          <div key={debt.id} className="bg-white border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between w-full">
+                          <div key={debt.id} className="bg-white border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between w-full shadow-sm">
                             {editingDebt && editingDebt.id === debt.id ? (
                               // Mode édition
                               <div className="w-full">
