@@ -89,21 +89,26 @@ export function NewsList() {
       
       if (!post.id) {
         // Créer un nouvel article
+        console.log('Tentative de création d\'un nouvel article:', post);
         const newPost = await newsService.createNews({
           title: post.title,
           content: post.content,
           excerpt: post.excerpt || null,
           image_url: post.image_url || null,
-          published: post.published,
+          published: post.published !== undefined ? post.published : true,
           author_id: post.author_id
         });
         
         if (newPost) {
+          console.log('Nouvel article créé avec succès:', newPost);
           setPosts([newPost, ...posts]);
-          console.log('Nouvel article créé avec succès');
+          setShowForm(false); // Fermer le formulaire après création réussie
+        } else {
+          console.error('Échec de création de l\'article: newPost est null');
         }
       } else {
         // Mettre à jour un article existant
+        console.log('Tentative de mise à jour d\'un article:', post);
         const updatedPost = await newsService.updateNews(post.id, {
           title: post.title,
           content: post.content,
@@ -113,8 +118,11 @@ export function NewsList() {
         });
         
         if (updatedPost) {
+          console.log('Article mis à jour avec succès:', updatedPost);
           setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
-          console.log('Article mis à jour avec succès');
+          setShowForm(false); // Fermer le formulaire après mise à jour réussie
+        } else {
+          console.error('Échec de mise à jour de l\'article: updatedPost est null');
         }
       }
     } catch (err) {

@@ -126,18 +126,22 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
       // Récupérer l'ID de l'utilisateur connecté
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Utilisateur non connecté');
+      console.log('Utilisateur authentifié:', user.id);
       
       // Upload de l'image si une nouvelle image est sélectionnée
       let finalImageUrl = imageUrl;
       let uploadError = null;
       
       if (imageFile) {
+        console.log('Début de l\'upload de l\'image:', imageFile.name);
         try {
           const uploadedUrl = await uploadImage(imageFile);
           if (uploadedUrl) {
             finalImageUrl = uploadedUrl;
+            console.log('Image uploadée avec succès:', uploadedUrl);
           } else {
             uploadError = 'Impossible de télécharger l\'image. L\'article sera créé sans image.';
+            console.error('Échec de l\'upload d\'image: URL null');
           }
         } catch (error) {
           console.error('Erreur lors de l\'upload de l\'image:', error);
@@ -151,18 +155,30 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
         content,
         excerpt: excerpt || null,
         image_url: finalImageUrl || null,
-        published,
+        published: published !== undefined ? published : true,
         author_id: user.id
       };
+      
+      console.log('Données de l\'article à enregistrer:', postData);
       
       // Sauvegarder l'article
       if (isEditing && post) {
         // Mise à jour d'un article existant
+        console.log('Mise à jour de l\'article existant ID:', post.id);
         const updatedPost = { ...post, ...postData };
         onSave(updatedPost);
       } else {
         // Création d'un nouvel article
-        onSave(postData as NewsPost);
+        console.log('Création d\'un nouvel article');
+        // Ajouter un id temporaire pour satisfaire le typage
+        const newPostWithFakeId = {
+          ...postData,
+          id: 'temp-' + Date.now(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as NewsPost;
+        
+        onSave(newPostWithFakeId);
       }
       
       // Afficher un message d'erreur concernant l'image si nécessaire
