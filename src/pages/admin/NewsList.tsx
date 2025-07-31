@@ -86,14 +86,23 @@ export function NewsList() {
   const handleSavePost = async (post: NewsPost) => {
     try {
       setIsLoading(true);
+      setError(null); // Réinitialiser les erreurs précédentes
       
       // Vérifier si c'est un nouvel article (ID commençant par 'temp-' ou pas d'ID)
       const isNewPost = !post.id || post.id.toString().startsWith('temp-');
       
       if (isNewPost) {
         // Créer un nouvel article
-        console.log('Tentative de création d\'un nouvel article:', post);
-        console.log('Type de post.id:', typeof post.id, 'Valeur:', post.id);
+        console.error('Tentative de création d\'un nouvel article:', post);
+        
+        // Optimistic update - ajouter l'article temporairement à l'UI
+        const tempPost = {
+          ...post,
+          id: post.id || `temp-${Date.now()}`
+        };
+        
+        // Ajouter temporairement à l'UI pour feedback immédiat
+        setPosts([tempPost, ...posts]);
         
         // Extraire uniquement les données nécessaires sans l'ID temporaire
         const postData = {
@@ -105,45 +114,79 @@ export function NewsList() {
           author_id: post.author_id
         };
         
-        console.log('Données envoyées à createNews:', postData);
+        console.error('Données envoyées à createNews:', postData);
         
-        const newPost = await newsService.createNews(postData);
-        
-        if (newPost) {
-          console.log('Nouvel article créé avec succès:', newPost);
-          console.log('ID généré par Supabase:', newPost.id);
-          setPosts([newPost, ...posts]);
-          setShowForm(false); // Fermer le formulaire après création réussie
-        } else {
-          console.error('Échec de création de l\'article: newPost est null');
-          alert('Erreur lors de la création de l\'article. Veuillez réessayer.');
+        try {
+          // Appel au service pour créer l'article
+          const newPost = await newsService.createNews(postData);
+          
+          if (!newPost) {
+            throw new Error('Aucun article retourné par le serveur');
+          }
+          
+          console.error('Nouvel article créé avec succès:', newPost);
+          console.error('ID généré par Supabase:', newPost.id);
+          
+          // Remplacer l'article temporaire par celui retourné par le serveur
+          setPosts((currentPosts: NewsPost[]) => {
+            // Filtrer les posts pour enlever le temporaire et ajouter le nouveau
+            const filteredPosts = currentPosts.filter(p => p.id !== tempPost.id);
+            return [newPost as NewsPost, ...filteredPosts];
+          });
+          
+          // Fermer le formulaire après création réussie
+          setShowForm(false);
+        } catch (createError: any) {
+          // Rollback de l'optimistic update en cas d'erreur
+          setPosts((currentPosts: NewsPost[]) => currentPosts.filter(p => p.id !== tempPost.id));
+          
+          console.error('Erreur lors de la création de l\'article:', createError);
+          setError(`Erreur lors de la création de l'article: ${createError.message || 'Erreur inconnue'}`);
+          // Ne pas fermer le formulaire pour permettre à l'utilisateur de corriger
+          setShowForm(true);
+          return;
         }
       } else {
         // Mettre à jour un article existant
-        console.log('Tentative de mise à jour d\'un article:', post);
-        const updatedPost = await newsService.updateNews(post.id, {
-          title: post.title,
-          content: post.content,
-          excerpt: post.excerpt || null,
-          image_url: post.image_url || null,
-          published: post.published
-        });
+        console.error('Tentative de mise à jour d\'un article:', post);
         
-        if (updatedPost) {
-          console.log('Article mis à jour avec succès:', updatedPost);
-          setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
+        // Optimistic update pour la mise à jour
+        const originalPost = posts.find(p => p.id === post.id);
+        setPosts((currentPosts: NewsPost[]) => currentPosts.map(p => p.id === post.id ? post : p));
+        
+        try {
+          const updatedPost = await newsService.updateNews(post.id, {
+            title: post.title,
+            content: post.content,
+            excerpt: post.excerpt || null,
+            image_url: post.image_url || null,
+            published: post.published
+          });
+          
+          console.error('Article mis à jour avec succès:', updatedPost);
+          setPosts((currentPosts: NewsPost[]) => currentPosts.map(p => p.id === post.id ? updatedPost as NewsPost : p));
           setShowForm(false); // Fermer le formulaire après mise à jour réussie
-        } else {
-          console.error('Échec de mise à jour de l\'article: updatedPost est null');
+        } catch (updateError: any) {
+          // Rollback en cas d'erreur
+          if (originalPost) {
+            setPosts((currentPosts: NewsPost[]) => currentPosts.map(p => p.id === post.id ? originalPost : p));
+          }
+          
+          console.error('Erreur lors de la mise à jour de l\'article:', updateError);
+          setError(`Erreur lors de la mise à jour de l'article: ${updateError.message || 'Erreur inconnue'}`);
+          // Ne pas fermer le formulaire pour permettre à l'utilisateur de corriger
+          setShowForm(true);
+          return;
         }
       }
-    } catch (err) {
-      console.error('Erreur lors de la sauvegarde de l\'article:', err);
-      setError('Erreur lors de la sauvegarde de l\'article');
+    } catch (err: any) {
+      console.error('Erreur générale lors de la sauvegarde de l\'article:', err);
+      setError(`Erreur: ${err.message || 'Erreur inconnue lors de la sauvegarde de l\'article'}`);
+      // Ne pas fermer le formulaire en cas d'erreur générale
+      setShowForm(true);
     } finally {
       setIsLoading(false);
-      setShowForm(false);
-      setCurrentPost(undefined);
+      // Ne pas fermer le formulaire ici, cela sera géré dans les blocs try/catch
     }
   };
 

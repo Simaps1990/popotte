@@ -44,22 +44,33 @@ export const newsService = {
   // Créer un nouvel article
   async createNews(newsData: Omit<NewsPost, 'id' | 'created_at' | 'updated_at'>): Promise<NewsPost | null> {
     try {
-      console.log('newsService.createNews - Début de la création avec les données:', newsData);
-      
       // Vérifier les données obligatoires
       if (!newsData.title) {
         console.error('newsService.createNews - Titre manquant');
-        return null;
+        throw new Error('Le titre de l\'article est obligatoire');
       }
       
-      // Préparer les données pour l'insertion
+      if (!newsData.content) {
+        console.error('newsService.createNews - Contenu manquant');
+        throw new Error('Le contenu de l\'article est obligatoire');
+      }
+      
+      if (!newsData.author_id) {
+        console.error('newsService.createNews - ID auteur manquant');
+        throw new Error('L\'ID de l\'auteur est obligatoire');
+      }
+      
+      // Préparer les données pour l'insertion (sans id, created_at et updated_at)
       const payload = {
-        ...newsData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        title: newsData.title,
+        content: newsData.content,
+        excerpt: newsData.excerpt || null,
+        image_url: newsData.image_url || null,
+        published: newsData.published !== undefined ? newsData.published : true,
+        author_id: newsData.author_id
       };
       
-      console.log('newsService.createNews - Payload prêt pour insertion:', payload);
+      console.error('newsService.createNews - Payload prêt pour insertion:', payload);
       
       // Insérer l'article dans la base de données
       const { data, error } = await supabase
@@ -76,11 +87,16 @@ export const newsService = {
         throw error;
       }
       
-      console.log('newsService.createNews - Article créé avec succès:', data);
+      if (!data) {
+        console.error('newsService.createNews - Aucune donnée retournée après insertion');
+        throw new Error('Aucune donnée retournée après insertion');
+      }
+      
+      console.error('newsService.createNews - Article créé avec succès:', data);
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('newsService.createNews - Exception lors de la création:', error);
-      return null;
+      throw error; // Propager l'erreur pour une meilleure gestion dans le composant
     }
   },
   

@@ -117,77 +117,105 @@ export const NewsForm: React.FC<NewsFormProps> = ({ post, onSave, onCancel }) =>
       return null;
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Récupérer l'ID de l'utilisateur connecté
+      // Récupérer l'utilisateur connecté
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utilisateur non connecté');
-      console.log('Utilisateur authentifié:', user.id);
       
-      // Upload de l'image si une nouvelle image est sélectionnée
-      let finalImageUrl = imageUrl;
-      let uploadError = null;
+      if (!user) {
+        alert('Vous devez être connecté pour créer ou modifier un article');
+        setIsLoading(false);
+        return;
+      }
       
+      // Vérifier les champs obligatoires
+      if (!title.trim()) {
+        alert('Le titre est obligatoire');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!content.trim()) {
+        alert('Le contenu est obligatoire');
+        setIsLoading(false);
+        return;
+      }
+      
+      let finalImageUrl = post?.image_url || null;
+      
+      // Si une nouvelle image a été sélectionnée, la télécharger
       if (imageFile) {
-        console.log('Début de l\'upload de l\'image:', imageFile.name);
         try {
-          const uploadedUrl = await uploadImage(imageFile);
-          if (uploadedUrl) {
-            finalImageUrl = uploadedUrl;
-            console.log('Image uploadée avec succès:', uploadedUrl);
+          const fileName = `${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+          console.error('Tentative d\'upload de l\'image:', fileName);
+          
+          // Essayer d'abord avec le bucket 'news'
+          let { data: uploadData, error: uploadError } = await supabase.storage
+            .from('news')
+            .upload(fileName, imageFile, { upsert: true });
+          
+          // Si échec, essayer avec le bucket 'public'
+          if (uploadError) {
+            console.error('Erreur upload dans bucket news:', uploadError);
+            
+            const { data: publicUploadData, error: publicUploadError } = await supabase.storage
+              .from('public')
+              .upload(fileName, imageFile, { upsert: true });
+            
+            if (publicUploadError) {
+              console.error('Erreur upload dans bucket public:', publicUploadError);
+              throw new Error(`Erreur lors du téléchargement de l'image: ${publicUploadError.message}`);
+            } else {
+              // Succès avec le bucket 'public'
+              console.error('Upload réussi dans bucket public:', publicUploadData);
+              const { data: publicUrl } = supabase.storage
+                .from('public')
+                .getPublicUrl(fileName);
+              
+              finalImageUrl = publicUrl?.publicUrl || null;
+              console.error('URL publique générée (public):', finalImageUrl);
+            }
           } else {
-            uploadError = 'Impossible de télécharger l\'image. L\'article sera créé sans image.';
-            console.error('Échec de l\'upload d\'image: URL null');
+            // Succès avec le bucket 'news'
+            console.error('Upload réussi dans bucket news:', uploadData);
+            const { data: newsUrl } = supabase.storage
+              .from('news')
+              .getPublicUrl(fileName);
+            
+            finalImageUrl = newsUrl?.publicUrl || null;
+            console.error('URL publique générée (news):', finalImageUrl);
           }
-        } catch (error) {
-          console.error('Erreur lors de l\'upload de l\'image:', error);
-          uploadError = 'Erreur lors du téléchargement de l\'image. L\'article sera créé sans image.';
+        } catch (uploadError) {
+          console.error('Exception lors de l\'upload de l\'image:', uploadError);
+          alert(`Erreur lors du téléchargement de l'image: ${uploadError instanceof Error ? uploadError.message : 'Erreur inconnue'}`);
+          setIsLoading(false);
+          return;
         }
       }
       
-      // Préparer les données à sauvegarder
-      const postData: Omit<NewsPost, 'id' | 'created_at' | 'updated_at'> = {
-        title,
-        content,
-        excerpt: excerpt || null,
-        image_url: finalImageUrl || null,
-        published: published !== undefined ? published : true,
-        author_id: user.id
+      // Préparer les données du post
+      const postData: NewsPost = {
+        id: post?.id || `temp-${Date.now()}`, // ID temporaire pour les nouveaux posts
+        title: title.trim(),
+        content: content.trim(),
+        excerpt: excerpt?.trim() || null,
+        image_url: finalImageUrl,
+        published,
+        author_id: user.id,
+        created_at: post?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
-      console.log('Données de l\'article à enregistrer:', postData);
+      console.error('Données du post prêtes à être envoyées:', postData);
       
-      // Sauvegarder l'article
-      if (isEditing && post) {
-        // Mise à jour d'un article existant
-        console.log('Mise à jour de l\'article existant ID:', post.id);
-        const updatedPost = { ...post, ...postData };
-        onSave(updatedPost);
-      } else {
-        // Création d'un nouvel article
-        console.log('Création d\'un nouvel article');
-        // Ajouter un id temporaire pour satisfaire le typage
-        const newPostWithFakeId = {
-          ...postData,
-          id: 'temp-' + Date.now(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as NewsPost;
-        
-        onSave(newPostWithFakeId);
-      }
-      
-      // Afficher un message d'erreur concernant l'image si nécessaire
-      if (uploadError) {
-        alert(uploadError);
-      }
+      // Appeler la fonction onSave avec les données du post
+      onSave(postData);
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde de l\'article:', error);
-      alert('Une erreur est survenue lors de la sauvegarde de l\'article.');
+      console.error('Erreur lors de la soumission du formulaire:', error);
+      alert(`Une erreur est survenue lors de la sauvegarde de l'article: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setIsLoading(false);
     }
