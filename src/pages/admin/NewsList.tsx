@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Edit, Trash2, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { NewsForm } from '../../components/admin/NewsForm';
 import { type NewsPost } from '../../lib/supabase';
 import { newsService } from '../../services/newsService';
@@ -111,10 +111,7 @@ export function NewsList() {
     }
   };
   
-  // Recharger manuellement les actualités
-  const handleRefresh = () => {
-    loadPosts();
-  };
+  // Fonction supprimée : plus de rechargement manuel nécessaire
   
   const loadPosts = async () => {
     setIsLoading(true);
@@ -261,13 +258,6 @@ export function NewsList() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <h1 className="text-2xl font-bold text-[#10182a]">Gestion des news</h1>
-            <button
-              onClick={handleRefresh}
-              className="ml-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
-              title="Actualiser les données"
-            >
-              <RefreshCw className="h-5 w-5 text-[#10182a]" />
-            </button>
           </div>
           <button
             onClick={() => navigate(-1)}

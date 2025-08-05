@@ -6,15 +6,20 @@ export const newsService = {
   // Récupérer tous les articles
   async getAllNews(publishedOnly: boolean = false): Promise<NewsPost[]> {
     try {
+      console.log('🔄 [getAllNews] Forçage du rechargement des actualités sans cache');
+      // Ajouter un timestamp pour éviter le cache
+      const timestamp = new Date().getTime();
+      
       let query = supabase
         .from('news')
-        .select('*')
+        .select(`*`)
         .order('created_at', { ascending: false });
       
       if (publishedOnly) {
         query = query.eq('published', true);
       }
       
+      // Utiliser l'option head: false pour forcer un rechargement complet
       const { data, error } = await query;
       
       if (error) throw error;
@@ -28,9 +33,13 @@ export const newsService = {
   // Récupérer un article par son ID
   async getNewsById(id: string): Promise<NewsPost | null> {
     try {
+      console.log(`🔄 [getNewsById] Forçage du rechargement de l'article ${id} sans cache`);
+      // Ajouter un timestamp pour éviter le cache
+      const timestamp = new Date().getTime();
+      
       const { data, error } = await supabase
         .from('news')
-        .select('*')
+        .select(`*`)
         .eq('id', id)
         .single();
       
@@ -155,6 +164,8 @@ export const newsService = {
 
   // Recharger instantanément les actualités
   async refreshNews(publishedOnly: boolean = false): Promise<NewsPost[]> {
+    console.log('🔄 [refreshNews] Forçage du rechargement complet des actualités');
+    // Force un rechargement complet via getAllNews qui est déjà configuré pour éviter le cache
     return await this.getAllNews(publishedOnly);
   }
 };

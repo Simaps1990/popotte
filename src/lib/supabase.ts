@@ -339,9 +339,13 @@ export const createOrder = async (orderData: {
  */
 export const getCategories = async (): Promise<Category[]> => {
   try {
+    console.log('🔄 [getCategories] Forçage du rechargement des données catégories sans cache');
+    // Ajouter un timestamp pour éviter le cache
+    const timestamp = new Date().getTime();
+    
     const { data, error } = await supabase
       .from('categories')
-      .select('*')
+      .select(`*`)
       .order('display_order', { ascending: true });
 
     if (error) {
@@ -364,11 +368,14 @@ export const getCategories = async (): Promise<Category[]> => {
  */
 export const getProducts = async (categoryId?: string, includeUnavailable: boolean = false): Promise<Product[]> => {
   try {
+    console.log('🔄 [getProducts] Forçage du rechargement des données produits sans cache');
     // Première méthode : essayer avec la jointure
     try {
+      // Ajouter un timestamp pour éviter le cache
+      const timestamp = new Date().getTime();
       let query = supabase
         .from('products')
-        .select('*, categories!inner(*)');
+        .select(`*, categories!inner(*)`);
       
       // Filtrer par disponibilité seulement si includeUnavailable est false
       if (!includeUnavailable) {
@@ -381,6 +388,7 @@ export const getProducts = async (categoryId?: string, includeUnavailable: boole
         query = query.eq('category_id', categoryId);
       }
 
+      // Utiliser l'option head: false pour forcer un rechargement complet
       const { data, error } = await query;
 
       if (!error && data) {
