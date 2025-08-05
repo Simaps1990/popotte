@@ -104,12 +104,23 @@ export const Dashboard = () => {
     }
   };
 
+  // Fonction pour gérer le changement de visibilité de la page
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      console.log('📡 [Dashboard] Page redevenue visible, rechargement des données');
+      fetchStats();
+    }
+  };
+
   // Chargement initial et abonnements temps réel
   useEffect(() => {
     let isMounted = true;
     
     // Chargement initial
     fetchStats();
+    
+    // Ajouter un écouteur pour le changement de visibilité
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Abonnements temps réel pour toutes les tables critiques
     const subscriptions = [
@@ -125,7 +136,8 @@ export const Dashboard = () => {
           (payload: any) => {
             console.log('📡 [Dashboard] Changement de profil détecté:', payload);
             if (isMounted) {
-              setTimeout(() => fetchStats(), 500); // Délai pour éviter les conflits
+              // Mise à jour instantanée sans délai
+              fetchStats();
             }
           }
         )
@@ -143,7 +155,8 @@ export const Dashboard = () => {
           (payload: any) => {
             console.log('📡 [Dashboard] Changement de produit détecté:', payload);
             if (isMounted) {
-              setTimeout(() => fetchStats(), 500);
+              // Mise à jour instantanée sans délai
+              fetchStats();
             }
           }
         )
@@ -161,7 +174,8 @@ export const Dashboard = () => {
           (payload: any) => {
             console.log('📡 [Dashboard] Changement de paiement détecté:', payload);
             if (isMounted) {
-              setTimeout(() => fetchStats(), 500);
+              // Mise à jour instantanée sans délai
+              fetchStats();
             }
           }
         )
@@ -179,7 +193,8 @@ export const Dashboard = () => {
           (payload: any) => {
             console.log('📡 [Dashboard] Changement de commande détecté:', payload);
             if (isMounted) {
-              setTimeout(() => fetchStats(), 500);
+              // Mise à jour instantanée sans délai
+              fetchStats();
             }
           }
         )
@@ -197,7 +212,8 @@ export const Dashboard = () => {
           (payload: any) => {
             console.log('📡 [Dashboard] Changement de dette détecté:', payload);
             if (isMounted) {
-              setTimeout(() => fetchStats(), 500);
+              // Mise à jour instantanée sans délai
+              fetchStats();
             }
           }
         )
@@ -210,9 +226,10 @@ export const Dashboard = () => {
     return () => {
       console.log('🔕 [Dashboard] Désabonnement de tous les canaux temps réel');
       isMounted = false;
-      subscriptions.forEach(subscription => {
-        subscription.unsubscribe();
-      });
+      // Nettoyer tous les abonnements
+      subscriptions.forEach(subscription => subscription.unsubscribe());
+      // Supprimer l'écouteur de visibilité
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

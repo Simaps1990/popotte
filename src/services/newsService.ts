@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { type NewsPost } from '../lib/supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export const newsService = {
   // Récupérer tous les articles
@@ -135,5 +136,25 @@ export const newsService = {
       console.error(`Erreur lors de la suppression de l'article ${id}:`, error);
       return false;
     }
+  },
+
+  // S'abonner aux changements en temps réel des actualités
+  subscribeToNewsChanges(callback: (payload: { new: NewsPost; old: NewsPost; eventType: 'INSERT' | 'UPDATE' | 'DELETE' }) => void): RealtimeChannel {
+    const channel = supabase
+      .channel('news_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'news' }, 
+        (payload: any) => {
+          callback(payload);
+        }
+      )
+      .subscribe();
+    
+    return channel;
+  },
+
+  // Recharger instantanément les actualités
+  async refreshNews(publishedOnly: boolean = false): Promise<NewsPost[]> {
+    return await this.getAllNews(publishedOnly);
   }
 };

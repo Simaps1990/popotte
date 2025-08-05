@@ -13,29 +13,12 @@ export function useDebtSubscription(userId: string | undefined, onUpdate?: () =>
   const activeSubscriptionRef = useRef<(() => void) | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Protection contre les mises à jour trop fréquentes
+  // Mise à jour instantanée sans délai
   const handleUpdate = () => {
     const now = Date.now();
-    // Si la dernière mise à jour date de moins de 500ms, on attend
-    if (now - lastUpdate < 500) {
-      console.log('🛡️ Mise à jour trop rapide, debounce activé');
-      
-      // Annuler le timer précédent s'il existe
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Créer un nouveau timer
-      debounceTimerRef.current = setTimeout(() => {
-        console.log('⏱️ Debounce terminé, exécution de la mise à jour');
-        setLastUpdate(Date.now());
-        if (onUpdate) onUpdate();
-      }, 500);
-      
-      return;
-    }
+    console.log('⚡ [useDebtSubscription] Mise à jour instantanée');
     
-    // Sinon, on met à jour immédiatement
+    // Mise à jour immédiate sans délai
     setLastUpdate(now);
     if (onUpdate) onUpdate();
   };

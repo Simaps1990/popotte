@@ -204,10 +204,7 @@ export const userService = {
         return false;
       }
 
-      // Attendre un court délai pour la propagation
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-
+      // Retourner immédiatement sans délai
       return true;
       
     } catch (error) {
@@ -563,7 +560,7 @@ export const userService = {
             return false;
           } else {
             // Double vérification pour s'assurer que l'utilisateur a bien été supprimé
-            await new Promise(resolve => setTimeout(resolve, 500)); // Attendre un peu pour la propagation
+            // Vérification immédiate sans délai
             
             const { data: checkUser, error: checkError } = await supabase
               .from('profiles')

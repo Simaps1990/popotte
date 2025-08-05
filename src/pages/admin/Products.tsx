@@ -74,11 +74,9 @@ const Products = () => {
           (payload: any) => {
             console.log('📡 [Products] Changement de produit détecté:', payload);
             if (isMounted) {
-              // Délai pour éviter les conflits avec les mutations en cours
-              setTimeout(() => {
-                fetchData();
-                toast.success('Produits mis à jour automatiquement');
-              }, 500);
+              // Mise à jour instantanée sans délai
+              fetchData();
+              toast.success('Produits mis à jour instantanément');
             }
           }
         )
@@ -96,10 +94,9 @@ const Products = () => {
           (payload: any) => {
             console.log('📡 [Products] Changement de catégorie détecté:', payload);
             if (isMounted) {
-              setTimeout(() => {
-                fetchData();
-                toast.success('Catégories mises à jour automatiquement');
-              }, 500);
+              // Mise à jour instantanée sans délai
+              fetchData();
+              toast.success('Catégories mises à jour instantanément');
             }
           }
         )

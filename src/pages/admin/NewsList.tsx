@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Plus, Edit, Trash2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { NewsForm } from '../../components/admin/NewsForm';
 import { type NewsPost } from '../../lib/supabase';
 import { newsService } from '../../services/newsService';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 // Composant principal de gestion des actualités, charte graphique identique à Products
 export function NewsList() {
@@ -59,16 +60,68 @@ export function NewsList() {
     setShowForm(true);
   };
   
-  // Charger les articles au chargement du composant
+  // Référence pour le canal de temps réel
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+  const location = useLocation();
+  
+  // Charger les articles au chargement du composant et configurer les abonnements temps réel
+  useEffect(() => {
+    // Charger les articles immédiatement
+    loadPosts();
+    
+    // Configurer l'abonnement temps réel
+    setupRealtimeSubscription();
+    
+    // Configurer la détection de visibilité de la page
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Nettoyage lors du démontage du composant
+    return () => {
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+  
+  // Recharger les données lorsque l'utilisateur revient sur cette page
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [location.pathname]);
 
+  // Configurer l'abonnement temps réel aux changements d'actualités
+  const setupRealtimeSubscription = () => {
+    // Désabonner de l'ancien canal s'il existe
+    if (realtimeChannelRef.current) {
+      realtimeChannelRef.current.unsubscribe();
+    }
+    
+    // S'abonner aux changements d'actualités
+    realtimeChannelRef.current = newsService.subscribeToNewsChanges((_payload) => {
+      // Recharger automatiquement les actualités à chaque changement
+      loadPosts();
+    });
+  };
+  
+  // Gérer les changements de visibilité de la page
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      // Recharger les données lorsque l'utilisateur revient sur la page
+      loadPosts();
+    }
+  };
+  
+  // Recharger manuellement les actualités
+  const handleRefresh = () => {
+    loadPosts();
+  };
+  
   const loadPosts = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const allPosts = await newsService.getAllNews(false);
+      // Utiliser refreshNews pour garantir des données fraîches
+      const allPosts = await newsService.refreshNews(false);
       setPosts(allPosts);
     } catch (err) {
       console.error('Erreur lors du chargement des articles:', err);
@@ -206,7 +259,16 @@ export function NewsList() {
       <main className="container mx-auto px-4 py-6 max-w-2xl bg-white">
         {/* Ligne 1 : Titre à gauche, bouton retour à droite */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#10182a]">Gestion des news</h1>
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold text-[#10182a]">Gestion des news</h1>
+            <button
+              onClick={handleRefresh}
+              className="ml-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              title="Actualiser les données"
+            >
+              <RefreshCw className="h-5 w-5 text-[#10182a]" />
+            </button>
+          </div>
           <button
             onClick={() => navigate(-1)}
             className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gradient-to-r from-[#10182a] to-[#2a4365] text-white hover:opacity-90 transition-opacity"

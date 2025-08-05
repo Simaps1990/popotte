@@ -62,14 +62,12 @@ export function Commande() {
           (payload: any) => {
             console.log('📡 [Commande] Changement de produit détecté:', payload);
             if (isMounted) {
-              // Mise à jour automatique des produits
-              setTimeout(() => {
-                fetchProducts();
-                // Notification discrète pour l'utilisateur
-                if (payload.eventType === 'UPDATE') {
-                  toast.success('Produits mis à jour', { duration: 2000 });
-                }
-              }, 500);
+              // Mise à jour instantanée des produits
+              fetchProducts();
+              // Notification discrète pour l'utilisateur
+              if (payload.eventType === 'UPDATE') {
+                toast.success('Produits mis à jour instantanément', { duration: 2000 });
+              }
             }
           }
         )
@@ -87,12 +85,11 @@ export function Commande() {
           (payload: any) => {
             console.log('📡 [Commande] Changement de catégorie détecté:', payload);
             if (isMounted) {
-              setTimeout(() => {
-                fetchCategories();
-                if (payload.eventType === 'UPDATE') {
-                  toast.success('Menu mis à jour', { duration: 2000 });
-                }
-              }, 500);
+              // Mise à jour instantanée des catégories
+              fetchCategories();
+              if (payload.eventType === 'UPDATE') {
+                toast.success('Menu mis à jour instantanément', { duration: 2000 });
+              }
             }
           }
         )
