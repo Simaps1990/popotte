@@ -3,17 +3,15 @@ import { Plus, Minus, ShoppingCart, Package } from 'lucide-react'
 import { getProducts, getCategories, createOrder } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Product, Category } from '../lib/mockData'
-import { supabase } from '../lib/supabaseClient'
 import { toast } from 'react-hot-toast'
 import { usePageReload } from '../hooks/usePageReload'
+import { useProductSubscription } from '../hooks/useProductSubscription'
 
 interface CartItem {
   product: Product
   quantity: number
   selectedVariant?: string
 }
-
-// Le hook personnalisé a été déplacé dans src/hooks/usePageReload.ts
 
 export function Commande() {
   const { user } = useAuth()
@@ -23,10 +21,8 @@ export function Commande() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   
-  // Utiliser le hook pour forcer le rechargement à chaque visite
   const lastVisit = usePageReload()
 
-  // Fonction pour charger toutes les données
   const fetchAllData = async () => {
     await Promise.all([
       fetchProducts(),
@@ -34,91 +30,43 @@ export function Commande() {
     ]);
   };
 
-  // Chargement initial et abonnements temps réel
+  // Utiliser le hook centralisé pour les abonnements aux produits et catégories
+  useProductSubscription(
+    () => {
+      console.log('🔄 [Commande] Mise à jour des produits via hook centralisé');
+      fetchProducts();
+    },
+    () => {
+      console.log('🔄 [Commande] Mise à jour des catégories via hook centralisé');
+      fetchCategories();
+    }
+  );
+  
+  // Chargement initial des données
   useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    
-    // Chargement initial sans notification
-    fetchAllData().then(() => {
-      if (isMounted) {
-        setLoading(false);
-      }
-    });
-    
-    // Abonnements temps réel pour les produits et catégories
-    const productChannel = supabase.channel('commande_products_changes');
-    const categoryChannel = supabase.channel('commande_categories_changes');
-    
-    // Abonnement aux changements de produits avec priorité élevée
-    productChannel
-      .on('postgres_changes', 
-        { 
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        }, 
-        (payload: any) => {
-          if (isMounted) {
-            // Mise à jour instantanée des produits avec priorité
-            fetchProducts();
-            
-            // Notification discrète pour l'utilisateur
-            if (payload.eventType === 'UPDATE') {
-              toast.success('Produits mis à jour', { duration: 2000 });
-            }
-          }
-        }
-      )
-      .subscribe((status: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => {
-        if (status === 'SUBSCRIBED' && isMounted) {
-          // Forcer une synchronisation immédiate après l'abonnement
-          fetchProducts();
-        }
-      });
-      
-    // Abonnement aux changements de catégories
-    categoryChannel
-      .on('postgres_changes', 
-        { 
-          event: '*',
-          schema: 'public',
-          table: 'categories'
-        }, 
-        (payload: any) => {
-          if (isMounted) {
-            // Mise à jour instantanée des catégories
-            fetchCategories();
-            
-            if (payload.eventType === 'UPDATE') {
-              toast.success('Menu mis à jour', { duration: 2000 });
-            }
-          }
-        }
-      )
-      .subscribe((status: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => {
-        if (status === 'SUBSCRIBED' && isMounted) {
-          // Forcer une synchronisation immédiate après l'abonnement
-          fetchCategories();
-        }
-      });
-    
-    // Nettoyage lors du démontage
-    return () => {
-      isMounted = false;
-      productChannel.unsubscribe();
-      categoryChannel.unsubscribe();
-    };
-  }, [lastVisit]) // Recharger les données à chaque visite de la page
+    console.log('🔄 [Commande] Chargement initial des données');
+    fetchAllData();
+  }, [lastVisit]); // Recharger les données à chaque visite de la page
 
   const fetchProducts = async () => {
     try {
-      const data = await getProducts()
-      setProducts(data as Product[])
+      console.log('🔎 [Commande] Chargement des produits...');
+      
+      // Forcer un rechargement complet sans cache (incluant les produits indisponibles)
+      const data = await getProducts(undefined, true);
+      
+      console.log(`✅ [Commande] ${data.length} produits chargés`);
+      
+      // Mettre à jour l'état avec les nouvelles données
+      setProducts(data as Product[]);
+      
+      // Notification de succès discrète
+      // toast.success(`Produits synchronisés (${data.length})`, { duration: 1000 });
     } catch (error) {
-      toast.error('Erreur lors de la récupération des produits')
+      console.error('❌ [Commande] Erreur lors du chargement des produits:', error);
+      toast.error('Erreur lors de la récupération des produits');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronUp, ChevronDown, PenSquare, Trash2, Eye, EyeOff, ArrowLeft, FolderPlus } from 'lucide-react';
 import * as productService from '../../services/productService';
@@ -7,6 +7,9 @@ import { Product, Category } from '../../services/types';
 import { toast } from 'react-hot-toast';
 import { ProductForm } from '../../components/admin/ProductForm';
 import { supabase } from '../../lib/supabaseClient';
+import { broadcastProductChange, broadcastCategoryChange } from '../../services/syncService';
+import type { SupabaseEventPayload } from '../../services/syncTypes';
+import { useProductSubscription } from '../../hooks/useProductSubscription';
 
 type ProductsByCategory = (Category & { products: Product[] })[];
 
@@ -50,64 +53,22 @@ const Products = () => {
     }
   };
 
-  // Chargement initial et abonnements temps réel
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Chargement initial
-    fetchData();
-    
-    // Abonnements temps réel pour les produits et catégories
-    const subscriptions = [
-      // Abonnement aux changements de produits
-      supabase
-        .channel('products_admin_changes')
-        .on('postgres_changes', 
-          { 
-            event: '*',
-            schema: 'public',
-            table: 'products'
-          }, 
-          () => {
-            if (isMounted) {
-              // Mise à jour instantanée sans délai
-              fetchData();
-              toast.success('Produits mis à jour instantanément');
-            }
-          }
-        )
-        .subscribe(),
-        
-      // Abonnement aux changements de catégories
-      supabase
-        .channel('categories_admin_changes')
-        .on('postgres_changes', 
-          { 
-            event: '*',
-            schema: 'public',
-            table: 'categories'
-          }, 
-          () => {
-            if (isMounted) {
-              // Mise à jour instantanée sans délai
-              fetchData();
-              toast.success('Catégories mises à jour instantanément');
-            }
-          }
-        )
-        .subscribe()
-    ];
-    
+  // Utiliser le hook centralisé pour les abonnements aux produits et catégories
+  useProductSubscription(
+    () => {
+      console.log('🔄 [Products] Mise à jour des produits via hook centralisé');
+      fetchData();
+    },
+    () => {
+      console.log('🔄 [Products] Mise à jour des catégories via hook centralisé');
+      fetchData();
+    }
+  );
 
-    
-    // Nettoyage lors du démontage
-    return () => {
-      console.log('🔕 [Products] Désabonnement des canaux temps réel');
-      isMounted = false;
-      subscriptions.forEach(subscription => {
-        subscription.unsubscribe();
-      });
-    };
+  // Chargement initial
+  useEffect(() => {
+    console.log('🔄 [Products] Chargement initial des données');
+    fetchData();
   }, []);
 
   // Composant séparé pour les boutons d'action
