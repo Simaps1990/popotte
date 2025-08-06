@@ -96,7 +96,7 @@ export const getProductById = async (id: string): Promise<ProductWithRelations |
 
 export const createProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<ProductWithRelations> => {
   try {
-    console.log('🔄 Création d\'un nouveau produit...', productData);
+
     
     // Création du produit de base
     const { data: product, error: productError } = await supabase
@@ -127,7 +127,7 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
       throw new Error('Échec de la création du produit');
     }
     
-    console.log('✅ Produit de base créé avec succès:', product);
+
     
     // Gestion des variantes de stock si activé
     if (productData.stock_enabled && productData.stock_variants?.length) {
@@ -138,7 +138,7 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
         price_adjustment: variant.price_adjustment || 0
       }));
       
-      console.log('🔄 Ajout des variantes de stock:', variantsToInsert);
+
       
       const { error: variantsError } = await supabase
         .from('product_stock_variants')
@@ -149,7 +149,7 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
         throw variantsError;
       }
       
-      console.log('✅ Variantes de stock ajoutées avec succès');
+
     }
     
     // Récupérer le produit avec toutes ses relations
@@ -160,7 +160,7 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
       throw new Error('Échec de la récupération du produit créé');
     }
     
-    console.log('✅ Produit créé avec succès:', fullProduct);
+
     return fullProduct;
   } catch (error) {
     console.error('❌ Erreur lors de la création du produit:', error);
@@ -174,7 +174,7 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'created_a
  */
 export const updateMultipleProducts = async (updates: Array<{ id: string; updates: Partial<Product> }>) => {
   try {
-    console.log('🔄 Mise à jour de plusieurs produits en une seule transaction...', updates);
+
     
     // Utilisation d'une transaction pour mettre à jour tous les produits en une seule requête
     const { data, error } = await supabase
@@ -194,7 +194,7 @@ export const updateMultipleProducts = async (updates: Array<{ id: string; update
       throw error;
     }
 
-    console.log('✅ Produits mis à jour avec succès:', data);
+
     return data;
   } catch (error) {
     console.error('❌ Erreur lors de la mise à jour des produits:', error);
@@ -209,16 +209,16 @@ export const updateMultipleProducts = async (updates: Array<{ id: string; update
  */
 export const updateProduct = async (id: string, updates: Partial<Product>): Promise<ProductWithRelations> => {
   try {
-    console.log(`🔄 Mise à jour du produit ${id}...`, updates);
+
     
     // Extraire les stock_variants des mises à jour
     const { stock_variants, ...productUpdates } = updates;
     
     // Mise à jour du produit de base avec toutes les colonnes nécessaires
-    console.log('Mise à jour du produit dans la base de données:', { id, updates: productUpdates });
+
     
     // D'abord, récupérer le produit actuel
-    console.log('Récupération du produit actuel...');
+
     const { data: currentProduct, error: fetchError } = await supabase
       .from('products')
       .select('*')
@@ -234,7 +234,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
       throw new Error('Produit non trouvé');
     }
     
-    console.log('Produit actuel:', currentProduct);
+
     
     // Préparer les données de mise à jour (ne patcher que les champs explicitement modifiés)
     // Ne patcher que les champs vraiment modifiés (différents de la valeur actuelle)

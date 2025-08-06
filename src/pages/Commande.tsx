@@ -37,8 +37,6 @@ export function Commande() {
   // Chargement initial et abonnements temps réel
   useEffect(() => {
     let isMounted = true;
-    
-    console.log('🔄 [Commande] Chargement des données - Visite de page détectée');
     setLoading(true);
     
     // Chargement initial sans notification
@@ -49,73 +47,76 @@ export function Commande() {
     });
     
     // Abonnements temps réel pour les produits et catégories
-    const subscriptions = [
-      // Abonnement aux changements de produits
-      supabase
-        .channel('commande_products_changes')
-        .on('postgres_changes', 
-          { 
-            event: '*',
-            schema: 'public',
-            table: 'products'
-          }, 
-          (payload: any) => {
-            console.log('📡 [Commande] Changement de produit détecté:', payload);
-            if (isMounted) {
-              // Mise à jour instantanée des produits
-              fetchProducts();
-              // Notification discrète pour l'utilisateur
-              if (payload.eventType === 'UPDATE') {
-                toast.success('Produits mis à jour instantanément', { duration: 2000 });
-              }
-            }
-          }
-        )
-        .subscribe(),
-        
-      // Abonnement aux changements de catégories
-      supabase
-        .channel('commande_categories_changes')
-        .on('postgres_changes', 
-          { 
-            event: '*',
-            schema: 'public',
-            table: 'categories'
-          }, 
-          (payload: any) => {
-            console.log('📡 [Commande] Changement de catégorie détecté:', payload);
-            if (isMounted) {
-              // Mise à jour instantanée des catégories
-              fetchCategories();
-              if (payload.eventType === 'UPDATE') {
-                toast.success('Menu mis à jour instantanément', { duration: 2000 });
-              }
-            }
-          }
-        )
-        .subscribe()
-    ];
+    const productChannel = supabase.channel('commande_products_changes');
+    const categoryChannel = supabase.channel('commande_categories_changes');
     
-    console.log('🔔 [Commande] Abonnements temps réel activés pour produits et catégories');
+    // Abonnement aux changements de produits avec priorité élevée
+    productChannel
+      .on('postgres_changes', 
+        { 
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        }, 
+        (payload: any) => {
+          if (isMounted) {
+            // Mise à jour instantanée des produits avec priorité
+            fetchProducts();
+            
+            // Notification discrète pour l'utilisateur
+            if (payload.eventType === 'UPDATE') {
+              toast.success('Produits mis à jour', { duration: 2000 });
+            }
+          }
+        }
+      )
+      .subscribe((status: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => {
+        if (status === 'SUBSCRIBED' && isMounted) {
+          // Forcer une synchronisation immédiate après l'abonnement
+          fetchProducts();
+        }
+      });
+      
+    // Abonnement aux changements de catégories
+    categoryChannel
+      .on('postgres_changes', 
+        { 
+          event: '*',
+          schema: 'public',
+          table: 'categories'
+        }, 
+        (payload: any) => {
+          if (isMounted) {
+            // Mise à jour instantanée des catégories
+            fetchCategories();
+            
+            if (payload.eventType === 'UPDATE') {
+              toast.success('Menu mis à jour', { duration: 2000 });
+            }
+          }
+        }
+      )
+      .subscribe((status: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => {
+        if (status === 'SUBSCRIBED' && isMounted) {
+          // Forcer une synchronisation immédiate après l'abonnement
+          fetchCategories();
+        }
+      });
     
     // Nettoyage lors du démontage
     return () => {
-      console.log('🔕 [Commande] Désabonnement des canaux temps réel');
       isMounted = false;
-      subscriptions.forEach(subscription => {
-        subscription.unsubscribe();
-      });
+      productChannel.unsubscribe();
+      categoryChannel.unsubscribe();
     };
   }, [lastVisit]) // Recharger les données à chaque visite de la page
 
   const fetchProducts = async () => {
     try {
-      console.log('🔄 Récupération des produits...')
       const data = await getProducts()
-      console.log('✅ Produits récupérés:', data)
       setProducts(data as Product[])
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des produits:', error)
+      toast.error('Erreur lors de la récupération des produits')
     } finally {
       setLoading(false)
     }
@@ -123,12 +124,10 @@ export function Commande() {
 
   const fetchCategories = async () => {
     try {
-      console.log('🔄 Récupération des catégories...')
       const data = await getCategories()
-      console.log('✅ Catégories récupérées:', data)
-      setCategories(data as Category[])
+      setCategories(data as Array<Category & { id: string }>)
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des catégories:', error)
+      toast.error('Erreur lors de la récupération des catégories')
     }
   }
 

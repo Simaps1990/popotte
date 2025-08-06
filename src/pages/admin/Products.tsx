@@ -41,10 +41,7 @@ const Products = () => {
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
-      console.log('✅ [Products] Données mises à jour:', {
-        products: productsData.length,
-        categories: categoriesData.length
-      });
+
     } catch (error) {
       console.error('❌ [Products] Erreur lors du chargement des données:', error);
       toast.error('Erreur lors du chargement des données');
@@ -71,8 +68,7 @@ const Products = () => {
             schema: 'public',
             table: 'products'
           }, 
-          (payload: any) => {
-            console.log('📡 [Products] Changement de produit détecté:', payload);
+          () => {
             if (isMounted) {
               // Mise à jour instantanée sans délai
               fetchData();
@@ -91,8 +87,7 @@ const Products = () => {
             schema: 'public',
             table: 'categories'
           }, 
-          (payload: any) => {
-            console.log('📡 [Products] Changement de catégorie détecté:', payload);
+          () => {
             if (isMounted) {
               // Mise à jour instantanée sans délai
               fetchData();
@@ -103,7 +98,7 @@ const Products = () => {
         .subscribe()
     ];
     
-    console.log('🔔 [Products] Abonnements temps réel activés pour produits et catégories');
+
     
     // Nettoyage lors du démontage
     return () => {
