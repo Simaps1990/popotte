@@ -7,6 +7,10 @@
   # Les variables d'environnement Supabase doivent être configurées dans le dashboard Netlify
   # Ne pas les inclure ici pour éviter l'exposition de secrets
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 [[headers]]
   for = "/*"
   [headers.values]

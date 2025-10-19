@@ -30,6 +30,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@netlify/functions": "^2.8.2",
     "@types/history": "^4.7.11",
     "@types/node": "^20.19.6",
     "@types/react": "^18.3.18",
