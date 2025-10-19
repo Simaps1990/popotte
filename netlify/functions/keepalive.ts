@@ -1,9 +1,6 @@
-// Netlify Scheduled Function - Supabase Keep-Alive
-// Cette fonction s'exécute automatiquement tous les 3 jours pour empêcher
+// Netlify HTTP Function - Supabase Keep-Alive
+// Cette fonction peut être appelée par cron-job.org pour empêcher
 // Supabase de se mettre en pause après 7 jours d'inactivité.
-// Cron expression: "0 0 */3 * *" = Tous les 3 jours à minuit (UTC)
-
-import type { Config } from '@netlify/functions'
 
 const handler = async () => {
   try {
@@ -69,12 +66,6 @@ const handler = async () => {
       })
     }
   }
-}
-
-// Configuration de la fonction scheduled
-export const config: Config = {
-  // Exécuter tous les 3 jours à minuit (UTC)
-  schedule: '0 0 */3 * *'
 }
 
 export default handler
