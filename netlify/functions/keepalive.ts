@@ -7,9 +7,9 @@ import type { Config } from '@netlify/functions'
 
 const handler = async () => {
   try {
-    // Récupérer les variables d'environnement
-    const supabaseUrl = process.env.VITE_SUPABASE_URL
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
+    // Récupérer les variables d'environnement (essayer avec et sans VITE_)
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
 
     // Vérifier que les variables sont définies
     if (!supabaseUrl || !supabaseAnonKey) {
