@@ -82,35 +82,12 @@ export function AuthForm() {
       if (mode === 'login') {
         try {
           const startTime = Date.now()
-          
-          // TIMEOUT D'URGENCE - REDIRECTION FORCÉE SI SIGNIN BLOQUE
-          const emergencyRedirect = setTimeout(() => {
-            // REDIRECTION BRUTALE IMMÉDIATE SANS VÉRIFICATION
-            window.location.href = '/'
-            
-            // Méthode 2: Redirection de sécurité après 100ms
-            setTimeout(() => {
-              window.location.replace('/')
-            }, 100)
-            
-            // Méthode 3: Redirection de sécurité après 500ms
-            setTimeout(() => {
-              navigate('/', { replace: true })
-            }, 500)
-          }, 5000)
-          
-          let signInResult
-          try {
-            signInResult = await signIn(email, password)
-            clearTimeout(emergencyRedirect) // Annuler le timeout si signIn répond
-          } catch (signInError) {
-            clearTimeout(emergencyRedirect)
-            throw signInError
-          }
-          
+
+          // Connexion standard via signIn (Supabase gère la persistance)
+          const signInResult = await signIn(email, password)
           const { user, error } = signInResult
           const endTime = Date.now()
-          
+
           if (error) {
             console.error('❌ ERREUR DE CONNEXION DÉTECTÉE:')
             console.error('  - Message:', error.message)
@@ -118,64 +95,22 @@ export function AuthForm() {
             console.error('  - Détails:', error)
             throw error
           }
-          
+
           if (!user) {
             console.error('❌ AUCUN UTILISATEUR RETOURNÉ MALGRÉ ABSENCE D\'ERREUR')
             throw new Error('Aucun utilisateur retourné par signIn')
           }
-          
+
           setError('✅ Connexion réussie! Redirection en cours...')
-          
+
           // Attendre un court délai pour que la session se stabilise
           await new Promise(resolve => setTimeout(resolve, 500))
-          
-          // Vérifier à nouveau la session
-          const { data: finalSessionCheck } = await supabase.auth.getSession()
-          
+
+          // Navigation normale vers la page d'accueil
           navigate('/', { replace: true })
-          
-          // Méthode 2: window.location.href (après délai)
-          setTimeout(() => {
-            window.location.href = '/'
-          }, 100)
-          
-          // Méthode 3: window.location.replace (après délai plus long)
-          setTimeout(() => {
-            window.location.replace('/')
-          }, 500)
-          
-          // MÉTHODE 4: REDIRECTION BRUTALE IMMÉDIATE (NOUVEAU)
-          
-          // Forcer immédiatement
-          if (window.location.pathname === '/auth') {
-            console.log('  4. 🔥 FORCE IMMÉDIATE: window.location.href = "/"')
-            window.location.href = '/'
-          }
-          
-          // Vérification forcée toutes les 50ms pendant 2 secondes
-          let attempts = 0
-          const forceRedirect = setInterval(() => {
-            attempts++
-            console.log(`  4. 🔥 VÉRIFICATION FORCÉE #${attempts} - pathname:`, window.location.pathname)
-            
-            if (window.location.pathname === '/auth') {
-              console.log(`  4. 🔥 TENTATIVE FORCÉE #${attempts}: window.location.href = "/"`)
-              window.location.href = '/'
-            } else {
-              console.log(`  4. ✅ REDIRECTION RÉUSSIE après ${attempts} tentatives !`)
-              clearInterval(forceRedirect)
-            }
-            
-            // Arrêter après 40 tentatives (2 secondes)
-            if (attempts >= 40) {
-              console.log('  4. 💥 ÉCHEC TOTAL - REDIRECTION IMPOSSIBLE APRÈS 40 TENTATIVES')
-              clearInterval(forceRedirect)
-            }
-          }, 50)
-          
-          console.log('🏁 === FIN PROCESSUS DE CONNEXION ===')
+
           return
-          
+
         } catch (loginError) {
           console.error('💥 === ERREUR CRITIQUE DANS LE PROCESSUS DE CONNEXION ===')
           console.error('  - Type:', typeof loginError)
@@ -206,8 +141,8 @@ export function AuthForm() {
         // Attendre un peu pour que la session soit bien établie
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // SOLUTION RADICALE: Forcer le rechargement de la page
-        window.location.href = '/'
+        // Navigation normale vers la page d'accueil
+        navigate('/', { replace: true })
       }
     } catch (error) {
       console.error('Erreur lors de la soumission:', error)

@@ -116,17 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
           reconnectAttempts = 0; // Réinitialiser le compteur de tentatives
           // Ne pas appeler updateUserData ici pour éviter le double chargement
-        } else if (!session && user && isMounted) {
-          // Session perdue mais nous avions un utilisateur
-          console.warn('⚠️ Session perdue, tentative de récupération...');
-          handleSessionRecovery();
         }
       } catch (error) {
         console.error('❌ Erreur lors de la vérification de la session existante:', error);
-        if (user && isMounted) {
-          // Erreur lors de la vérification mais nous avions un utilisateur
-          handleSessionRecovery();
-        }
       }
     };
     
@@ -149,10 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('❌ Échec de la récupération d\'urgence:', e);
         }
         
-        // Si tout échoue, déconnecter
-        setUser(null);
-        setProfile(null);
-        setIsUserAdmin(false);
+        // Si tout échoue, ne pas forcer la déconnexion automatiquement
+        // On laisse la session actuelle telle quelle et on arrête juste les tentatives
         setLoading(false);
         return;
       }
@@ -239,10 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
         // Ne pas forcer la déconnexion si loading déjà passé à false
-        console.warn('⚠️ Timeout de chargement atteint, réinitialisation de l\'état');
-        setUser(null)
-        setProfile(null)
-        setIsUserAdmin(false)
+        console.warn('⚠️ Timeout de chargement atteint, arrêt du mode loading');
         setLoading(false)
       }
     }, 6000) // 6 secondes maximum (plus tolérant)
