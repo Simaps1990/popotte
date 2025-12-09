@@ -450,9 +450,10 @@ export const userService = {
     }
   },
 
-  // Supprimer un compte utilisateur
+  // Supprimer complètement un compte utilisateur et toutes ses données associées
   async deleteUser(userId: string): Promise<boolean> {
-
+    console.log(`🚀 [deleteUser] Début de la suppression complète de l'utilisateur ${userId}`);
+    
     try {
       // 0. Vérifier si l'utilisateur existe
       const { data: userCheck, error: userCheckError } = await supabase
@@ -462,145 +463,99 @@ export const userService = {
         .single();
       
       if (userCheckError || !userCheck) {
-        console.error('Erreur ou utilisateur non trouvé:', userCheckError);
+        console.error('❌ [deleteUser] Utilisateur non trouvé:', userCheckError);
         return false;
       }
       
-      // Vérifier que userCheck est bien défini et a les propriétés attendues
-      if (!userCheck.id || !userCheck.username || !userCheck.email) {
-        console.error('Données utilisateur incomplètes:', userCheck);
+      if (!userCheck.id) {
+        console.error('❌ [deleteUser] Données utilisateur incomplètes');
         return false;
       }
-      
 
+      // 1. Supprimer les notifications de paiement
+      console.log(`🗑️ [deleteUser] Suppression des notifications de paiement pour ${userId}`);
+      const { error: paymentNotificationsError } = await supabase
+        .from('payment_notifications')
+        .delete()
+        .eq('user_id', userId);
       
-      // 1. Gérer les dettes de l'utilisateur
-      try {
-        // Marquer toutes les dettes comme payées plutôt que de les supprimer
-        const { data: debtsData, error: debtsUpdateError } = await supabase
-          .from('debts')
-          .update({ status: 'paid' })
-          .eq('user_id', userId)
-          .select();
-        
-        if (debtsUpdateError) {
-          console.error('Erreur lors de la mise à jour des dettes:', debtsUpdateError);
-          // On continue malgré cette erreur
-        } else {
-
-        }
-      } catch (err) {
-        console.warn('Erreur lors de la gestion des dettes:', err);
+      if (paymentNotificationsError) {
+        console.warn('⚠️ [deleteUser] Erreur lors de la suppression des notifications de paiement:', paymentNotificationsError);
       }
 
-      // 2. Supprimer les commandes de l'utilisateur si nécessaire
-      try {
-        // D'abord compter les commandes pour le log
-        const { count: orderCount, error: countError } = await supabase
-          .from('orders')
-          .select('id', { count: 'exact' })
-          .eq('user_id', userId);
-          
-        // Ensuite supprimer
-        const { error: ordersError } = await supabase
-          .from('orders')
-          .delete()
-          .eq('user_id', userId);
-
-        if (ordersError) {
-          console.error('Erreur lors de la suppression des commandes:', ordersError);
-        }
-      } catch (err) {
-        console.warn('Erreur lors de la tentative de suppression des commandes:', err);
+      // 2. Supprimer les notifications
+      console.log(`🗑️ [deleteUser] Suppression des notifications pour ${userId}`);
+      const { error: notificationsError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (notificationsError) {
+        console.warn('⚠️ [deleteUser] Erreur lors de la suppression des notifications:', notificationsError);
       }
 
-      // 3. Tenter directement la suppression physique (plus fiable)
-
-      try {
-        // Vérifier d'abord s'il existe des contraintes FK qui empêcheraient la suppression
-        const { count: relatedDebts } = await supabase
-          .from('debts')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId);
-          
-        const { count: relatedOrders } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId);
-        
-        // Essayer d'abord le soft delete (plus fiable avec les contraintes FK)
-        const timestamp = Date.now();
-        const newUsername = `SUPPRIME_${timestamp}_${userId.substring(0, 8)}`;
-        const newEmail = `supprime_${timestamp}@deleted.user`;
-        
-        const { data: updateData, error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            username: newUsername,
-            email: newEmail,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', userId)
-          .select();
-        
-        if (updateError) {
-          console.error('Erreur lors du soft delete:', updateError);
-          console.error('Détails:', JSON.stringify(updateError));
-          
-          // Si le soft delete échoue, on essaie la suppression physique
-          // Force la suppression en cascade si possible
-          const { error: deleteError } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', userId);
-          
-          if (deleteError) {
-            console.error('Erreur lors de la suppression physique:', deleteError);
-            console.error('Détails:', JSON.stringify(deleteError));
-            return false;
-          } else {
-            // Double vérification pour s'assurer que l'utilisateur a bien été supprimé
-            // Vérification immédiate sans délai
-            
-            const { data: checkUser, error: checkError } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', userId)
-              .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur
-            
-            if (checkUser) {
-              return false;
-            } else {
-              return true;
-            }
-          }
-        } else {
-          // Vérifier que la mise à jour a bien été appliquée
-          const { data: checkUser, error: checkError } = await supabase
-            .from('profiles')
-            .select('username, email')
-            .eq('id', userId)
-            .maybeSingle();
-          
-          if (checkError) {
-            // Erreur lors de la vérification
-          } else if (checkUser) {
-            if (!checkUser.username.includes('SUPPRIME_') || 
-                !checkUser.email.includes('supprime_')) {
-              return false;
-            } else {
-              return true;
-            }
-          }
-          
-          return true;
-        }
-      } catch (error: any) {
-        console.error('Erreur inattendue lors de la suppression:', error);
+      // 3. Supprimer les commandes
+      console.log(`🗑️ [deleteUser] Suppression des commandes pour ${userId}`);
+      const { error: ordersError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (ordersError) {
+        console.error('❌ [deleteUser] Erreur lors de la suppression des commandes:', ordersError);
         return false;
       }
-    } catch (err) {
-      console.error('Erreur globale lors de la suppression:', err);
+
+      // 4. Supprimer les dettes
+      console.log(`🗑️ [deleteUser] Suppression des dettes pour ${userId}`);
+      const { error: debtsError } = await supabase
+        .from('debts')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (debtsError) {
+        console.error('❌ [deleteUser] Erreur lors de la suppression des dettes:', debtsError);
+        return false;
+      }
+
+      // 5. Supprimer le profil utilisateur
+      console.log(`🗑️ [deleteUser] Suppression du profil pour ${userId}`);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profileError) {
+        console.error('❌ [deleteUser] Erreur lors de la suppression du profil:', profileError);
+        return false;
+      }
+
+      // 6. Supprimer l'utilisateur de la table auth.users
+      console.log(`🗑️ [deleteUser] Suppression de l'utilisateur de auth.users pour ${userId}`);
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) {
+        console.error('❌ [deleteUser] Erreur lors de la suppression de l\'utilisateur de auth.users:', authError);
+        return false;
+      }
+
+      // Vérification finale
+      const { data: verifyUser, error: verifyError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (verifyUser) {
+        console.error('❌ [deleteUser] L\'utilisateur existe toujours après la suppression');
+        return false;
+      }
+
+      console.log(`✅ [deleteUser] Utilisateur ${userId} supprimé avec succès`);
+      return true;
+      
+    } catch (error) {
+      console.error('❌ [deleteUser] Erreur inattendue lors de la suppression:', error);
       return false;
     }
   }

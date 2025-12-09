@@ -36,7 +36,7 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
   const isHeaderVisible = !window.location.pathname.startsWith('/auth');
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white" style={{ background: '#fff' }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white pt-4 md:pt-0" style={{ background: '#fff' }}>
       {window.location.pathname === '/' && (
         <>
           <div style={{background: 'linear-gradient(to bottom, #0a1018, #10182a)', width: '100%', height: 40, position: 'relative', zIndex: 1}}></div>

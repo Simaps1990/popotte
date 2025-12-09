@@ -1,7 +1,8 @@
-import React, { ReactNode, Suspense } from 'react';
+import React, { ReactNode, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { supabaseKeepAlive } from './services/supabaseKeepAlive';
 import { AuthRoute } from './components/routing/AuthRoute';
 import { LayoutWithChildren } from './components/LayoutWithChildren';
 import { AdminLayoutWithChildren } from './pages/admin/AdminLayoutWithChildren';
@@ -169,9 +170,18 @@ const MemoizedAdminNews = React.memo(AdminNews);
 const MemoizedAdminProducts = React.memo(AdminProducts);
 
 function App() {
+  // Démarrer le service de keep-alive
   React.useEffect(() => {
     console.log('🚀 Composant App monté');
-    return () => console.log('👋 Composant App démonté');
+    
+    // Démarrer le service de keep-alive
+    supabaseKeepAlive.start();
+    
+    return () => {
+      console.log('👋 Composant App démonté');
+      // Arrêter le service de keep-alive
+      supabaseKeepAlive.stop();
+    };
   }, []);
   
   return (
