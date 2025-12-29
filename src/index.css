@@ -22,7 +22,10 @@
   
   /* Header bleu foncé avec dégradé plus clair */
   header.site-header {
-    background: linear-gradient(to bottom, #1e293b, #10182a);
+    background-image: url('/fond.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     color: #fff;
     width: 100vw;
     min-height: 80px;

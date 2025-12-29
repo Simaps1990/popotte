@@ -34,15 +34,54 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
 
   // Afficher le header (logo centré) sauf sur la page de login et callback
   const isHeaderVisible = !window.location.pathname.startsWith('/auth');
+  const isHomePage = window.location.pathname === '/';
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-white pt-4 md:pt-0" style={{ background: '#fff' }}>
-      {window.location.pathname === '/' && (
+    <div
+      className="min-h-screen flex flex-col overflow-x-hidden bg-white pt-4 md:pt-0"
+      style={{ background: '#fff', paddingTop: isHomePage ? 0 : undefined }}
+    >
+      {isHomePage && (
         <>
-          <div style={{background: 'linear-gradient(to bottom, #0a1018, #10182a)', width: '100%', height: 40, position: 'relative', zIndex: 1}}></div>
-          <header className="site-header w-full flex justify-center items-center pb-8 md:pb-10" style={{ background: 'linear-gradient(to bottom, #10182a, #1a2a40)', marginTop: 0, borderTop: 'none', paddingTop: 0, paddingBottom: 50, position: 'relative', boxShadow: 'none', zIndex: 2 }}>
+          <header
+            className="site-header w-full flex justify-center items-center pb-8 md:pb-10"
+            style={{
+              backgroundImage: "url('/fond.jpg')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              marginTop: 0,
+              borderTop: 'none',
+              paddingTop: 40,
+              paddingBottom: 50,
+              position: 'relative',
+              boxShadow: 'none',
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.25)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 80,
+                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.4))',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
             {/* Header bleu foncé avec logo centré et gradient */}
-            <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128 }} />
+            <img src="/logo.png" alt="Logo Popotte" className="h-28 md:h-32" style={{ maxHeight: 128, position: 'relative', zIndex: 3 }} />
             {/* Arrondi inversé en bas du header */}
             {/* Arrondis inversés très petits sur les extrémités */}
             <div style={{position: 'absolute', left: 0, right: 0, bottom: -1, height: 32, pointerEvents: 'none', zIndex: 2}}>

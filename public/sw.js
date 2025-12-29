@@ -1,4 +1,4 @@
-const CACHE_NAME = 'popotte-v1';
+const CACHE_NAME = 'popotte-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -29,6 +29,28 @@ self.addEventListener('fetch', event => {
   // Ne pas mettre en cache les requêtes vers l'API
   if (event.request.url.includes('/rest/v1/')) {
     return fetch(event.request);
+  }
+
+  const destination = event.request.destination;
+  const isNavigation = event.request.mode === 'navigate';
+  const isCritical = isNavigation || destination === 'document' || destination === 'script' || destination === 'style';
+
+  if (isCritical) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(event.request, responseToCache))
+            .catch(() => undefined);
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request, { ignoreSearch: true })
+            .then(response => response || fetch(event.request))
+        )
+    );
+    return;
   }
 
   event.respondWith(
@@ -82,4 +104,6 @@ self.addEventListener('activate', event => {
       );
     })
   );
+
+  self.clients.claim();
 });
