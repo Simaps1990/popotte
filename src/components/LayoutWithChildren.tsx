@@ -63,7 +63,7 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
               style={{
                 position: 'absolute',
                 inset: 0,
-                backgroundColor: 'rgba(0,0,0,0.25)',
+                backgroundColor: 'rgba(0,0,0,0.4)',
                 pointerEvents: 'none',
                 zIndex: 1,
               }}
@@ -75,7 +75,7 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
                 right: 0,
                 bottom: 0,
                 height: 80,
-                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.4))',
+                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.6))',
                 pointerEvents: 'none',
                 zIndex: 2,
               }}
