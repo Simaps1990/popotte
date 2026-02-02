@@ -168,7 +168,7 @@ export function AuthForm() {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
       if (error) throw error
 
-      setError("✅ Email envoyé ! Vérifiez votre boîte mail (et vos spams) pour réinitialiser votre mot de passe.")
+      setError('✅ Email envoyé ! Vérifiez votre boîte mail pour réinitialiser votre mot de passe.')
     } catch (e) {
       console.error('Erreur reset password:', e)
       setError(e instanceof Error ? e.message : 'Impossible d\'envoyer l\'email de réinitialisation')

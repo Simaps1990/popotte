@@ -44,7 +44,14 @@ export function ResetPassword() {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (error) {
             if (!cancelled) {
-              setStatus(error.message)
+              const msg = error.message || ''
+              if (msg.toLowerCase().includes('code verifier')) {
+                setStatus(
+                  "Lien invalide ou expiré. Refais une demande de réinitialisation et utilise le dernier email reçu."
+                )
+              } else {
+                setStatus(error.message)
+              }
               setReady(true)
             }
             return

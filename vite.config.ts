@@ -92,6 +92,9 @@ export default defineConfig(({ mode }) => {
           name: 'Popotte Association',
           short_name: 'Popotte',
           description: 'Application de commande de repas',
+          start_url: '/',
+          scope: '/',
+          display: 'standalone',
           theme_color: '#ffffff',
           icons: [
             {

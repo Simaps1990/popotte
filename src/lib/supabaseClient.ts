@@ -20,7 +20,7 @@ if (!_global.__supabaseClient) {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce' as const,
+      flowType: 'implicit' as const,
       storageKey: 'popotte-auth-token',
       storage: localStorage,
     },
