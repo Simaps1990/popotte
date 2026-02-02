@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'react-hot-toast'
+import { supabase } from '../lib/supabaseClient'
 
 export function Auth() {
   const { user, signIn, signUp } = useAuth()
@@ -13,6 +14,7 @@ export function Auth() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const [error, setError] = useState('')
   const authAttempted = useRef(false)
 
@@ -23,10 +25,32 @@ export function Auth() {
       navigate('/', { replace: true })
     }
   }, [user, navigate])
-  
+
   // Redirection immédiate si l'utilisateur est déjà connecté au chargement initial
   if (user && !authAttempted.current) {
     return <Navigate to="/" replace />
+  }
+
+  const handleForgotPassword = async () => {
+    setError('')
+
+    if (!email) {
+      setError('Veuillez entrer votre email pour recevoir le lien de réinitialisation')
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+      if (error) throw error
+      setError("✅ Email envoyé ! Vérifiez votre boîte mail (et vos spams) pour réinitialiser votre mot de passe.")
+    } catch (e) {
+      console.error('Erreur reset password:', e)
+      setError(e instanceof Error ? e.message : 'Impossible d\'envoyer l\'email de réinitialisation')
+    } finally {
+      setResetLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,6 +203,19 @@ export function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+
+            {isLogin && (
+              <div className="-mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={loading || resetLoading}
+                  className="text-sm font-medium text-[#10182a] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resetLoading ? 'Envoi en cours...' : 'Mot de passe oublié ?'}
+                </button>
+              </div>
+            )}
           </div>
 
           <div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar } from 'lucide-react'
+import { Calendar, X } from 'lucide-react'
 import { getNews, type NewsPost } from '../lib/supabase'
 import { useRealTimeSubscriptions, useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
@@ -19,6 +19,8 @@ export function Home() {
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ url: string; title: string } | null>(null)
+
 
   // Utiliser une référence pour suivre si l'effet a déjà été exécuté
   const effectRan = React.useRef(false);
@@ -96,6 +98,21 @@ export function Home() {
     window.scrollTo(0, 0);
   }, []);
 
+  useEffect(() => {
+    if (!selectedImage) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedImage(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedImage])
+
   return (
     <div className="w-full min-h-screen bg-white">
       {/* En-tête avec l'image - Positionné en haut de la page sans marge */}
@@ -144,7 +161,8 @@ export function Home() {
                     <img
                       src={post.image_url}
                       alt={post.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
+                      className="w-full h-48 object-cover rounded-t-lg cursor-pointer"
+                      onClick={() => setSelectedImage({ url: post.image_url as string, title: post.title })}
                     />
                   )}
                   <div className="p-4 space-y-3">
@@ -170,6 +188,36 @@ export function Home() {
           )}
         </div>
       </div>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => setSelectedImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Aperçu de l'image"
+        >
+          <div
+            className="relative inline-block"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-4 -right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#10182a] shadow"
+              aria-label="Fermer"
+            >
+              <X size={18} />
+            </button>
+
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.title}
+              className="block max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
