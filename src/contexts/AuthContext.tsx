@@ -79,6 +79,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true
+
+    // Si l'utilisateur arrive via un lien Supabase de récupération de mot de passe,
+    // on force l'affichage de la page /reset-password (tout en conservant le hash avec les tokens).
+    // Netlify/SPA redirige vers index.html, mais React Router doit être sur la bonne route.
+    const currentHash = window.location.hash || ''
+    const isRecoveryLink = currentHash.includes('type=recovery') || currentHash.includes('access_token=')
+    if (isRecoveryLink && window.location.pathname !== '/reset-password') {
+      window.location.replace(`/reset-password${currentHash}`)
+      return () => {
+        isMounted = false
+      }
+    }
     
     // Fonction améliorée pour vérifier la session existante
     const checkExistingSession = async () => {
@@ -131,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('🚨 Tentative de récupération d\'urgence avec getSession...');
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            console.log('✅ Session récupérée avec getSession!');
+            console.log('✅ Session récupérée avec succès depuis getSession!');
             setUser(session.user);
             reconnectAttempts = 0;
             await updateUserData(session.user);
@@ -331,6 +343,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             break;
             
           case 'PASSWORD_RECOVERY':
+            // Forcer l'utilisateur sur la page de réinitialisation
+            // (Supabase fournit les tokens dans le hash, qu'on conserve).
+            if (window.location.pathname !== '/reset-password') {
+              const hash = window.location.hash || ''
+              window.location.replace(`/reset-password${hash}`)
+              return
+            }
+            setLoading(false);
             break;
             
           default:
