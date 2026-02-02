@@ -110,6 +110,9 @@ export default defineConfig(({ mode }) => {
           ]
         },
         workbox: {
+          clientsClaim: true,
+          skipWaiting: true,
+          cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/xtjzuqyvyzkzchwtjpeo\.supabase\.co/,

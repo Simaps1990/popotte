@@ -12,16 +12,26 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Vérifier si une instance existe déjà dans la fenêtre globale
 const _global = window as any;
 
+const desiredAuthConfig = {
+  flowType: 'implicit' as const,
+  storageKey: 'popotte-auth-token',
+};
+
 // NE PAS réinitialiser le client existant pour éviter de casser la déconnexion
-if (!_global.__supabaseClient) {
+if (
+  !_global.__supabaseClient ||
+  !_global.__supabaseClientConfig ||
+  _global.__supabaseClientConfig.flowType !== desiredAuthConfig.flowType ||
+  _global.__supabaseClientConfig.storageKey !== desiredAuthConfig.storageKey
+) {
   // Configuration optimisée pour garantir l'accès anonyme et la persistance de session
   const config = {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'implicit' as const,
-      storageKey: 'popotte-auth-token',
+      flowType: desiredAuthConfig.flowType,
+      storageKey: desiredAuthConfig.storageKey,
       storage: localStorage,
     },
     global: {
@@ -37,6 +47,7 @@ if (!_global.__supabaseClient) {
   };
 
   _global.__supabaseClient = createClient(supabaseUrl, supabaseAnonKey, config);
+  _global.__supabaseClientConfig = desiredAuthConfig;
 }
 
 export const supabase = _global.__supabaseClient;
