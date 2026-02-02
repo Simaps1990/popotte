@@ -178,13 +178,9 @@ export function AuthForm() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">
-        {mode === 'login' ? 'Connexion' : 'Créer un compte'}
-      </h2>
-      
+    <>
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+        <div className={`mb-4 p-3 rounded ${error.startsWith('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
           {error}
         </div>
       )}
@@ -202,7 +198,7 @@ export function AuthForm() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                  className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-4 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
                   required
                 />
               </div>
@@ -216,7 +212,7 @@ export function AuthForm() {
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                    className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-4 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
                     required
                   />
                 </div>
@@ -229,7 +225,7 @@ export function AuthForm() {
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                    className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-4 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
                     required
                   />
                 </div>
@@ -244,7 +240,7 @@ export function AuthForm() {
                   type="number"
                   value={captchaAnswer}
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                  className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-4 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
                   required
                   disabled={loading}
                 />
@@ -264,7 +260,7 @@ export function AuthForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+              className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-4 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
               required
             />
           </div>
@@ -278,7 +274,7 @@ export function AuthForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+              className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-4 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
               required
               minLength={6}
             />
@@ -301,7 +297,7 @@ export function AuthForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition mb-3"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-[#0b1020] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10182a]/30 transition mb-3"
             >
               {loading
                 ? 'Chargement...'
@@ -315,14 +311,14 @@ export function AuthForm() {
       <div className="mt-4 text-center">
         {/* Lien secondaire bleu foncé */}
         <button
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition mb-3"
+            className="w-full flex justify-center py-2.5 px-4 border border-gray-200 rounded-xl text-sm font-semibold bg-white text-[#10182a] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10182a]/20 transition"
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
         >
           {mode === 'login'
-            ? "Pas encore de compte ? S'inscrire"
-            : 'Déjà un compte ? Se connecter'}
+            ? "Créer un compte"
+            : 'J’ai déjà un compte'}
         </button>
       </div>
-    </div>
+    </>
   )
 }

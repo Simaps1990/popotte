@@ -40,7 +40,7 @@ export function ResetPassword() {
           return
         }
 
-        if (code && type === 'recovery') {
+        if (code && (!type || type === 'recovery')) {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (error) {
             if (!cancelled) {
@@ -152,18 +152,15 @@ export function ResetPassword() {
   const isSuccess = !!status && status.startsWith('✅')
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Réinitialiser votre mot de passe
+        <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-gray-900">
+          Nouveau mot de passe
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Choisissez un nouveau mot de passe pour votre compte
-        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 rounded-xl sm:px-10 border border-gray-100">
+        <div className="bg-white py-8 px-6 rounded-2xl sm:px-10 border border-gray-100 shadow-sm">
           {status && (
             <div className={`mb-4 p-3 rounded ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
               {status}
@@ -183,7 +180,7 @@ export function ResetPassword() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                  className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
                   required
                   minLength={6}
                   disabled={loading}
@@ -199,7 +196,7 @@ export function ResetPassword() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-200 px-4 py-2 mt-1 mb-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
+                  className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2 mt-1 mb-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#10182a]/20 focus:border-[#10182a] transition"
                   required
                   minLength={6}
                   disabled={loading}
@@ -209,7 +206,7 @@ export function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold bg-[#10182a] text-white hover:bg-[#0b1020] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10182a]/30 transition"
               >
                 {loading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
               </button>
@@ -217,7 +214,7 @@ export function ResetPassword() {
               <button
                 type="button"
                 onClick={() => navigate('/auth', { replace: true })}
-                className="w-full flex justify-center py-2 px-4 border border-gray-200 rounded-lg shadow-sm text-sm font-semibold bg-white text-[#10182a] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition"
+                className="w-full flex justify-center py-2.5 px-4 border border-gray-200 rounded-xl text-sm font-semibold bg-white text-[#10182a] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10182a]/20 transition"
               >
                 Retour à la connexion
               </button>

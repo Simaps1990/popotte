@@ -28,19 +28,16 @@ export function AuthPage() {
   // Header/logo centré
   return (
     <>
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Header/logo centré, fond blanc, cohérent avec le site */}
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Bienvenue sur le site de la Popote
+        <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-gray-900">
+          Connexion
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Connectez-vous ou créez un compte pour continuer
-        </p>
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 rounded-xl sm:px-10 border border-gray-100">
+        <div className="bg-white py-8 px-6 rounded-2xl sm:px-10 border border-gray-100 shadow-sm">
           <AuthForm />
         </div>
       </div>
