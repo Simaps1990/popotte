@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabaseClient'
 
 export function ResetPassword() {
@@ -14,43 +15,96 @@ export function ResetPassword() {
   const code = params.get('code')
   const type = params.get('type')
 
+  const hasRecoveryParams = useMemo(() => {
+    const hash = window.location.hash || ''
+    const search = window.location.search || ''
+    const sp = new URLSearchParams(search)
+
+    return (
+      (sp.get('type') === 'recovery' && !!sp.get('code')) ||
+      sp.get('type') === 'recovery' ||
+      !!sp.get('code') ||
+      hash.includes('type=recovery') ||
+      hash.includes('access_token=')
+    )
+  }, [])
+
   useEffect(() => {
+    let cancelled = false
+
     const init = async () => {
       try {
+        const { data: initialSessionData } = await supabase.auth.getSession()
+        if (!cancelled && initialSessionData.session) {
+          setReady(true)
+          return
+        }
+
         if (code && type === 'recovery') {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (error) {
-            setStatus(error.message)
-            setReady(true)
+            if (!cancelled) {
+              setStatus(error.message)
+              setReady(true)
+            }
             return
           }
 
           window.history.replaceState({}, '', '/reset-password')
         }
 
-        const { data, error } = await supabase.auth.getSession()
-        if (error) {
-          setStatus(error.message)
+        if (!hasRecoveryParams) {
+          const { data } = await supabase.auth.getSession()
+          if (!data.session) {
+            setStatus('Lien invalide ou expiré. Veuillez refaire une demande de réinitialisation.')
+          }
           setReady(true)
           return
         }
 
-        if (!data.session) {
+        const { data: authSubscription } = supabase.auth.onAuthStateChange((
+          _event: AuthChangeEvent,
+          session: Session | null
+        ) => {
+          if (cancelled) return
+          if (session) {
+            setReady(true)
+          }
+        })
+
+        const startedAt = Date.now()
+        const timeoutMs = 5000
+        while (!cancelled && Date.now() - startedAt < timeoutMs) {
+          const { data } = await supabase.auth.getSession()
+          if (data.session) {
+            setReady(true)
+            authSubscription.subscription.unsubscribe()
+            return
+          }
+          await new Promise((r) => setTimeout(r, 250))
+        }
+
+        authSubscription.subscription.unsubscribe()
+
+        if (!cancelled) {
           setStatus('Lien invalide ou expiré. Veuillez refaire une demande de réinitialisation.')
           setReady(true)
-          return
         }
-
-        setReady(true)
       } catch (e) {
         console.error('Erreur init reset password:', e)
-        setStatus(e instanceof Error ? e.message : 'Erreur lors de la préparation de la réinitialisation')
-        setReady(true)
+        if (!cancelled) {
+          setStatus(e instanceof Error ? e.message : 'Erreur lors de la préparation de la réinitialisation')
+          setReady(true)
+        }
       }
     }
 
     init()
-  }, [code, type])
+
+    return () => {
+      cancelled = true
+    }
+  }, [code, type, hasRecoveryParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,6 +127,13 @@ export function ResetPassword() {
 
     setLoading(true)
     try {
+      const { data, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      if (!data.session) {
+        setStatus('Session manquante. Veuillez rouvrir le lien de réinitialisation depuis votre email.')
+        return
+      }
+
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
 
