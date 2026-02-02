@@ -13,6 +13,7 @@ import VisibilityHandler from './components/VisibilityHandler';
 import { Home } from './pages/Home';
 import { AuthPage } from './pages/AuthPage';
 import { AuthCallback } from './pages/AuthCallback';
+import ResetPassword from './pages/ResetPassword';
 
 // Pages protégées (lazy loading)
 const Commande = React.lazy(() => import('./pages/Commande').then(m => ({ default: m.Commande })));
@@ -198,11 +199,13 @@ function App() {
             <Route path="/" element={<MemoizedPublicPage />} />
             <Route path="/auth" element={<MemoizedAuthPage />} />
             <Route path="/auth/callback" element={<MemoizedAuthCallback />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* Routes protégées */}
             <Route path="/commande" element={<MemoizedProtectedCommande />} />
             <Route path="/dettes" element={<MemoizedProtectedDettes />} />
             <Route path="/parametres" element={<MemoizedProtectedSettings />} />
             <Route path="/profil" element={<MemoizedProtectedProfile />} />
+            
             {/* Routes admin */}
             <Route path="/admin" element={<Navigate to="/admin/orders" replace />} />
             <Route path="/admin/users" element={<MemoizedAdminUsers />} />

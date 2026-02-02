@@ -84,9 +84,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // on force l'affichage de la page /reset-password (tout en conservant le hash avec les tokens).
     // Netlify/SPA redirige vers index.html, mais React Router doit être sur la bonne route.
     const currentHash = window.location.hash || ''
-    const isRecoveryLink = currentHash.includes('type=recovery') || currentHash.includes('access_token=')
+    const currentSearch = window.location.search || ''
+    const searchParams = new URLSearchParams(currentSearch)
+    const isRecoveryLink =
+      currentHash.includes('type=recovery') ||
+      currentHash.includes('access_token=') ||
+      searchParams.get('type') === 'recovery' ||
+      !!searchParams.get('code')
+
     if (isRecoveryLink && window.location.pathname !== '/reset-password') {
-      window.location.replace(`/reset-password${currentHash}`)
+      window.location.replace(`/reset-password${currentSearch}${currentHash}`)
       return () => {
         isMounted = false
       }
@@ -347,7 +354,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // (Supabase fournit les tokens dans le hash, qu'on conserve).
             if (window.location.pathname !== '/reset-password') {
               const hash = window.location.hash || ''
-              window.location.replace(`/reset-password${hash}`)
+              const search = window.location.search || ''
+              window.location.replace(`/reset-password${search}${hash}`)
               return
             }
             setLoading(false);
