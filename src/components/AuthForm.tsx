@@ -20,6 +20,7 @@ export function AuthForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const [captchaNum1, setCaptchaNum1] = useState(0)
   const [captchaNum2, setCaptchaNum2] = useState(0)
   const [captchaAnswer, setCaptchaAnswer] = useState('')
@@ -152,6 +153,30 @@ export function AuthForm() {
     }
   }
 
+  const handleForgotPassword = async () => {
+    setError('')
+    setCaptchaError('')
+
+    if (!email) {
+      setError('Veuillez entrer votre email pour recevoir le lien de réinitialisation')
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+      if (error) throw error
+
+      setError("✅ Email envoyé ! Vérifiez votre boîte mail (et vos spams) pour réinitialiser votre mot de passe.")
+    } catch (e) {
+      console.error('Erreur reset password:', e)
+      setError(e instanceof Error ? e.message : 'Impossible d\'envoyer l\'email de réinitialisation')
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">
@@ -258,6 +283,19 @@ export function AuthForm() {
               minLength={6}
             />
           </div>
+
+          {mode === 'login' && (
+            <div className="-mt-2 mb-2 text-right">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading || resetLoading}
+                className="text-sm font-medium text-[#10182a] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resetLoading ? 'Envoi en cours...' : 'Mot de passe oublié ?'}
+              </button>
+            </div>
+          )}
           {/* Bouton principal bleu foncé */}
           <div>
             <button
