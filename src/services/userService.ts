@@ -20,9 +20,9 @@ export interface UserDebt {
   amount: number;
   description: string;
   created_at?: string;
-  created_by: string;
-  status: string;
-  order_id?: string;
+  updated_at?: string;
+  status: 'unpaid' | 'payment_pending' | 'paid' | 'cancelled';
+  order_id?: string | null;
 }
 
 export interface UserOrder {
@@ -156,7 +156,7 @@ export const userService = {
           .from('debts')
           .select('amount, status')
           .eq('user_id', userId)
-          .in('status', ['unpaid', 'pending']);
+          .in('status', ['unpaid', 'payment_pending']);
           
         const totalDebt = debts && !debtsError 
           ? debts.reduce((sum: number, debt: { amount: number }) => sum + (debt.amount || 0), 0)
@@ -218,7 +218,7 @@ export const userService = {
     user_id: string;
     amount: number;
     description?: string;
-    created_by: string;
+    order_id?: string | null;
   }): Promise<UserDebt | null> {
     try {
       // Validation des données
@@ -254,7 +254,7 @@ export const userService = {
           amount: debtData.amount,
           description: debtData.description || 'Dette manuelle',
           status: 'unpaid',
-          created_by: debtData.created_by,
+          order_id: debtData.order_id ?? null,
           created_at: now,
           updated_at: now
           // Pas de order_id pour une dette manuelle
@@ -277,9 +277,9 @@ export const userService = {
         amount: data.amount,
         description: data.description || '',
         created_at: data.created_at,
-        created_by: data.created_by || debtData.created_by,
-        status: data.status || 'unpaid',
-        order_id: data.order_id
+        updated_at: data.updated_at,
+        status: (data.status || 'unpaid') as 'unpaid' | 'payment_pending' | 'paid' | 'cancelled',
+        order_id: data.order_id ?? null
       };
     } catch (error) {
       console.error('Erreur inattendue lors de l\'ajout de la dette:', error);

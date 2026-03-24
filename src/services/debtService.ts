@@ -1,9 +1,39 @@
 import { supabase } from '../lib/supabaseClient';
-import { DebtStatus, UserDebt, DebtSummary } from '../types/debt';
+import { DebtStatus, Debt, DebtSummary } from '../types/debt';
+
+const normalizeDebtStatus = (status?: string | null): DebtStatus => {
+  switch (status) {
+    case DebtStatus.UNPAID:
+      return DebtStatus.UNPAID;
+    case 'pending':
+    case DebtStatus.PAYMENT_PENDING:
+      return DebtStatus.PAYMENT_PENDING;
+    case DebtStatus.PAID:
+      return DebtStatus.PAID;
+    case DebtStatus.CANCELLED:
+      return DebtStatus.CANCELLED;
+    default:
+      return DebtStatus.UNPAID;
+  }
+};
+
+const mapDebt = (row: any): Debt => ({
+  id: row.id,
+  userId: row.user_id,
+  user_id: row.user_id,
+  orderId: row.order_id ?? null,
+  order_id: row.order_id ?? null,
+  amount: Number(row.amount) || 0,
+  description: row.description || '',
+  status: normalizeDebtStatus(row.status),
+  createdAt: row.created_at,
+  created_at: row.created_at,
+  updatedAt: row.updated_at,
+  updated_at: row.updated_at,
+});
 
 export const debtService = {
-  // Récupérer toutes les dettes d'un utilisateur
-  async getUserDebts(userId: string): Promise<UserDebt[]> {
+  async getUserDebts(userId: string): Promise<Debt[]> {
     try {
       const { data, error } = await supabase
         .from('debts')
@@ -12,79 +42,63 @@ export const debtService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      return data || [];
+
+      return (data || []).map(mapDebt);
     } catch (error) {
       console.error('Error fetching user debts:', error);
       return [];
     }
   },
 
-  // Récupérer le résumé des dettes d'un utilisateur
   async getDebtSummary(userId: string): Promise<DebtSummary> {
     const debts = await this.getUserDebts(userId);
-    
+
     const summary: DebtSummary = {
       totalUnpaid: 0,
       totalPending: 0,
       totalPaid: 0,
-      debts: []
+      debts,
     };
 
-    debts.forEach(debt => {
+    debts.forEach((debt) => {
       if (debt.status === DebtStatus.UNPAID) {
         summary.totalUnpaid += debt.amount;
-      } else if (debt.status === DebtStatus.PENDING) {
+      } else if (debt.status === DebtStatus.PAYMENT_PENDING) {
         summary.totalPending += debt.amount;
       } else if (debt.status === DebtStatus.PAID) {
         summary.totalPaid += debt.amount;
       }
     });
 
-    summary.debts = debts;
     return summary;
   },
 
-  // Récupérer le total global de toutes les dettes en cours de tous les utilisateurs
   async getGlobalDebtSummary(): Promise<{ totalUnpaid: number; totalPending: number; totalPaid: number }> {
     try {
-      // Récupérer toutes les dettes de tous les utilisateurs avec plus de détails
       const { data: allDebts, error } = await supabase
         .from('debts')
-        .select('id, amount, status, user_id, description, created_at')
+        .select('id, amount, status, user_id, description, created_at, updated_at, order_id')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const summary = {
         totalUnpaid: 0,
         totalPending: 0,
-        totalPaid: 0
+        totalPaid: 0,
       };
 
-      let unpaidCount = 0;
-      let pendingCount = 0;
-      let paidCount = 0;
+      (allDebts || []).forEach((row: any) => {
+        const debt = mapDebt(row);
 
-      // Calculer les totaux par statut avec comptage
-      allDebts?.forEach((debt: { amount: number; status: string }) => {
-        const amount = Number(debt.amount) || 0;
-        
-        if (debt.status === 'unpaid') {
-          summary.totalUnpaid += amount;
-          unpaidCount++;
-        } else if (debt.status === 'payment_pending') {
-          summary.totalPending += amount;
-          pendingCount++;
-        } else if (debt.status === 'paid') {
-          summary.totalPaid += amount;
-          paidCount++;
+        if (debt.status === DebtStatus.UNPAID) {
+          summary.totalUnpaid += debt.amount;
+        } else if (debt.status === DebtStatus.PAYMENT_PENDING) {
+          summary.totalPending += debt.amount;
+        } else if (debt.status === DebtStatus.PAID) {
+          summary.totalPaid += debt.amount;
         }
       });
-
-
 
       return summary;
     } catch (error) {
@@ -93,15 +107,13 @@ export const debtService = {
     }
   },
 
-  // Marquer une dette comme payée
   async markAsPaid(debtId: string, userId: string): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('debts')
-        .update({ 
-          status: DebtStatus.PENDING,
+        .update({
+          status: DebtStatus.PAYMENT_PENDING,
           updated_at: new Date().toISOString(),
-          paid_at: new Date().toISOString()
         })
         .eq('id', debtId)
         .eq('user_id', userId);
@@ -114,15 +126,13 @@ export const debtService = {
     }
   },
 
-  // Confirmer un paiement (admin)
-  async confirmPayment(debtId: string, adminId: string): Promise<boolean> {
+  async confirmPayment(debtId: string): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('debts')
-        .update({ 
+        .update({
           status: DebtStatus.PAID,
           updated_at: new Date().toISOString(),
-          confirmed_by: adminId
         })
         .eq('id', debtId);
 
@@ -134,73 +144,32 @@ export const debtService = {
     }
   },
 
-  // Créer une nouvelle dette
-  async createDebt(debtData: Omit<UserDebt, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserDebt | null> {
+  async createDebt(debtData: {
+    userId: string;
+    orderId?: string | null;
+    amount: number;
+    description: string;
+    status?: DebtStatus;
+  }): Promise<Debt | null> {
     try {
-      // Préparer les données de la dette avec les champs snake_case pour Supabase
       const debtPayload = {
         user_id: debtData.userId,
-        order_id: debtData.orderId,
+        order_id: debtData.orderId ?? null,
         amount: debtData.amount,
         description: debtData.description,
-        status: debtData.status,
-        // Suppression des champs items et created_by qui n'existent pas dans la table debts
+        status: debtData.status ?? DebtStatus.UNPAID,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-      
-      // Vérifier si la table debts existe
-      try {
-        const { count, error: countError } = await supabase
-          .from('debts')
-          .select('*', { count: 'exact', head: true });
-          
-        if (countError) {
-          console.error('❌ Erreur lors de la vérification de la table debts:', countError);
-          if (countError.code === '42P01') {
-            console.error('⚠️ La table debts n\'existe pas!');
-          }
-        }
-      } catch (tableCheckError) {
-        console.error('❌ Exception lors de la vérification de la table:', tableCheckError);
-      }
-      
-      // Insérer la dette dans la base de données
-      const { data, error } = await supabase
-        .from('debts')
-        .insert([debtPayload])
-        .select()
-        .single();
+
+      const { data, error } = await supabase.from('debts').insert([debtPayload]).select().single();
 
       if (error) {
         console.error('❌ Erreur Supabase lors de la création de dette:', error);
-        console.error('  - Code:', error.code);
-        console.error('  - Message:', error.message);
-        console.error('  - Details:', error.details);
-        console.error('  - Hint:', error.hint);
         throw error;
       }
-      
-      if (data) {
-        console.log('✅ Dette créée avec succès:', data);
-        
-        // Émettre un événement broadcast pour notifier tous les clients
-        // Cela permet de s'assurer que les abonnements temps réel sont déclenchés
-        try {
-          const broadcastResult = await supabase
-            .from('debts')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', data.id);
-            
-          if (broadcastResult.error) {
-            console.warn('⚠️ Erreur lors du broadcast:', broadcastResult.error);
-          }
-        } catch (broadcastError) {
-          console.warn('⚠️ Exception lors du broadcast (non bloquant):', broadcastError);
-        }
-      }
-      
-      return data;
+
+      return data ? mapDebt(data) : null;
     } catch (error) {
       console.error('❌ Exception lors de la création de dette:', error);
       return null;

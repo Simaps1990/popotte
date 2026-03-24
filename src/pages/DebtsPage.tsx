@@ -55,7 +55,7 @@ export default function DebtsPage() {
           // Create a copy of the debt with updated status
           return {
             ...debt,
-            status: DebtStatus.PENDING,
+            status: DebtStatus.PAYMENT_PENDING,
             updatedAt: new Date().toISOString()
           };
         }
@@ -70,7 +70,7 @@ export default function DebtsPage() {
       updatedDebts.forEach(debt => {
         if (debt.status === DebtStatus.UNPAID) {
           newTotalUnpaid += debt.amount;
-        } else if (debt.status === DebtStatus.PENDING) {
+        } else if (debt.status === DebtStatus.PAYMENT_PENDING) {
           newTotalPending += debt.amount;
         } else if (debt.status === DebtStatus.PAID) {
           newTotalPaid += debt.amount;
@@ -156,11 +156,7 @@ export default function DebtsPage() {
                     </div>
                     
                     <div className="space-y-1 mb-3">
-                      {(debt.items || []).map((item, index) => (
-                        <div key={index} className="text-sm text-gray-600">
-                          {item.quantity}x {item.name} - {item.unitPrice.toFixed(2)} €
-                        </div>
-                      ))}
+                      <div className="text-sm text-gray-600">{debt.description}</div>
                     </div>
                     
                     <div className="space-y-3">
@@ -213,7 +209,7 @@ export default function DebtsPage() {
                           if (debtIds.includes(debt.id)) {
                             return {
                               ...debt,
-                              status: DebtStatus.PENDING,
+                              status: DebtStatus.PAYMENT_PENDING,
                               updatedAt: new Date().toISOString()
                             };
                           }
@@ -228,7 +224,7 @@ export default function DebtsPage() {
                         updatedDebts.forEach(debt => {
                           if (debt.status === DebtStatus.UNPAID) {
                             newTotalUnpaid += debt.amount;
-                          } else if (debt.status === DebtStatus.PENDING) {
+                          } else if (debt.status === DebtStatus.PAYMENT_PENDING) {
                             newTotalPending += debt.amount;
                           } else if (debt.status === DebtStatus.PAID) {
                             newTotalPaid += debt.amount;
@@ -263,12 +259,12 @@ export default function DebtsPage() {
           ) : null}
 
           {/* Dettes en attente de confirmation */}
-          {debtSummary?.debts.some(d => d.status === DebtStatus.PENDING) && (
+          {debtSummary?.debts.some(d => d.status === DebtStatus.PAYMENT_PENDING) && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-orange-600">🟠 Dettes en attente de confirmation</h2>
               
               {debtSummary.debts
-                .filter(debt => debt.status === DebtStatus.PENDING)
+                .filter(debt => debt.status === DebtStatus.PAYMENT_PENDING)
                 .map(debt => (
                   <div key={debt.id} className="card border-l-4 border-orange-500 bg-orange-50">
                     <div className="flex justify-between items-start mb-2">
@@ -281,11 +277,7 @@ export default function DebtsPage() {
                     </div>
                     
                     <div className="space-y-1 mb-3">
-                      {(debt.items || []).map((item, index) => (
-                        <div key={index} className="text-sm text-gray-600">
-                          {item.quantity}x {item.name} - {item.unitPrice.toFixed(2)} €
-                        </div>
-                      ))}
+                      <div className="text-sm text-gray-600">{debt.description}</div>
                     </div>
                     
                     <div className="text-sm text-orange-700 font-medium bg-orange-100 p-2 rounded">

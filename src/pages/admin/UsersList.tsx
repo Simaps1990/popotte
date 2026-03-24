@@ -12,7 +12,7 @@ export default function UsersList() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userDebts, setUserDebts] = useState<Record<string, { unpaid: number; pending: number }>>({});
+  const [userDebts, setUserDebts] = useState<Record<string, { unpaid: number; payment_pending: number }>>({});
 
   const loadUsers = async () => {
     if (!user || user.role !== 'admin') return;
@@ -35,11 +35,11 @@ export default function UsersList() {
       
       // Charger les dettes pour chaque utilisateur avec optimisation
       console.log('Chargement des dettes pour chaque utilisateur...');
-      const debtsMap: Record<string, { unpaid: number; pending: number }> = {};
+      const debtsMap: Record<string, { unpaid: number; payment_pending: number }> = {};
       
       // Initialiser la map pour tous les utilisateurs
       usersData.forEach(user => {
-        debtsMap[user.id] = { unpaid: 0, pending: 0 };
+        debtsMap[user.id] = { unpaid: 0, payment_pending: 0 };
       });
       
       // Charger les dettes en parallèle pour améliorer les performances
@@ -52,8 +52,8 @@ export default function UsersList() {
               unpaid: debts
                 .filter(d => d.status === DebtStatus.UNPAID)
                 .reduce((sum, debt) => sum + debt.amount, 0),
-              pending: debts
-                .filter(d => d.status === DebtStatus.PENDING)
+              payment_pending: debts
+                .filter(d => d.status === DebtStatus.PAYMENT_PENDING)
                 .reduce((sum, debt) => sum + debt.amount, 0)
             };
           }
@@ -154,9 +154,9 @@ export default function UsersList() {
                       Dette: {userDebts[user.id].unpaid.toFixed(2)} €
                     </span>
                   )}
-                  {userDebts[user.id]?.pending > 0 && (
+                  {userDebts[user.id]?.payment_pending > 0 && (
                     <span className="mt-1 px-2 py-1 text-xs font-semibold text-orange-800 bg-orange-100 rounded-full">
-                      En attente: {userDebts[user.id].pending.toFixed(2)} €
+                      En attente: {userDebts[user.id].payment_pending.toFixed(2)} €
                     </span>
                   )}
                   {/* Bouton de changement de rôle */}

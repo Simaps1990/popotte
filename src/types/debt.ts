@@ -1,7 +1,8 @@
 export enum DebtStatus {
   UNPAID = 'unpaid',
-  PENDING = 'pending',
+  PAYMENT_PENDING = 'payment_pending',
   PAID = 'paid',
+  CANCELLED = 'cancelled',
 }
 
 export interface DebtItem {
@@ -11,29 +12,26 @@ export interface DebtItem {
   unitPrice: number;
 }
 
-export interface UserDebt {
+export interface Debt {
   id: string;
   userId: string;
-  user_id?: string; // Alias pour la compatibilité avec la base de données
-  orderId?: string;
+  user_id?: string;
+  orderId?: string | null;
+  order_id?: string | null;
   amount: number;
-  description?: string;
-  status?: DebtStatus;
-  items?: DebtItem[];
+  description: string;
+  status: DebtStatus;
   createdAt?: string;
-  created_at?: string; // Alias pour la compatibilité
+  created_at?: string;
   updatedAt?: string;
-  paidAt?: string;
-  confirmedBy?: string;
-  createdBy?: string;
-  created_by?: string; // Alias pour la compatibilité avec la base de données
+  updated_at?: string;
 }
 
 export interface DebtSummary {
   totalUnpaid: number;
   totalPending: number;
   totalPaid: number;
-  debts: UserDebt[];
+  debts: Debt[];
 }
 
 export interface OrderItem {

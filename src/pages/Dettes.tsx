@@ -73,6 +73,22 @@ interface PaymentNotification {
   notified_at: string;
 }
 
+const normalizeDebtStatus = (status?: string | null): OrderStatus => {
+  switch (status) {
+    case 'unpaid':
+      return 'unpaid';
+    case 'pending':
+    case 'payment_pending':
+      return 'payment_pending';
+    case 'paid':
+      return 'paid';
+    case 'cancelled':
+      return 'cancelled';
+    default:
+      return 'unpaid';
+  }
+};
+
 export function Dettes() {
   // État pour contrôler l'affichage du bouton de notification
   // Ne plus utiliser localStorage pour éviter l'affichage prématuré
@@ -248,7 +264,7 @@ export function Dettes() {
         .from('payment_notifications')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'pending')
+        .eq('status', 'payment_pending')
         .order('notified_at', { ascending: false });
 
       if (error) throw error;
@@ -304,7 +320,12 @@ export function Dettes() {
       
       // Mise à jour des états avec les données récupérées
       console.log('Mise à jour des états avec les données récupérées:', { debts: debtsData, orders: ordersData });
-      setDebts(debtsData || []);
+      setDebts(
+        (debtsData || []).map((debt: any) => ({
+          ...debt,
+          status: normalizeDebtStatus(debt.status),
+        }))
+      );
       setOrders(ordersData || []);
     } catch (error) {
       console.error('Erreur lors du chargement des dettes et commandes:', error);
@@ -355,7 +376,7 @@ export function Dettes() {
         user_id: user.id,
         debt_ids: debtIds,
         total_amount: total.toString(),
-        status: 'pending',
+        status: 'payment_pending',
         notified_at: new Date().toISOString()
       };
       
@@ -377,7 +398,7 @@ export function Dettes() {
           ...(user ? { user_id: user.id } : {}),
           debt_ids: debtIds,
           total_amount: total,
-          status: 'pending',
+          status: 'payment_pending',
           notified_at: new Date().toISOString()
         }])
         .select();
@@ -601,7 +622,12 @@ export function Dettes() {
         }
         
         console.log('Dettes récupérées avec succès via fallback:', debtsData);
-        setDebts(debtsData || []);
+        setDebts(
+          (debtsData || []).map((debt: any) => ({
+            ...debt,
+            status: normalizeDebtStatus(debt.status),
+          }))
+        );
       } else {
         console.log('Dettes récupérées avec succès via RPC:', debtsFromRPC);
         // S'assurer que les montants sont des nombres
@@ -611,7 +637,12 @@ export function Dettes() {
               amount: typeof debt.amount === 'string' ? parseFloat(debt.amount) : debt.amount
             }))
           : [];
-        setDebts(formattedDebts);
+        setDebts(
+          formattedDebts.map((debt: any) => ({
+            ...debt,
+            status: normalizeDebtStatus(debt.status),
+          }))
+        );
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des dettes:', error);

@@ -146,11 +146,11 @@ const Users: React.FC = () => {
         // Récupérer l'historique des dettes avec fusion des optimistic updates
         const backendDebts = await userService.getUserDebtHistory(userId);
         
-        // Filtrer pour ne garder que les dettes non payées ajoutées par les administrateurs
-        // Une dette est considérée comme ajoutée par un admin quand created_by est différent de user_id
-        const filteredDebts = backendDebts.filter(debt => 
-          debt.status === 'unpaid' && 
-          debt.created_by !== debt.user_id
+        // Ne garder que les dettes manuelles encore ouvertes.
+        // Avec le schéma actuel de debts, on ne peut plus distinguer via created_by.
+        // On considère ici qu'une dette manuelle est une dette sans order_id.
+        const filteredDebts = backendDebts.filter(
+          debt => debt.status === 'unpaid' && !debt.order_id
         );
         
         const mergedDebts = mergeDebtData(filteredDebts);
@@ -688,7 +688,10 @@ const Users: React.FC = () => {
       );
       
       if (selectedUser && selectedUser.id === userId) {
-        setSelectedUser(prev => prev ? { ...prev, role: originalRole } : null);
+        setSelectedUser(prev => prev ? {
+          ...prev,
+          role: originalRole
+        } : null);
       }
       
       toast.error('Erreur lors de la mise à jour du rôle. Veuillez réessayer.');
@@ -826,8 +829,8 @@ const Users: React.FC = () => {
         description: newDebt.description,
         status: DebtStatus.UNPAID,
         created_at: new Date().toISOString(),
-        created_by: selectedUser.id,
-        order_id: undefined
+        updated_at: new Date().toISOString(),
+        order_id: null
       };
       
       // Ajouter à la map des optimistic updates pour le merge intelligent
@@ -1449,11 +1452,11 @@ const Users: React.FC = () => {
                                 <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
                                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                     debt.status === 'unpaid' ? 'bg-red-100 text-red-800' : 
-                                    debt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                    debt.status === 'payment_pending' ? 'bg-yellow-100 text-yellow-800' : 
                                     'bg-green-100 text-green-800'
                                   }`}>
                                     {debt.status === 'unpaid' ? 'Non payée' : 
-                                     debt.status === 'pending' ? 'En attente' : 
+                                     debt.status === 'payment_pending' ? 'En attente' : 
                                      'Payée'}
                                   </span>
                                   

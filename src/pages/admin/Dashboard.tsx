@@ -70,7 +70,7 @@ export const Dashboard = () => {
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('payments').select('*', { count: 'exact', head: true }).eq('status', 'payment_pending'),
         supabase.from('orders').select('total').eq('status', 'completed'),
         supabase.from('debts').select('amount').eq('status', 'unpaid')
       ]);
