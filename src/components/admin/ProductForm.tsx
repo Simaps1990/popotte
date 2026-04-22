@@ -27,7 +27,12 @@ export const ProductForm = ({ initialData, categories, onCancel, onSubmit }: Pro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await onSubmit(formData);
+      // Convertir le prix en nombre avant la soumission
+      const submissionData = {
+        ...formData,
+        price: typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price
+      };
+      await onSubmit(submissionData);
     } catch (error) {
       console.error('Error submitting product:', error);
     }
@@ -38,7 +43,8 @@ export const ProductForm = ({ initialData, categories, onCancel, onSubmit }: Pro
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) : 
+      [name]: type === 'number' && name === 'price' ? value : 
+              type === 'number' && name !== 'price' ? parseFloat(value) :
               type === 'checkbox' ? (e.target as HTMLInputElement).checked :
               value
     }));
