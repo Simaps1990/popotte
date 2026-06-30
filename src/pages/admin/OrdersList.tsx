@@ -64,8 +64,18 @@ export function OrdersList() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="max-w-md mx-auto px-4 py-6 space-y-3">
+        <div className="skeleton h-7 w-1/2 mb-6" />
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className={`anim-fadeInUp delay-${i} rounded-xl border border-gray-100 p-4`} style={{boxShadow: '0 1px 4px rgba(0,0,0,0.06)'}}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="skeleton h-4 w-1/3" />
+              <div className="skeleton h-5 w-20 rounded-full" />
+            </div>
+            <div className="skeleton h-3.5 w-full mb-2" />
+            <div className="skeleton h-3.5 w-2/3" />
+          </div>
+        ))}
       </div>
     );
   }

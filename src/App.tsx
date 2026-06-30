@@ -8,6 +8,7 @@ import { LayoutWithChildren } from './components/LayoutWithChildren';
 import { AdminLayoutWithChildren } from './pages/admin/AdminLayoutWithChildren';
 import ScrollToTop from './components/ScrollToTop';
 import VisibilityHandler from './components/VisibilityHandler';
+import { logger } from './lib/logger';
 
 // Pages publiques (chargement immédiat)
 import { Home } from './pages/Home';
@@ -31,10 +32,18 @@ const NewsList = React.lazy(() => import('./pages/admin/NewsList').then(m => ({ 
 const OrderDetail = React.lazy(() => import('./pages/admin/OrderDetail').then(m => ({ default: m.OrderDetail })));
 const PaymentsToVerify = React.lazy(() => import('./pages/admin/PaymentsToVerify'));
 
-// Composant de chargement
+// Skeleton de chargement pour les pages lazy-loaded
 export const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+  <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+    <div className="skeleton h-7 w-2/5" />
+    <div className="skeleton h-48 w-full rounded-xl" />
+    <div className="space-y-2">
+      <div className="skeleton h-4 w-full" />
+      <div className="skeleton h-4 w-4/5" />
+    </div>
+    <div className="skeleton h-14 w-full rounded-xl" />
+    <div className="skeleton h-14 w-full rounded-xl" />
+    <div className="skeleton h-14 w-full rounded-xl" />
   </div>
 );
 
@@ -69,25 +78,20 @@ const AdminLayoutWrapper: React.FC<{ children: ReactNode }> = (props) => {
   );
 };
 
-// Composant de page admin avec contenu personnalisé
-import { Dashboard } from './pages/admin/Dashboard';
 import AdminProfile from './pages/admin/Profile';
 
-const AdminDashboard = () => <Dashboard />;
 const AdminProfilePage = () => (
   <AdminLayoutWrapper>
     <AdminProfile />
   </AdminLayoutWrapper>
 );
 
-// Composants de page avec leurs layouts respectifs
 const PublicPage = () => (
   <BaseLayout>
     <Home />
   </BaseLayout>
 );
 
-// Page de gestion des commandes
 const AdminOrdersPage = () => (
   <AdminLayoutWrapper>
     <OrdersList />
@@ -125,13 +129,6 @@ const ProtectedProfile = () => (
   </ProtectedLayout>
 );
 
-// Composants admin
-const AdminHome = () => (
-  <AdminLayoutWrapper>
-    <AdminDashboard />
-  </AdminLayoutWrapper>
-);
-
 const AdminUsers = () => (
   <AdminLayoutWrapper>
     <Users />
@@ -164,7 +161,6 @@ const MemoizedProtectedCommande = React.memo(ProtectedCommande);
 const MemoizedProtectedDettes = React.memo(ProtectedDettes);
 const MemoizedProtectedSettings = React.memo(ProtectedSettings);
 const MemoizedProtectedProfile = React.memo(ProtectedProfile);
-const MemoizedAdminHome = React.memo(AdminHome);
 const MemoizedAdminUsers = React.memo(AdminUsers);
 const MemoizedAdminOrders = React.memo(AdminOrders);
 const MemoizedAdminNews = React.memo(AdminNews);
@@ -173,13 +169,13 @@ const MemoizedAdminProducts = React.memo(AdminProducts);
 function App() {
   // Démarrer le service de keep-alive
   React.useEffect(() => {
-    console.log('🚀 Composant App monté');
+    logger.debug('🚀 Composant App monté');
     
     // Démarrer le service de keep-alive
     supabaseKeepAlive.start();
     
     return () => {
-      console.log('👋 Composant App démonté');
+      logger.debug('👋 Composant App démonté');
       // Arrêter le service de keep-alive
       supabaseKeepAlive.stop();
     };

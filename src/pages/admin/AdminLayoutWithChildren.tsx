@@ -8,7 +8,6 @@ interface AdminLayoutWithChildrenProps {
 }
 
 export const AdminLayoutWithChildren: React.FC<AdminLayoutWithChildrenProps> = ({ children }) => {
-  console.log("[ADMIN DEBUG] AdminLayoutWithChildren MOUNTED", window.location.pathname);
   const location = useLocation();
   
   // Fonction pour obtenir le titre de la page en fonction de l'URL

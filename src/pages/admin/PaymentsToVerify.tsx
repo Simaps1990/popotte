@@ -142,8 +142,17 @@ const PaymentsToVerify: React.FC = () => {
         </div>
       </div>
       {loading && (
-        <div className="text-center p-8 bg-white rounded-lg">
-          <p className="text-gray-500">Chargement des paiements...</p>
+        <div className="space-y-3 mt-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className={`anim-fadeInUp delay-${i} rounded-xl border border-gray-100 p-4`} style={{boxShadow: '0 1px 4px rgba(0,0,0,0.06)'}}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="skeleton h-4 w-2/5" />
+                <div className="skeleton h-6 w-24 rounded-full" />
+              </div>
+              <div className="skeleton h-3.5 w-full mb-2" />
+              <div className="skeleton h-8 w-1/3 rounded-lg mt-3" />
+            </div>
+          ))}
         </div>
       )}
       {error && (

@@ -2,174 +2,116 @@ import { Link, useLocation } from 'react-router-dom'
 import { Home, ClipboardList, CreditCard, Settings, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useForceReload } from '../hooks/useForceReload'
-// Suppression de l'import qui cause les rechargements
-// import { useCacheInvalidation } from '../hooks/useRealTimeSubscriptions'
 
 export function BottomNavigation() {
   const location = useLocation()
   const { user } = useAuth()
   const { forceReload } = useForceReload()
-  
-  // Détecter si nous sommes sur la page de login
+
   const isLoginPage = location.pathname === '/auth'
 
-  // Fonction pour gérer les clics de navigation avec rechargement des données
   const handleNavigationClick = (path: string) => {
-    console.log(`🔄 Navigation vers ${path} - Avec rafraîchissement des données`);
-    // Utiliser la nouvelle approche qui préserve la session
-    forceReload(path);
-  };
+    console.log(`🔄 Navigation vers ${path} - Avec rafraîchissement des données`)
+    forceReload(path)
+  }
 
-  // Vérifie si le chemin actuel correspond au chemin de base ou à un sous-chemin
   const isActive = (path: string) => {
-    // Pour la page d'accueil, vérifier l'exactitude
     if (path === '/' && location.pathname === '/') return true
-    
-    // Cas spécial pour les pages de paramètres : actif pour /parametres, /profil et toutes les sous-pages admin
-    if (path === '/parametres' && (location.pathname.startsWith('/parametres') || location.pathname.startsWith('/admin') || location.pathname === '/profil')) {
+    if (
+      path === '/parametres' &&
+      (location.pathname.startsWith('/parametres') ||
+        location.pathname.startsWith('/admin') ||
+        location.pathname === '/profil')
+    ) {
       return true
     }
-    
-    // Pour les autres pages, vérifier si le chemin actuel commence par le chemin de base
-    // mais seulement si le chemin n'est pas la racine ('/')
     return path !== '/' && location.pathname.startsWith(path)
   }
 
-  // Afficher la navigation même si l'utilisateur n'est pas connecté
-
-  // Styles épurés pour les icônes du footer
-  const iconStyle = (isActivePage: boolean) => ({
-    color: isActivePage ? '#1e293b' : '#7b8690',
-    transition: 'color 0.2s',
-    width: 28,
-    height: 28,
-    minWidth: 28,
-    minHeight: 28,
-    maxWidth: 28,
-    maxHeight: 28,
-    display: 'block',
-    margin: '0 auto',
-    outline: 'none',
+  const ic = (active: boolean) => ({
+    color: active ? '#f2750a' : '#94a3b8',
+    strokeWidth: active ? 2.2 : 1.8,
   })
-  const textStyle = (isActivePage: boolean) => ({
-    color: isActivePage ? '#1e293b' : '#7b8690',
-    fontWeight: 500,
-    fontSize: '0.75rem',
-    lineHeight: '1rem',
-    transition: 'color 0.2s',
-    textAlign: "center" as const,
-    minHeight: 16,
-    maxHeight: 16,
-    display: 'block',
-    outline: 'none',
-  })
-  // Footer blanc géré par CSS global (voir index.css)
 
-  // Rendu conditionnel en fonction de la page
+  const labelCls = (active: boolean) =>
+    `text-[11px] font-semibold mt-1 tracking-wide transition-colors duration-200 ${
+      active ? 'text-orange-500' : 'text-slate-400'
+    }`
+
+  const dotCls = (active: boolean) =>
+    `mt-0.5 h-1 w-1 rounded-full bg-orange-500 transition-all duration-200 ${
+      active ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
+    }`
+
+  const itemCls = 'tap-feedback flex flex-col items-center py-2 px-4 min-w-[56px]'
+
   if (isLoginPage) {
-    // Footer spécial pour la page de login (mode "hors connexion" avec seulement deux icônes)
     return (
-      <nav className="fixed bottom-0 left-0 right-0 border-t-0">
-        <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
-          <div className="flex justify-around items-center w-full">
-            {/* Icône Accueil */}
-            <Link
-              to="/"
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-              onClick={() => handleNavigationClick('/')}
-            >
-              <Home size={24} style={iconStyle(isActive('/'))} />
-              <span className="text-xs mt-1" style={{...textStyle(isActive('/')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Accueil</span>
-            </Link>
-            
-            {/* Icône Connexion */}
-            <div className="flex flex-col items-center p-2 rounded-lg transition-colors" style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}}>
-              <Link
-                to="/auth"
-                onClick={() => { 
-                  console.log('Footer Connexion cliqué');
-                  handleNavigationClick('/auth');
-                }}
-              >
-                <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
-                <span className="text-xs" style={{...textStyle(isActive('/auth')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Connexion</span>
-              </Link>
-            </div>
-          </div>
+      <nav className="fixed bottom-0 left-0 right-0 pb-4">
+        <div className="w-full max-w-md mx-auto px-2 flex items-center justify-around">
+          <Link to="/" className={itemCls} onClick={() => handleNavigationClick('/')}>
+            <Home size={24} {...ic(isActive('/'))} />
+            <span className={labelCls(isActive('/'))}>Accueil</span>
+            <span className={dotCls(isActive('/'))} />
+          </Link>
+
+          <Link to="/auth" className={itemCls} onClick={() => handleNavigationClick('/auth')}>
+            <Lock size={24} {...ic(isActive('/auth'))} />
+            <span className={labelCls(isActive('/auth'))}>Connexion</span>
+            <span className={dotCls(isActive('/auth'))} />
+          </Link>
         </div>
       </nav>
-    );
+    )
   }
-  
-  // Footer normal pour les autres pages
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t-0" style={{paddingBottom: 16}}>
-      <div className="w-full max-w-md mx-auto px-2 h-full flex items-center">
-        <div className="flex justify-around items-center w-full">
-          {/* Icône Accueil (toujours visible) */}
-          <Link
-            to="/"
-            className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-            style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
-            onClick={() => handleNavigationClick('/')}
-          >
-            <Home size={24} style={iconStyle(isActive('/'))} />
-            <span className="text-xs mt-1" style={{...textStyle(isActive('/')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Accueil</span>
-          </Link>
-          
-          {/* Icônes visibles uniquement pour les utilisateurs connectés */}
-          {user && (
-            <Link
-              to="/commande"
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-              style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
-              onClick={() => handleNavigationClick('/commande')}
-            >
-              <ClipboardList size={24} style={iconStyle(isActive('/commande'))} />
-              <span className="text-xs mt-1" style={{...textStyle(isActive('/commande')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Commander</span>
-            </Link>
-          )}
-          
-          {user && (
-            <>
-              <Link
-                to="/dettes"
-                className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-                style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
-                onClick={() => handleNavigationClick('/dettes')}
-              >
-                <CreditCard size={24} style={iconStyle(isActive('/dettes'))} />
-                <span className="text-xs mt-1" style={{...textStyle(isActive('/dettes')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Dettes</span>
-              </Link>
-              
-              <Link
-                to="/parametres"
-                className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-                style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
-                onClick={() => handleNavigationClick('/parametres')}
-              >
-                <Settings size={24} style={iconStyle(isActive('/parametres'))} />
-                <span className="text-xs mt-1" style={{...textStyle(isActive('/parametres')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Paramètres</span>
-              </Link>
-            </>
-          )}
 
-          {/* Icône de connexion pour les utilisateurs non connectés (sauf sur la page de login) */}
-          {!user && !isLoginPage && (
-            <Link
-              to="/auth"
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors`}
-              style={{minWidth: 64, minHeight: 64, justifyContent: 'center', alignItems: 'center'}} 
-              onClick={() => { 
-                console.log('Footer Connexion cliqué');
-                handleNavigationClick('/auth');
-              }}
-            >
-              <Lock size={20} style={iconStyle(isActive('/auth'))} className="mb-1" />
-              <span className="text-xs" style={{...textStyle(isActive('/auth')), display: 'block', minHeight: 16, maxHeight: 16, lineHeight: '16px'}}>Connexion</span>
-            </Link>
-          )}
-        </div>
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 pb-4">
+      <div className="w-full max-w-md mx-auto px-2 flex items-center justify-around">
+        <Link to="/" className={itemCls} onClick={() => handleNavigationClick('/')}>
+          <Home size={24} {...ic(isActive('/'))} />
+          <span className={labelCls(isActive('/'))}>Accueil</span>
+          <span className={dotCls(isActive('/'))} />
+        </Link>
+
+        {user && (
+          <Link to="/commande" className={itemCls} onClick={() => handleNavigationClick('/commande')}>
+            <ClipboardList size={24} {...ic(isActive('/commande'))} />
+            <span className={labelCls(isActive('/commande'))}>Commander</span>
+            <span className={dotCls(isActive('/commande'))} />
+          </Link>
+        )}
+
+        {user && (
+          <Link to="/dettes" className={itemCls} onClick={() => handleNavigationClick('/dettes')}>
+            <CreditCard size={24} {...ic(isActive('/dettes'))} />
+            <span className={labelCls(isActive('/dettes'))}>Dettes</span>
+            <span className={dotCls(isActive('/dettes'))} />
+          </Link>
+        )}
+
+        {user && (
+          <Link to="/parametres" className={itemCls} onClick={() => handleNavigationClick('/parametres')}>
+            <Settings size={24} {...ic(isActive('/parametres'))} />
+            <span className={labelCls(isActive('/parametres'))}>Paramètres</span>
+            <span className={dotCls(isActive('/parametres'))} />
+          </Link>
+        )}
+
+        {!user && !isLoginPage && (
+          <Link
+            to="/auth"
+            className={itemCls}
+            onClick={() => {
+              console.log('Footer Connexion cliqué')
+              handleNavigationClick('/auth')
+            }}
+          >
+            <Lock size={24} {...ic(isActive('/auth'))} />
+            <span className={labelCls(isActive('/auth'))}>Connexion</span>
+            <span className={dotCls(isActive('/auth'))} />
+          </Link>
+        )}
       </div>
     </nav>
   )

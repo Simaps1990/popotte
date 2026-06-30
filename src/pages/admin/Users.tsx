@@ -1160,12 +1160,21 @@ const Users: React.FC = () => {
 
   if (loading.users && users.length === 0) {
     return (
-      <div className="min-h-screen pb-16">
-        <main className="container mx-auto px-4 py-6 max-w-md">
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
+      <div className="max-w-md mx-auto px-4 py-6 space-y-3">
+        <div className="skeleton h-7 w-1/3 mb-6" />
+        <div className="skeleton h-10 w-full rounded-xl mb-4" />
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className={`anim-fadeInUp delay-${Math.min(i, 5)} rounded-xl border border-gray-100 p-4`} style={{boxShadow: '0 1px 4px rgba(0,0,0,0.06)'}}>
+            <div className="flex items-center space-x-3">
+              <div className="skeleton h-10 w-10 rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="skeleton h-4 w-2/5" />
+                <div className="skeleton h-3.5 w-3/5" />
+              </div>
+              <div className="skeleton h-6 w-16 rounded-full" />
+            </div>
           </div>
-        </main>
+        ))}
       </div>
     );
   }

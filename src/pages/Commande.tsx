@@ -329,19 +329,19 @@ export function Commande() {
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => removeFromCart(product.id, variant.name)}
-                                className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
+                                className="tap-feedback w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50"
                                 disabled={quantity === 0 || isOutOfStock}
                               >
                                 <Minus size={14} />
                               </button>
-                              
+
                               <span className="w-6 text-center font-medium text-sm">
                                 {quantity}
                               </span>
-                              
+
                               <button
                                 onClick={() => addToCart(product, variant.name)}
-                                className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-50"
+                                className="tap-feedback w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-50"
                                 disabled={isOutOfStock || quantity >= variant.quantity}
                               >
                                 <Plus size={14} />
@@ -397,22 +397,22 @@ export function Commande() {
                     <div className="flex items-center space-x-3 self-start">
                       <button
                         onClick={() => removeFromCart(product.id)}
-                        className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
+                        className="tap-feedback w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50"
                         disabled={getCartItemCount(product.id) === 0}
                       >
                         <Minus size={18} />
                       </button>
-                      
+
                       <span className="w-8 text-center font-bold text-lg flex items-center justify-center">
                         {getCartItemCount(product.id)}
                       </span>
-                      
+
                       <button
                         onClick={() => addToCart(product)}
-                        className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-50"
+                        className="tap-feedback w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-50"
                         disabled={
-                          product.stock_enabled && 
-                          product.stock_quantity !== undefined && 
+                          product.stock_enabled &&
+                          product.stock_quantity !== undefined &&
                           (product.stock_quantity === 0 || getCartItemCount(product.id) >= product.stock_quantity)
                         }
                       >
@@ -432,11 +432,11 @@ export function Commande() {
       <div className="pb-8"></div>
 
       {cart.length > 0 && (
-        <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center">
+        <div className="anim-popIn fixed bottom-24 left-0 right-0 z-50 flex justify-center">
           <button
             onClick={handleSubmit}
             disabled={cart.length === 0 || submitting || !user}
-            className="btn-primary flex items-center space-x-3 shadow-xl disabled:opacity-50 px-6 py-3 rounded-lg text-white font-medium text-lg"
+            className="btn-primary flex items-center space-x-3 shadow-xl disabled:opacity-50 px-6 py-3 rounded-2xl text-white font-semibold text-base"
             type="button"
           >
             <ShoppingCart size={24} />

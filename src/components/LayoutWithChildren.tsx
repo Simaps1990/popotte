@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { BottomNavigation } from './BottomNavigation';
 
@@ -9,12 +9,18 @@ interface LayoutWithChildrenProps {
 
 export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
-  // Si le chargement est en cours, afficher un spinner
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+        <div className="skeleton h-7 w-2/5" />
+        <div className="skeleton h-48 w-full rounded-xl" />
+        <div className="space-y-2">
+          <div className="skeleton h-4 w-full" />
+          <div className="skeleton h-4 w-4/5" />
+        </div>
+        <div className="skeleton h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -93,7 +99,7 @@ export const LayoutWithChildren: React.FC<LayoutWithChildrenProps> = ({ children
         </>
       )}
       <main className="w-full max-w-md mx-auto px-4 py-0 flex-grow pb-20 bg-white">
-        <div className="w-full">
+        <div key={location.pathname} className="w-full anim-fadeInUp">
           {children}
         </div>
       </main>

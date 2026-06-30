@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { logger } from '../lib/logger';
 
 export interface UserProfile {
   id: string;
@@ -54,7 +55,7 @@ export const userService = {
         .limit(1000); // Augmentation de la limite pour s'assurer de récupérer tous les utilisateurs
 
       if (usersError) {
-        console.error('Erreur lors de la récupération des utilisateurs:', usersError);
+        logger.error('Erreur lors de la récupération des utilisateurs:', usersError);
         return [];
       }
 
@@ -82,7 +83,7 @@ export const userService = {
       const { data: allDebts, error: debtsError } = debtsResult;
 
       if (debtsError) {
-        console.error('Erreur lors de la récupération des dettes:', debtsError);
+        logger.error('Erreur lors de la récupération des dettes:', debtsError);
         return activeUsers.map((user: UserProfile) => ({ ...user, debt: 0 }));
       }
       
@@ -104,7 +105,7 @@ export const userService = {
         debt: Math.round((debtsByUser.get(user.id) || 0) * 100) / 100
       }));
     } catch (error) {
-      console.error('Erreur inattendue dans getAllUsers:', error);
+      logger.error('Erreur inattendue dans getAllUsers:', error);
       return [];
     }
   },
@@ -120,7 +121,7 @@ export const userService = {
         .single();
 
       if (error) {
-        console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+        logger.error('Erreur lors de la récupération de l\'utilisateur:', error);
         return null;
       }
 
@@ -169,7 +170,7 @@ export const userService = {
         };
         
       } catch (error) {
-        console.warn('Erreur lors du calcul de la dette, utilisation de 0:', error);
+        logger.warn('Erreur lors du calcul de la dette, utilisation de 0:', error);
         return {
           ...user,
           debt: 0,
@@ -177,7 +178,7 @@ export const userService = {
         };
       }
     } catch (error) {
-      console.error('Erreur inattendue dans getUserById:', error);
+      logger.error('Erreur inattendue dans getUserById:', error);
       return null;
     }
   },
@@ -195,12 +196,12 @@ export const userService = {
         });
 
       if (rpcError) {
-        console.error('❌ [updateUserRole] Erreur RPC:', rpcError);
+        logger.error('❌ [updateUserRole] Erreur RPC:', rpcError);
         return false;
       }
 
       if (!result || !result.success) {
-        console.error('❌ [updateUserRole] Échec de la mise à jour:', result?.error || 'Erreur inconnue');
+        logger.error('❌ [updateUserRole] Échec de la mise à jour:', result?.error || 'Erreur inconnue');
         return false;
       }
 
@@ -208,7 +209,7 @@ export const userService = {
       return true;
       
     } catch (error) {
-      console.error('❌ [updateUserRole] Erreur inattendue:', error);
+      logger.error('❌ [updateUserRole] Erreur inattendue:', error);
       return false;
     }
   },
@@ -223,12 +224,12 @@ export const userService = {
     try {
       // Validation des données
       if (!debtData.user_id) {
-        console.error('Erreur: ID utilisateur manquant');
+        logger.error('Erreur: ID utilisateur manquant');
         return null;
       }
 
       if (isNaN(debtData.amount) || debtData.amount <= 0) {
-        console.error('Erreur: Montant invalide', debtData.amount);
+        logger.error('Erreur: Montant invalide', debtData.amount);
         return null;
       }
 
@@ -240,7 +241,7 @@ export const userService = {
         .single();
 
       if (userError || !userExists) {
-        console.error('Erreur: Utilisateur introuvable', debtData.user_id, userError);
+        logger.error('Erreur: Utilisateur introuvable', debtData.user_id, userError);
         return null;
       }
 
@@ -264,7 +265,7 @@ export const userService = {
         .single();
 
       if (error) {
-        console.error('Erreur lors de l\'ajout de la dette:', error);
+        logger.error('Erreur lors de l\'ajout de la dette:', error);
         return null;
       }
 
@@ -282,7 +283,7 @@ export const userService = {
         order_id: data.order_id ?? null
       };
     } catch (error) {
-      console.error('Erreur inattendue lors de l\'ajout de la dette:', error);
+      logger.error('Erreur inattendue lors de l\'ajout de la dette:', error);
       return null;
     }
   },
@@ -308,7 +309,7 @@ export const userService = {
       
       return data || [];
     } catch (error) {
-      console.error('Error fetching user debt history:', error);
+      logger.error('Error fetching user debt history:', error);
       return [];
     }
   },
@@ -337,9 +338,9 @@ export const userService = {
       // Gestion des erreurs
       if (ordersError) {
         if (ordersError.code === '42P01') {
-          console.warn('Les tables orders ou order_items n\'existent pas encore');
+          logger.warn('Les tables orders ou order_items n\'existent pas encore');
         } else {
-          console.warn('Erreur lors de la récupération des commandes:', ordersError);
+          logger.warn('Erreur lors de la récupération des commandes:', ordersError);
         }
         return [];
       }
@@ -369,7 +370,7 @@ export const userService = {
         }))
       }));
     } catch (error) {
-      console.error('Erreur inattendue lors de la récupération des commandes:', error);
+      logger.error('Erreur inattendue lors de la récupération des commandes:', error);
       return [];
     }
   },
@@ -391,7 +392,7 @@ export const userService = {
             try {
               callback(payload);
             } catch (error) {
-              console.error('Erreur dans le callback de subscribeToUsers:', error);
+              logger.error('Erreur dans le callback de subscribeToUsers:', error);
             }
           }
         )
@@ -401,11 +402,11 @@ export const userService = {
         try {
           subscription.unsubscribe();
         } catch (error) {
-          console.error('Erreur lors de la désinscription de subscribeToUsers:', error);
+          logger.error('Erreur lors de la désinscription de subscribeToUsers:', error);
         }
       };
     } catch (error) {
-      console.error('Erreur lors de l\'abonnement aux mises à jour des utilisateurs:', error);
+      logger.error('Erreur lors de l\'abonnement aux mises à jour des utilisateurs:', error);
       // Retourner une fonction vide en cas d'erreur
       return () => {};
     }
@@ -430,7 +431,7 @@ export const userService = {
 
               callback(payload);
             } catch (error) {
-              console.error('Erreur dans le callback de subscribeToUserDebts:', error);
+              logger.error('Erreur dans le callback de subscribeToUserDebts:', error);
             }
           }
         )
@@ -441,18 +442,18 @@ export const userService = {
 
           subscription.unsubscribe();
         } catch (error) {
-          console.error('Erreur lors de la désinscription de subscribeToUserDebts:', error);
+          logger.error('Erreur lors de la désinscription de subscribeToUserDebts:', error);
         }
       };
     } catch (error) {
-      console.error('Erreur lors de l\'abonnement aux mises à jour des dettes:', error);
+      logger.error('Erreur lors de l\'abonnement aux mises à jour des dettes:', error);
       return () => {};
     }
   },
 
   // Supprimer complètement un compte utilisateur et toutes ses données associées
   async deleteUser(userId: string): Promise<boolean> {
-    console.log(`🚀 [deleteUser] Début de la suppression complète de l'utilisateur ${userId}`);
+    logger.debug(`🚀 [deleteUser] Début de la suppression complète de l'utilisateur ${userId}`);
     
     try {
       // 0. Vérifier si l'utilisateur existe
@@ -463,79 +464,79 @@ export const userService = {
         .single();
       
       if (userCheckError || !userCheck) {
-        console.error('❌ [deleteUser] Utilisateur non trouvé:', userCheckError);
+        logger.error('❌ [deleteUser] Utilisateur non trouvé:', userCheckError);
         return false;
       }
       
       if (!userCheck.id) {
-        console.error('❌ [deleteUser] Données utilisateur incomplètes');
+        logger.error('❌ [deleteUser] Données utilisateur incomplètes');
         return false;
       }
 
       // 1. Supprimer les notifications de paiement
-      console.log(`🗑️ [deleteUser] Suppression des notifications de paiement pour ${userId}`);
+      logger.debug(`🗑️ [deleteUser] Suppression des notifications de paiement pour ${userId}`);
       const { error: paymentNotificationsError } = await supabase
         .from('payment_notifications')
         .delete()
         .eq('user_id', userId);
       
       if (paymentNotificationsError) {
-        console.warn('⚠️ [deleteUser] Erreur lors de la suppression des notifications de paiement:', paymentNotificationsError);
+        logger.warn('⚠️ [deleteUser] Erreur lors de la suppression des notifications de paiement:', paymentNotificationsError);
       }
 
       // 2. Supprimer les notifications
-      console.log(`🗑️ [deleteUser] Suppression des notifications pour ${userId}`);
+      logger.debug(`🗑️ [deleteUser] Suppression des notifications pour ${userId}`);
       const { error: notificationsError } = await supabase
         .from('notifications')
         .delete()
         .eq('user_id', userId);
       
       if (notificationsError) {
-        console.warn('⚠️ [deleteUser] Erreur lors de la suppression des notifications:', notificationsError);
+        logger.warn('⚠️ [deleteUser] Erreur lors de la suppression des notifications:', notificationsError);
       }
 
       // 3. Supprimer les commandes
-      console.log(`🗑️ [deleteUser] Suppression des commandes pour ${userId}`);
+      logger.debug(`🗑️ [deleteUser] Suppression des commandes pour ${userId}`);
       const { error: ordersError } = await supabase
         .from('orders')
         .delete()
         .eq('user_id', userId);
       
       if (ordersError) {
-        console.error('❌ [deleteUser] Erreur lors de la suppression des commandes:', ordersError);
+        logger.error('❌ [deleteUser] Erreur lors de la suppression des commandes:', ordersError);
         return false;
       }
 
       // 4. Supprimer les dettes
-      console.log(`🗑️ [deleteUser] Suppression des dettes pour ${userId}`);
+      logger.debug(`🗑️ [deleteUser] Suppression des dettes pour ${userId}`);
       const { error: debtsError } = await supabase
         .from('debts')
         .delete()
         .eq('user_id', userId);
       
       if (debtsError) {
-        console.error('❌ [deleteUser] Erreur lors de la suppression des dettes:', debtsError);
+        logger.error('❌ [deleteUser] Erreur lors de la suppression des dettes:', debtsError);
         return false;
       }
 
       // 5. Supprimer le profil utilisateur
-      console.log(`🗑️ [deleteUser] Suppression du profil pour ${userId}`);
+      logger.debug(`🗑️ [deleteUser] Suppression du profil pour ${userId}`);
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId);
       
       if (profileError) {
-        console.error('❌ [deleteUser] Erreur lors de la suppression du profil:', profileError);
+        logger.error('❌ [deleteUser] Erreur lors de la suppression du profil:', profileError);
         return false;
       }
 
       // 6. Supprimer l'utilisateur de la table auth.users
-      console.log(`🗑️ [deleteUser] Suppression de l'utilisateur de auth.users pour ${userId}`);
+      logger.debug(`🗑️ [deleteUser] Suppression de l'utilisateur de auth.users pour ${userId}`);
       const { error: authError } = await supabase.auth.admin.deleteUser(userId);
       
       if (authError) {
-        console.error('❌ [deleteUser] Erreur lors de la suppression de l\'utilisateur de auth.users:', authError);
+        logger.error('❌ [deleteUser] Erreur lors de la suppression de l\'utilisateur de auth.users:', authError);
         return false;
       }
 
@@ -547,15 +548,15 @@ export const userService = {
         .maybeSingle();
       
       if (verifyUser) {
-        console.error('❌ [deleteUser] L\'utilisateur existe toujours après la suppression');
+        logger.error('❌ [deleteUser] L\'utilisateur existe toujours après la suppression');
         return false;
       }
 
-      console.log(`✅ [deleteUser] Utilisateur ${userId} supprimé avec succès`);
+      logger.debug(`✅ [deleteUser] Utilisateur ${userId} supprimé avec succès`);
       return true;
       
     } catch (error) {
-      console.error('❌ [deleteUser] Erreur inattendue lors de la suppression:', error);
+      logger.error('❌ [deleteUser] Erreur inattendue lors de la suppression:', error);
       return false;
     }
   }

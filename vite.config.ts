@@ -113,22 +113,6 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           cleanupOutdatedCaches: true,
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/xtjzuqyvyzkzchwtjpeo\.supabase\.co/,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'api-cache',
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                }
-              }
-            }
-          ]
         }
       })
     ]

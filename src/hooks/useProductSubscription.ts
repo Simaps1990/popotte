@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { SyncEventType, SupabaseEventPayload } from '../services/syncTypes';
 import { toast } from 'react-hot-toast';
+import { logger } from '../lib/logger';
 
 /**
- * Hook personnalisé pour gérer l'abonnement aux mises à jour des produits et catégories
+ * Hook personnalisé pour gérer l'abonnement aux mises à jour des produits, catégories et variantes de stock
  * Centralise les abonnements pour éviter les duplications
  * @param onProductUpdate Callback appelé lors d'une mise à jour de produit
  * @param onCategoryUpdate Callback appelé lors d'une mise à jour de catégorie
@@ -17,13 +18,14 @@ export function useProductSubscription(
   const [lastUpdate, setLastUpdate] = useState<number>(0);
   const productChannelRef = useRef<any>(null);
   const categoryChannelRef = useRef<any>(null);
+  const stockVariantChannelRef = useRef<any>(null);
 
   // Mise à jour instantanée sans délai
   const handleProductUpdate = (payload: SupabaseEventPayload) => {
     const now = Date.now();
     const eventType = payload.eventType;
     const id = payload.new?.id || payload.old?.id;
-    console.log('⚡ [useProductSubscription] Mise à jour produit instantanée:', eventType, id);
+    logger.debug('⚡ [useProductSubscription] Mise à jour produit instantanée:', eventType, id);
     
     // Notification toast
     if (eventType === 'UPDATE') {
@@ -43,7 +45,7 @@ export function useProductSubscription(
     const now = Date.now();
     const eventType = payload.eventType;
     const id = payload.new?.id || payload.old?.id;
-    console.log('⚡ [useProductSubscription] Mise à jour catégorie instantanée:', eventType, id);
+    logger.debug('⚡ [useProductSubscription] Mise à jour catégorie instantanée:', eventType, id);
     
     // Notification toast
     if (eventType === 'UPDATE') {
@@ -59,20 +61,46 @@ export function useProductSubscription(
     if (onCategoryUpdate) onCategoryUpdate();
   };
 
+  const handleStockVariantUpdate = (payload: SupabaseEventPayload) => {
+    const now = Date.now();
+    const eventType = payload.eventType;
+    const id = payload.new?.id || payload.old?.id;
+    logger.debug('⚡ [useProductSubscription] Mise à jour variante de stock instantanée:', eventType, id);
+    
+    // Notification toast
+    if (eventType === 'UPDATE') {
+      toast.success('Variante de stock mise à jour', { duration: 2000 });
+    } else if (eventType === 'INSERT') {
+      toast.success('Nouvelle variante de stock ajoutée', { duration: 2000 });
+    } else if (eventType === 'DELETE') {
+      toast.success('Variante de stock supprimée', { duration: 2000 });
+    }
+    
+    // Mise à jour immédiate sans délai
+    setLastUpdate(now);
+    if (onProductUpdate) onProductUpdate();
+  };
+
   useEffect(() => {
-    console.log('🔄 Initialisation des abonnements centralisés aux produits et catégories');
+    logger.debug('🔄 Initialisation des abonnements centralisés aux produits, catégories et variantes de stock');
     
     // S'assurer qu'il n'y a pas déjà des abonnements actifs
     if (productChannelRef.current) {
-      console.log('🔄 Désabonnement de l\'ancien abonnement produits');
+      logger.debug('🔄 Désabonnement de l\'ancien abonnement produits');
       productChannelRef.current.unsubscribe();
       productChannelRef.current = null;
     }
     
     if (categoryChannelRef.current) {
-      console.log('🔄 Désabonnement de l\'ancien abonnement catégories');
+      logger.debug('🔄 Désabonnement de l\'ancien abonnement catégories');
       categoryChannelRef.current.unsubscribe();
       categoryChannelRef.current = null;
+    }
+    
+    if (stockVariantChannelRef.current) {
+      logger.debug('🔄 Désabonnement de l\'ancien abonnement variantes de stock');
+      stockVariantChannelRef.current.unsubscribe();
+      stockVariantChannelRef.current = null;
     }
     
     // Créer un nouvel abonnement pour les produits
@@ -84,12 +112,12 @@ export function useProductSubscription(
           table: 'products'
         }, 
         (payload: any) => {
-          console.log('📡 [useProductSubscription] Changement de produit détecté:', payload.eventType, payload.new?.id || payload.old?.id);
+          logger.debug('📡 [useProductSubscription] Changement de produit détecté:', payload.eventType, payload.new?.id || payload.old?.id);
           handleProductUpdate(payload);
         }
       )
       .subscribe((status: string) => {
-        console.log('🔊 [useProductSubscription] Statut abonnement produits:', status);
+        logger.debug('🔊 [useProductSubscription] Statut abonnement produits:', status);
       });
     
     // Créer un nouvel abonnement pour les catégories
@@ -101,21 +129,39 @@ export function useProductSubscription(
           table: 'categories'
         }, 
         (payload: any) => {
-          console.log('📡 [useProductSubscription] Changement de catégorie détecté:', payload.eventType, payload.new?.id || payload.old?.id);
+          logger.debug('📡 [useProductSubscription] Changement de catégorie détecté:', payload.eventType, payload.new?.id || payload.old?.id);
           handleCategoryUpdate(payload);
         }
       )
       .subscribe((status: string) => {
-        console.log('🔊 [useProductSubscription] Statut abonnement catégories:', status);
+        logger.debug('🔊 [useProductSubscription] Statut abonnement catégories:', status);
+      });
+    
+    // Créer un nouvel abonnement pour les variantes de stock
+    const stockVariantChannel = supabase.channel('global_stock_variant_changes_' + Date.now())
+      .on('postgres_changes', 
+        { 
+          event: '*',
+          schema: 'public',
+          table: 'product_stock_variants'
+        }, 
+        (payload: any) => {
+          logger.debug('📡 [useProductSubscription] Changement de variante de stock détecté:', payload.eventType, payload.new?.id || payload.old?.id);
+          handleStockVariantUpdate(payload);
+        }
+      )
+      .subscribe((status: string) => {
+        logger.debug('🔊 [useProductSubscription] Statut abonnement variantes de stock:', status);
       });
     
     // Stocker les références aux canaux
     productChannelRef.current = productChannel;
     categoryChannelRef.current = categoryChannel;
+    stockVariantChannelRef.current = stockVariantChannel;
     
     // Nettoyage lors du démontage du composant
     return () => {
-      console.log('🧹 Nettoyage des abonnements aux produits et catégories');
+      logger.debug('🧹 Nettoyage des abonnements aux produits, catégories et variantes de stock');
       if (productChannelRef.current) {
         productChannelRef.current.unsubscribe();
         productChannelRef.current = null;
@@ -124,6 +170,11 @@ export function useProductSubscription(
       if (categoryChannelRef.current) {
         categoryChannelRef.current.unsubscribe();
         categoryChannelRef.current = null;
+      }
+      
+      if (stockVariantChannelRef.current) {
+        stockVariantChannelRef.current.unsubscribe();
+        stockVariantChannelRef.current = null;
       }
     };
   }, []);

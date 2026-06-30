@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { logger } from './logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -57,24 +58,26 @@ supabase.auth.onAuthStateChange(() => {
   // Événement d'authentification Supabase
 });
 
-// Tester l'accès anonyme aux actualités
-supabase.from('news').select('count').eq('published', true).then(({ error }: { data: any, error: any }) => {
-  if (error) {
-    console.error('❌ Test d\'accès anonyme aux actualités échoué:', error);
-  }
-});
+// Tester l'accès anonyme aux actualités (uniquement en développement)
+if (import.meta.env.DEV) {
+  supabase.from('news').select('count').eq('published', true).then(({ error }: { data: any, error: any }) => {
+    if (error) {
+      logger.error('❌ Test d\'accès anonyme aux actualités échoué:', error);
+    }
+  });
+}
 
 // Exporter une fonction pour tester la déconnexion
 export const testSignOut = async () => {
   try {
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     if (error) {
-      console.error('❌ Test de déconnexion échoué:', error);
+      logger.error('❌ Test de déconnexion échoué:', error);
       return { success: false, error };
     }
     return { success: true, error: null };
   } catch (e) {
-    console.error('❌ Erreur lors du test de déconnexion:', e);
+    logger.error('❌ Erreur lors du test de déconnexion:', e);
     return { success: false, error: e };
   }
 };

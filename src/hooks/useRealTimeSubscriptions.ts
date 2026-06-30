@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { logger } from '../lib/logger';
 
 // Constantes pour la gestion des reconnexions
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -33,20 +34,20 @@ export const useRealTimeSubscriptions = ({
   // Surveiller la connectivité du navigateur
   useEffect(() => {
     const handleOnline = () => {
-      console.log('🌐 Navigateur en ligne, reconnexion des abonnements...');
+      logger.debug('🌐 Navigateur en ligne, reconnexion des abonnements...');
       setIsConnected(true);
       reconnectSubscriptions();
     };
     
     const handleOffline = () => {
-      console.log('⚠️ Navigateur hors ligne, abonnements suspendus');
+      logger.debug('⚠️ Navigateur hors ligne, abonnements suspendus');
       setIsConnected(false);
     };
     
     // Surveiller les changements de visibilité de la page
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('👁️ Page visible, vérification des abonnements...');
+        logger.debug('👁️ Page visible, vérification des abonnements...');
         // Vérifier l'état des abonnements après un court délai
         setTimeout(() => {
           reconnectSubscriptions();
@@ -80,14 +81,14 @@ export const useRealTimeSubscriptions = ({
   // Fonction sécurisée pour créer les abonnements
   const createSubscriptions = useCallback(function() {
     try {
-      console.log('🔌 Création/recréation des abonnements temps réel...');
+      logger.debug('🔌 Création/recréation des abonnements temps réel...');
       
       // Nettoyer les abonnements existants
       subscriptionsRef.current.forEach(subscription => {
         try {
           supabase.removeChannel(subscription);
         } catch (error) {
-          console.warn('⚠️ Erreur lors du nettoyage d\'un abonnement:', error);
+          logger.warn('⚠️ Erreur lors du nettoyage d\'un abonnement:', error);
         }
       });
       subscriptionsRef.current = [];
@@ -175,13 +176,13 @@ export const useRealTimeSubscriptions = ({
     }
 
     } catch (error) {
-      console.error('❌ Erreur lors de la création des abonnements:', error);
+      logger.error('❌ Erreur lors de la création des abonnements:', error);
       // Planifier une nouvelle tentative
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
       }
       reconnectTimerRef.current = setTimeout(() => {
-        console.log('🔄 Nouvelle tentative de création des abonnements...');
+      logger.debug('🔄 Nouvelle tentative de création des abonnements...');
         createSubscriptions();
       }, 3000);
     }
@@ -210,16 +211,16 @@ export const useRealTimeSubscriptions = ({
       const hasCorrectSubscriptionCount = subscriptionsRef.current.length === expectedSubscriptions;
       
       if (!allActive || !hasCorrectSubscriptionCount) {
-        console.warn(`⚠️ Problème détecté avec les abonnements: ${subscriptionsRef.current.length}/${expectedSubscriptions} actifs`);        
+        logger.warn(`⚠️ Problème détecté avec les abonnements: ${subscriptionsRef.current.length}/${expectedSubscriptions} actifs`);        
         reconnectSubscriptions();
       } else {
-        console.log('✅ Tous les abonnements sont actifs et en bonne santé');
+        logger.debug('✅ Tous les abonnements sont actifs et en bonne santé');
         // Réinitialiser le compteur de tentatives si tout va bien
         reconnectAttemptsRef.current = 0;
         lastSuccessfulConnectionRef.current = Date.now();
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la vérification de santé des abonnements:', error);
+      logger.error('❌ Erreur lors de la vérification de santé des abonnements:', error);
       reconnectSubscriptions();
     }
   }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange, userId]);
@@ -234,7 +235,7 @@ export const useRealTimeSubscriptions = ({
       
       // Limiter le nombre de tentatives de reconnexion
       if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
-        console.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de reconnexion. Attente prolongée avant nouvel essai.`);
+        logger.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de reconnexion. Attente prolongée avant nouvel essai.`);
         
         // Réinitialiser après un délai plus long
         setTimeout(() => {
@@ -246,7 +247,7 @@ export const useRealTimeSubscriptions = ({
       }
       
       reconnectAttemptsRef.current++;
-      console.log(`🔄 Tentative de reconnexion #${reconnectAttemptsRef.current}...`);
+      logger.debug(`🔄 Tentative de reconnexion #${reconnectAttemptsRef.current}...`);
       
       // Vérifier si les abonnements sont actifs
       const allActive = subscriptionsRef.current.every(function(subscription) {
@@ -254,19 +255,19 @@ export const useRealTimeSubscriptions = ({
       });
       
       if (!allActive || subscriptionsRef.current.length === 0) {
-        console.log('🔌 Abonnements inactifs ou manquants, reconnexion...');
+        logger.debug('🔌 Abonnements inactifs ou manquants, reconnexion...');
         
         // Ajouter un délai progressif entre les tentatives
         setTimeout(() => {
           createSubscriptions();
         }, RECONNECT_DELAY * Math.min(reconnectAttemptsRef.current, 3));
       } else {
-        console.log('✅ Tous les abonnements sont actifs');
+        logger.debug('✅ Tous les abonnements sont actifs');
         reconnectAttemptsRef.current = 0;
         lastSuccessfulConnectionRef.current = Date.now();
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la reconnexion:', error);
+      logger.error('❌ Erreur lors de la reconnexion:', error);
     }
   }, [onPaymentNotificationChange, onDebtChange, onOrderChange, onNewsChange]);
   
@@ -312,7 +313,7 @@ export const useRealTimeSubscriptions = ({
         try {
           supabase.removeChannel(subscription);
         } catch (error) {
-          console.warn('⚠️ Erreur lors du nettoyage d\'un abonnement:', error);
+          logger.warn('⚠️ Erreur lors du nettoyage d\'un abonnement:', error);
         }
       });
       subscriptionsRef.current = [];
@@ -322,7 +323,7 @@ export const useRealTimeSubscriptions = ({
   return {
     // Fonction pour forcer la reconnexion des abonnements
     reconnect: () => {
-      console.log('🔄 Reconnexion forcée des abonnements...');
+      logger.debug('🔄 Reconnexion forcée des abonnements...');
       // Réinitialiser le compteur de tentatives pour une reconnexion forcée
       reconnectAttemptsRef.current = 0;
       reconnectSubscriptions();
@@ -353,14 +354,14 @@ export const useCacheInvalidation = () => {
     
     // Si une invalidation est déjà en cours ou si la dernière invalidation est trop récente, on ignore
     if (isInvalidatingRef.current || (now - lastInvalidationRef.current < DEBOUNCE_DELAY)) {
-      console.log('🔄 Invalidation du cache ignorée (trop récente ou déjà en cours)');
+      logger.debug('🔄 Invalidation du cache ignorée (trop récente ou déjà en cours)');
       return;
     }
     
     // Marquer le début de l'invalidation
     isInvalidatingRef.current = true;
     lastInvalidationRef.current = now;
-    console.log('🧹 Début de l\'invalidation du cache...');
+    logger.debug('🧹 Début de l\'invalidation du cache...');
     
     
     // Vider UNIQUEMENT les caches liés aux données métier, pas les caches d'authentification
@@ -387,7 +388,7 @@ export const useCacheInvalidation = () => {
     keysToRemove.forEach(key => localStorage.removeItem(key));
     
     // Log pour debug
-    console.log(`🧹 Cache invalidé sélectivement (${keysToRemove.length} clés supprimées)`)
+    logger.debug(`🧹 Cache invalidé sélectivement (${keysToRemove.length} clés supprimées)`)
     
     // Réinitialiser le flag après un court délai
     setTimeout(() => {

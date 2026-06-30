@@ -122,9 +122,18 @@ export function Home() {
           <h1 className="text-2xl font-bold text-[#10182a] text-center mb-4">Les nouveautés de la popote</h1>
           
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#10182a] border-t-transparent"></div>
-              <p className="text-[#10182a]">Chargement des actualités...</p>
+            <div className="space-y-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className={`anim-fadeInUp delay-${i} overflow-hidden rounded-xl border border-gray-100`} style={{boxShadow: '0 1px 4px rgba(0,0,0,0.06)'}}>
+                  <div className="skeleton w-full h-48" />
+                  <div className="p-4 space-y-3">
+                    <div className="skeleton h-5 w-3/4" />
+                    <div className="skeleton h-3.5 w-1/3" />
+                    <div className="skeleton h-4 w-full" />
+                    <div className="skeleton h-4 w-5/6" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="bg-red-50 border-l-4 border-red-500 p-4">
@@ -155,8 +164,8 @@ export function Home() {
             </div>
           ) : (
             <div className="space-y-6">
-              {newsPosts.map((post) => (
-                <article key={post.id} className="card mb-4 overflow-hidden bg-white border border-[#ddd] rounded-lg">
+              {newsPosts.map((post, index) => (
+                <article key={post.id} className={`anim-fadeInUp delay-${Math.min(index + 1, 5)} card mb-4 overflow-hidden bg-white border border-gray-100 rounded-xl`}>
                   {post.image_url && (
                     <img
                       src={post.image_url}
@@ -198,7 +207,7 @@ export function Home() {
           aria-label="Aperçu de l'image"
         >
           <div
-            className="relative inline-block"
+            className="relative inline-block anim-popIn"
             onClick={(e) => e.stopPropagation()}
           >
             <button

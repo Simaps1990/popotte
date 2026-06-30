@@ -619,7 +619,20 @@ const Products = () => {
               )}
             
             {loading ? (
-              <div>Chargement des produits...</div>
+              <div className="space-y-3 mt-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className={`anim-fadeInUp delay-${i} rounded-xl border border-gray-100 p-4`} style={{boxShadow: '0 1px 4px rgba(0,0,0,0.06)'}}>
+                    <div className="flex items-center space-x-3">
+                      <div className="skeleton h-14 w-14 rounded-lg flex-shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="skeleton h-4 w-2/3" />
+                        <div className="skeleton h-3.5 w-1/3" />
+                      </div>
+                      <div className="skeleton h-8 w-8 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
                 productsByCategory.map((category) => (
                   <div key={category.id} className="space-y-4">

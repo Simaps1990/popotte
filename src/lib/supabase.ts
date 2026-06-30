@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { logger } from './logger';
 
 // Réexporter le client Supabase
 export { supabase } from './supabaseClient';
@@ -89,7 +90,7 @@ export const tableExists = async (tableName: string): Promise<boolean> => {
     // Si on arrive ici, la table existe
     return true;
   } catch (error) {
-    console.error('Erreur lors de la vérification de la table:', error);
+    logger.error('Erreur lors de la vérification de la table:', error);
     return false;
   }
 };
@@ -136,7 +137,7 @@ export const checkDatabaseStructure = async (): Promise<{
 
     return result;
   } catch (error) {
-    console.error('Erreur lors de la vérification de la structure de la base de données:', error);
+    logger.error('Erreur lors de la vérification de la structure de la base de données:', error);
     return result;
   }
 };
@@ -147,12 +148,12 @@ export const checkDatabaseStructure = async (): Promise<{
  * @returns Liste des actualités
  */
 export const getNews = async (limit = 3): Promise<NewsPost[]> => {
-  console.log('🚀 getNews - VERSION SIMPLIFIÉE - ACCÈS DIRECT');
-  console.log('🔍 getNews - Paramètres:', { limit });
+  logger.debug('🚀 getNews - VERSION SIMPLIFIÉE - ACCÈS DIRECT');
+  logger.debug('🔍 getNews - Paramètres:', { limit });
   
   try {
     // Requête directe simple avec timeout
-    console.log('🎯 getNews - Requête directe avec timeout de 3s...');
+    logger.debug('🎯 getNews - Requête directe avec timeout de 3s...');
     
     const queryPromise = supabase
       .from('news')
@@ -168,30 +169,17 @@ export const getNews = async (limit = 3): Promise<NewsPost[]> => {
     const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
     
     if (!error && data && data.length > 0) {
-      console.log('✅ getNews - Succès:', data.length, 'actualités');
+      logger.debug('✅ getNews - Succès:', data.length, 'actualités');
       return data;
     }
     
     throw new Error('Pas de données ou erreur');
     
   } catch (error) {
-    console.log('⚡ getNews - Fallback activé');
+    logger.debug('⚡ getNews - Fallback activé');
     
-    // Retourner votre actualité "scqc" en fallback
-    const fallbackNews = {
-      id: '6439d9fe-8be4-4ce6-b9b3-4d6b4d23bbc8',
-      title: 'scqc',
-      content: 'wx ',
-      excerpt: 'Actualité de test',
-      image_url: null,
-      published: true,
-      created_at: '2025-07-12T20:11:39.386Z',
-      updated_at: '2025-07-12T20:11:57.559Z',
-      author_id: 'f21e582c-7414-4905-9eef-0fe209ef1692'
-    };
-    
-    console.log('✅ getNews - Retour fallback "scqc"');
-    return [fallbackNews];
+    // Retourner un tableau vide si Supabase échoue
+    return [];
   }
 };
 
@@ -214,7 +202,7 @@ export const createOrder = async (orderData: {
   status?: string;
 }): Promise<any> => {
   try {
-    console.log('Création de la commande avec les données:', {
+    logger.debug('Création de la commande avec les données:', {
       user_id: orderData.user_id,
       total_amount: orderData.total_amount,
       status: orderData.status || 'en_attente',
@@ -233,7 +221,7 @@ export const createOrder = async (orderData: {
       .single();
 
     if (orderError) {
-      console.error('Erreur lors de la création de la commande:', orderError);
+      logger.error('Erreur lors de la création de la commande:', orderError);
       throw orderError;
     }
 
@@ -241,7 +229,7 @@ export const createOrder = async (orderData: {
       throw new Error('Aucune donnée de commande retournée');
     }
 
-    console.log('Commande créée avec succès:', order);
+    logger.debug('Commande créée avec succès:', order);
 
     // 2. Ajouter les articles de la commande
     const orderItems = orderData.items.map(item => ({
@@ -251,7 +239,7 @@ export const createOrder = async (orderData: {
       unit_price: item.unit_price
     }));
 
-    console.log('Insertion des articles de commande:', orderItems);
+    logger.debug('Insertion des articles de commande:', orderItems);
 
     const { data: items, error: itemsError } = await supabase
       .from('order_items')
@@ -259,15 +247,15 @@ export const createOrder = async (orderData: {
       .select('*');
 
     if (itemsError) {
-      console.error('Erreur lors de l\'ajout des articles:', itemsError);
+      logger.error('Erreur lors de l\'ajout des articles:', itemsError);
       throw itemsError;
     }
 
-    console.log('Articles ajoutés avec succès:', items);
+    logger.debug('Articles ajoutés avec succès:', items);
     
     // 3. Créer une dette associée à la commande (pour tout statut de commande)
     try {
-      console.log('Création de la dette associée à la commande:', order.id);
+      logger.debug('Création de la dette associée à la commande:', order.id);
       
       const debtItems = items?.map((item: {
         product_id: string;
@@ -296,11 +284,11 @@ export const createOrder = async (orderData: {
         .single();
       
       if (debtError) {
-        console.error('Erreur lors de la création de la dette:', debtError);
+        logger.error('Erreur lors de la création de la dette:', debtError);
         // On ne rejette pas l'erreur pour ne pas bloquer la création de commande
         // mais on la log pour pouvoir la tracer
       } else {
-        console.log('Dette créée avec succès pour la commande:', order.id);
+        logger.debug('Dette créée avec succès pour la commande:', order.id);
         
         // Émettre un événement broadcast pour notifier tous les clients
         // Cela permet de s'assurer que les abonnements temps réel sont déclenchés
@@ -311,14 +299,14 @@ export const createOrder = async (orderData: {
               .update({ updated_at: new Date().toISOString() })
               .eq('id', debtData.id);
               
-            console.log('📢 Broadcast de mise à jour pour la dette créée via commande:', broadcastResult);
+            logger.debug('📢 Broadcast de mise à jour pour la dette créée via commande:', broadcastResult);
           } catch (broadcastError) {
-            console.warn('Erreur lors du broadcast de la dette (non bloquant):', broadcastError);
+      logger.warn('Erreur lors du broadcast de la dette (non bloquant):', broadcastError);
           }
         }
       }
     } catch (debtError) {
-      console.error('Erreur inattendue lors de la création de la dette:', debtError);
+      logger.error('Erreur inattendue lors de la création de la dette:', debtError);
       // On ne rejette pas l'erreur pour ne pas bloquer la création de commande
     }
 
@@ -328,7 +316,7 @@ export const createOrder = async (orderData: {
       items: items || []
     };
   } catch (error) {
-    console.error('Erreur dans createOrder:', error);
+    logger.error('Erreur dans createOrder:', error);
     throw error;
   }
 };
@@ -339,7 +327,7 @@ export const createOrder = async (orderData: {
  */
 export const getCategories = async (): Promise<Category[]> => {
   try {
-    console.log('🔄 [getCategories] Forçage du rechargement des données catégories sans cache');
+    logger.debug('🔄 [getCategories] Forçage du rechargement des données catégories sans cache');
     // Ajouter un timestamp pour éviter le cache
     const timestamp = new Date().getTime();
     
@@ -349,13 +337,13 @@ export const getCategories = async (): Promise<Category[]> => {
       .order('display_order', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des catégories:', error);
+      logger.error('Erreur lors de la récupération des catégories:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur inattendue lors de la récupération des catégories:', error);
+    logger.error('Erreur inattendue lors de la récupération des catégories:', error);
     return [];
   }
 };
@@ -368,7 +356,7 @@ export const getCategories = async (): Promise<Category[]> => {
  */
 export const getProducts = async (categoryId?: string, includeUnavailable: boolean = false): Promise<Product[]> => {
   try {
-    console.log('🔄 [getProducts] Forçage du rechargement des données produits sans cache');
+    logger.debug('🔄 [getProducts] Forçage du rechargement des données produits sans cache');
     // Première méthode : essayer avec la jointure
     try {
       // Ajouter un timestamp pour éviter le cache
@@ -420,13 +408,13 @@ export const getProducts = async (categoryId?: string, includeUnavailable: boole
     const { data, error } = await query;
 
     if (error) {
-      console.error('Erreur lors de la récupération des produits:', error);
+      logger.error('Erreur lors de la récupération des produits:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erreur inattendue lors de la récupération des produits:', error);
+    logger.error('Erreur inattendue lors de la récupération des produits:', error);
     return [];
   }
 };
@@ -474,7 +462,7 @@ export const fetchUserDebts = async (userId: string): Promise<any[]> => {
         return data;
       }
     } catch (error) {
-      console.warn("Erreur avec user_debts, tentative avec debts...", error);
+      logger.warn("Erreur avec user_debts, tentative avec debts...", error);
     }
 
     // Si user_debts échoue, essayer avec debts
@@ -489,12 +477,12 @@ export const fetchUserDebts = async (userId: string): Promise<any[]> => {
         return data;
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des dettes:', error);
+      logger.error('Erreur lors de la récupération des dettes:', error);
     }
     
     return [];
   } catch (error) {
-    console.error('Erreur inattendue lors de la récupération des dettes:', error);
+    logger.error('Erreur inattendue lors de la récupération des dettes:', error);
     return [];
   }
 };

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase, UserProfile } from '../lib/supabase'
 import { User } from '@supabase/supabase-js'
 import { signIn, signUp, signOut as authSignOut, getCurrentUser, isAdmin } from '../lib/auth'
+import { logger } from '../lib/logger'
 
 interface AuthContextType {
   user: User | null
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setIsUserAdmin(detectedAdmin)
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des données utilisateur:', error)
+      logger.error('Erreur lors de la mise à jour des données utilisateur:', error)
     } finally {
       setLoading(false)
     }
@@ -115,11 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        console.log('🔍 Vérification de la session existante...');
+        logger.debug('🔍 Vérification de la session existante...');
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && isMounted) {
-          console.log('✅ Session utilisateur valide trouvée');
+          logger.debug('✅ Session utilisateur valide trouvée');
           // Stocker la session dans localStorage pour récupération d'urgence
           try {
             localStorage.setItem('lastValidSession', JSON.stringify({
@@ -128,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: session.user.email
             }));
           } catch (e) {
-            console.warn('Impossible de stocker les infos de session:', e);
+            logger.warn('Impossible de stocker les infos de session:', e);
           }
           
           setUser(session.user);
@@ -137,27 +138,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Ne pas appeler updateUserData ici pour éviter le double chargement
         }
       } catch (error) {
-        console.error('❌ Erreur lors de la vérification de la session existante:', error);
+        logger.error('❌ Erreur lors de la vérification de la session existante:', error);
       }
     };
     
     // Fonction pour tenter de récupérer une session perdue
     const handleSessionRecovery = async () => {
       if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        console.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de récupération de session`);
+        logger.error(`❌ Échec après ${MAX_RECONNECT_ATTEMPTS} tentatives de récupération de session`);
         // Ne pas déconnecter automatiquement, essayer une dernière approche
         try {
-          console.log('🚨 Tentative de récupération d\'urgence avec getSession...');
+          logger.debug('🚨 Tentative de récupération d\'urgence avec getSession...');
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            console.log('✅ Session récupérée avec succès depuis getSession!');
+            logger.debug('✅ Session récupérée avec succès depuis getSession!');
             setUser(session.user);
             reconnectAttempts = 0;
             await updateUserData(session.user);
             return;
           }
         } catch (e) {
-          console.error('❌ Échec de la récupération d\'urgence:', e);
+          logger.error('❌ Échec de la récupération d\'urgence:', e);
         }
         
         // Si tout échoue, ne pas forcer la déconnexion automatiquement
@@ -167,14 +168,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       reconnectAttempts++;
-      console.log(`🔄 Tentative de récupération de session #${reconnectAttempts}...`);
+      logger.debug(`🔄 Tentative de récupération de session #${reconnectAttempts}...`);
       
       try {
         // Tenter de rafraîchir la session
         const { data, error } = await supabase.auth.refreshSession();
         
         if (error) {
-          console.error('❌ Échec du rafraîchissement de session:', error);
+          logger.error('❌ Échec du rafraîchissement de session:', error);
           // Attendre un peu avant la prochaine tentative
           await new Promise(resolve => setTimeout(resolve, 1000));
           
@@ -182,14 +183,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-              console.log('✅ Session récupérée via getSession après échec de refreshSession');
+              logger.debug('✅ Session récupérée via getSession après échec de refreshSession');
               setUser(session.user);
               reconnectAttempts = 0;
               await updateUserData(session.user);
               return;
             }
           } catch (e) {
-            console.error('❌ Échec de getSession après refreshSession:', e);
+            logger.error('❌ Échec de getSession après refreshSession:', e);
           }
           
           // Si l'erreur persiste, on continue les tentatives
@@ -197,13 +198,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Ne pas déconnecter ici, on laissera la fonction principale le faire
           }
         } else if (data.session && data.user) {
-          console.log('✅ Session récupérée avec succès via refreshSession');
+          logger.debug('✅ Session récupérée avec succès via refreshSession');
           setUser(data.user);
           reconnectAttempts = 0; // Réinitialiser le compteur
           await updateUserData(data.user);
         }
       } catch (error) {
-        console.error('❌ Erreur lors de la tentative de récupération de session:', error);
+        logger.error('❌ Erreur lors de la tentative de récupération de session:', error);
       } finally {
         setLoading(false);
       }
@@ -222,11 +223,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           // Si la session sauvegardée est récente (moins de 24h)
           if (sessionAge < 24 * 60 * 60 * 1000) {
-            console.log('🚨 Tentative de récupération d\'urgence depuis localStorage...');
+            logger.debug('🚨 Tentative de récupération d\'urgence depuis localStorage...');
             // Forcer un rafraîchissement de session
             supabase.auth.refreshSession().then(({ data }: { data: { session: any; user: any } }) => {
               if (data.session && data.user) {
-                console.log('✅ Session récupérée avec succès depuis localStorage!');
+                logger.debug('✅ Session récupérée avec succès depuis localStorage!');
                 setUser(data.user);
                 updateUserData(data.user);
               }
@@ -234,7 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (e) {
-        console.warn('Erreur lors de la récupération d\'urgence:', e);
+        logger.warn('Erreur lors de la récupération d\'urgence:', e);
       }
     }
     
@@ -248,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
         // Ne pas forcer la déconnexion si loading déjà passé à false
-        console.warn('⚠️ Timeout de chargement atteint, arrêt du mode loading');
+        logger.warn('⚠️ Timeout de chargement atteint, arrêt du mode loading');
         setLoading(false)
       }
     }, 6000) // 6 secondes maximum (plus tolérant)
@@ -313,7 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             break;
             
           case 'INITIAL_SESSION':
-            console.log('🏁 Session initiale');
+            logger.debug('🏁 Session initiale');
             // Éviter la double mise à jour si la session a déjà été traitée
             if (isSessionAlreadyProcessed) {
               setLoading(false);
@@ -420,9 +421,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await authSignOut();
       
       if (error) {
-        console.error('❌ Erreur lors de la déconnexion:', error);
+        logger.error('❌ Erreur lors de la déconnexion:', error);
       } else {
-        console.log('✅ Déconnexion réussie');
+        logger.debug('✅ Déconnexion réussie');
       }
       
       // Réinitialiser l'état local immédiatement
@@ -436,7 +437,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.location.href = '/';
       }, 300);
     } catch (error) {
-      console.error('❌ Erreur inattendue lors de la déconnexion:', error);
+      logger.error('❌ Erreur inattendue lors de la déconnexion:', error);
     }
   }
 
@@ -458,7 +459,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (metadataError) {
-        console.error('Erreur lors de la mise à jour des métadonnées:', metadataError)
+        logger.error('Erreur lors de la mise à jour des métadonnées:', metadataError)
         return { error: metadataError }
       }
       
@@ -483,10 +484,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         secureError = secureResult.error;
         
         if (secureError) {
-          console.warn('Erreur lors de la mise à jour du profil dans secure_profiles:', secureError);
+          logger.warn('Erreur lors de la mise à jour du profil dans secure_profiles:', secureError);
         }
       } catch (error) {
-        console.warn('Exception lors de la mise à jour de secure_profiles:', error);
+        logger.warn('Exception lors de la mise à jour de secure_profiles:', error);
       }
       
       // Note: La table user_profiles n'est plus utilisée pour éviter les erreurs 406
@@ -514,7 +515,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profilesError = profilesResult.error;
         
         if (profilesError) {
-          console.warn('Erreur lors de la mise à jour du profil dans profiles:', profilesError);
+          logger.warn('Erreur lors de la mise à jour du profil dans profiles:', profilesError);
           
           // Essayer d'insérer si la mise à jour échoue (peut-être que le profil n'existe pas)
           try {
@@ -532,17 +533,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .single();
               
             if (insertResult.error) {
-              console.warn('Erreur lors de l\'insertion du profil dans profiles:', insertResult.error);
+              logger.warn('Erreur lors de l\'insertion du profil dans profiles:', insertResult.error);
             } else {
               profilesData = insertResult.data;
               profilesError = null;
             }
           } catch (insertCatchError) {
-            console.error('Exception lors de l\'insertion du profil:', insertCatchError);
+            logger.error('Exception lors de l\'insertion du profil:', insertCatchError);
           }
         }
       } catch (error) {
-        console.warn('Exception lors de la mise à jour de profiles:', error);
+        logger.warn('Exception lors de la mise à jour de profiles:', error);
       }
       
       // 5. Forcer la mise à jour du profil dans l'état local
@@ -578,7 +579,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return { error: null };
     } catch (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error);
+      logger.error('Erreur lors de la mise à jour du profil:', error);
       return { error };
     }
   }
@@ -602,13 +603,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (error) {
-        console.error('Erreur lors du changement de mot de passe:', error)
+        logger.error('Erreur lors du changement de mot de passe:', error)
         return { error }
       }
       
       return { error: null }
     } catch (error) {
-      console.error('Erreur lors du changement de mot de passe:', error)
+      logger.error('Erreur lors du changement de mot de passe:', error)
       return { error }
     }
   }
@@ -635,7 +636,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await new Promise(resolve => setTimeout(resolve, 100));
       return adminStatus;
     } catch (error) {
-      console.error('Erreur lors du rafraîchissement du statut admin:', error);
+      logger.error('Erreur lors du rafraîchissement du statut admin:', error);
       return false;
     }
   }
